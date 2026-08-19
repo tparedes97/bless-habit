@@ -1,0 +1,1896 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bless Habit — Prototipo</title>
+<!-- Widget de pago de Paddle Billing (plan Premium). No se pudo probar en vivo desde este
+     entorno de trabajo (sin salida a internet) — confirma esta URL y la API de Paddle.js
+     contra https://developer.paddle.com/paddlejs/overview antes de cobrar de verdad. -->
+<script src="https://cdn.paddle.com/paddle/v2/paddle.js"></script>
+{% if adsense_client_id %}
+<!-- Google AdSense — solo se carga si ADSENSE_CLIENT_ID está configurado en Secrets.
+     Requiere que el sitio esté verificado/aprobado en tu cuenta de AdSense; hasta entonces
+     el bloque de anuncios (.ad-slot) se ve vacío/con el rótulo de repuesto. -->
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client={{ adsense_client_id }}" crossorigin="anonymous"></script>
+{% endif %}
+<style>
+  :root {
+    --bg: #0f1115; --panel: #171a21; --panel-2: #1e222b; --panel-3: #262c38;
+    --border: #2a2f3a; --text: #eef0f3; --text-dim: #9aa1ad;
+    --accent: #7c9eff; --accent-2: #6ee7b7; --accent-3: #ffb86c;
+    --user-bubble: #2d3546; --agent-bubble: #1f2530;
+    --warn-bg: #3a2f1a; --warn-text: #f0c975; --done-color: #6ee7b7;
+    --diag-bg: linear-gradient(135deg, #2a2f5c, #1e2a4a); --radius: 16px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; height: 100%; background: var(--bg); color: var(--text); }
+  #app { max-width: 480px; margin: 0 auto; height: 100vh; display: flex; flex-direction: column; background: var(--panel); border-left: 1px solid var(--border); border-right: 1px solid var(--border); position: relative; overflow: hidden; }
+  header { padding: 14px 18px 10px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; background: var(--panel); position: sticky; top: 0; z-index: 5; }
+  header .brand { display: flex; align-items: center; gap: 10px; }
+  .avatar {
+    width: 38px; height: 38px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    display: flex; align-items: center; justify-content: center; font-size: 18px;
+    animation: pulseAvatar 2.4s infinite; transition: transform .2s;
+  }
+  .avatar.bounce { animation: pulseAvatar 2.4s infinite, avatarBounce .5s ease; }
+  @keyframes pulseAvatar { 0%{box-shadow:0 0 0 0 rgba(124,158,255,.35);} 70%{box-shadow:0 0 0 8px rgba(124,158,255,0);} 100%{box-shadow:0 0 0 0 rgba(124,158,255,0);} }
+  @keyframes avatarBounce { 0%{transform:scale(1);} 30%{transform:scale(1.25) rotate(-8deg);} 60%{transform:scale(.95) rotate(4deg);} 100%{transform:scale(1) rotate(0);} }
+  header h1 { font-size: 15px; margin: 0; font-weight: 700; }
+  header .sub { font-size: 11px; color: var(--text-dim); margin: 0; }
+  .demo-badge { font-size: 10px; padding: 3px 8px; border-radius: 999px; background: var(--warn-bg); color: var(--warn-text); border: 1px solid #5a4a24; white-space: nowrap; }
+  .demo-badge.live { background: rgba(12,163,12,.15); color: var(--status-good); border-color: rgba(12,163,12,.4); }
+
+  .progress-ring { position: relative; width: 40px; height: 40px; }
+  .progress-ring svg { transform: rotate(-90deg); }
+  .progress-ring circle { fill: none; stroke-width: 4; }
+  .progress-ring .bg { stroke: var(--panel-2); }
+  .progress-ring .fg { stroke: var(--accent-2); stroke-linecap: round; transition: stroke-dashoffset .5s ease; }
+  .progress-ring .label { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; color: var(--accent-2); }
+
+  #onboarding-progress { height: 3px; background: var(--panel-2); position: relative; overflow: hidden; }
+  #onboarding-progress-fill { height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent-2)); width: 0%; transition: width .4s ease; }
+
+  #view-onboarding, #view-chat, #view-profile { flex: 1; display: none; flex-direction: column; min-height: 0; }
+  #view-onboarding.active, #view-chat.active, #view-profile.active { display: flex; }
+  #view-profile.active { overflow-y: auto; }
+
+  #onboarding-scroll { flex: 1; overflow-y: auto; padding: 18px 16px 8px; display: flex; flex-direction: column; gap: 12px; }
+  .bubble { max-width: 86%; padding: 11px 14px; border-radius: var(--radius); line-height: 1.42; font-size: 14.5px; animation: bubbleIn .3s cubic-bezier(.2,.8,.2,1); white-space: pre-wrap; }
+  @keyframes bubbleIn { from { opacity:0; transform: translateY(8px) scale(.98);} to {opacity:1; transform:none;} }
+  .agent { background: var(--agent-bubble); align-self: flex-start; border-bottom-left-radius: 4px; }
+  .user { background: var(--user-bubble); align-self: flex-end; border-bottom-right-radius: 4px; color: #fff; }
+  .agenda-note { align-self: center; font-size: 12px; color: var(--text-dim); background: var(--panel-2); padding: 6px 12px; border-radius: 999px; animation: bubbleIn .3s; }
+  .celebrate-note { align-self: center; font-size: 13px; color: #10131a; background: linear-gradient(135deg, var(--accent-2), var(--accent-3)); padding: 8px 16px; border-radius: 999px; font-weight: 700; animation: popIn .45s cubic-bezier(.34,1.56,.64,1); }
+  @keyframes popIn { 0%{opacity:0; transform: scale(.6);} 70%{transform: scale(1.08);} 100%{opacity:1; transform: scale(1);} }
+  .diag-card { align-self: stretch; background: var(--diag-bg); border: 1px solid #3d4a8a; border-radius: 18px; padding: 18px; animation: popIn .5s cubic-bezier(.34,1.56,.64,1); }
+  .diag-card .diag-label { font-size: 10px; text-transform: uppercase; letter-spacing: .08em; color: var(--accent-2); margin-bottom: 6px; }
+  .diag-card .diag-title { font-size: 17px; font-weight: 800; margin-bottom: 8px; }
+  .diag-card .diag-body { font-size: 13.5px; color: #d3d8f5; line-height: 1.5; }
+  .reengage-note { align-self: center; font-size: 13px; background: var(--panel-3); border: 1px solid var(--border); padding: 10px 16px; border-radius: 14px; animation: popIn .45s; text-align: center; }
+
+  .typing-bubble { align-self: flex-start; background: var(--agent-bubble); padding: 12px 16px; border-radius: var(--radius); border-bottom-left-radius: 4px; display: flex; gap: 4px; animation: bubbleIn .2s; }
+  .typing-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--text-dim); animation: typingBounce 1.1s infinite; }
+  .typing-dot:nth-child(2) { animation-delay: .15s; }
+  .typing-dot:nth-child(3) { animation-delay: .3s; }
+  @keyframes typingBounce { 0%,60%,100%{ transform: translateY(0); opacity:.5;} 30%{ transform: translateY(-5px); opacity:1;} }
+
+  .onboarding-input { border-top: 1px solid var(--border); padding: 12px 14px; display: flex; flex-direction: column; gap: 10px; background: var(--panel); animation: slideUp .3s ease; max-height: 52vh; overflow-y: auto; }
+  @keyframes slideUp { from { opacity:0; transform: translateY(10px);} to {opacity:1; transform:none;} }
+  .quick-replies { display: flex; flex-wrap: wrap; gap: 8px; }
+  .qr-btn { background: var(--panel-2); border: 1px solid var(--border); color: var(--text); padding: 9px 14px; border-radius: 999px; font-size: 13.5px; cursor: pointer; transition: .15s; }
+  .qr-btn:hover { border-color: var(--accent); color: var(--accent); transform: translateY(-1px); }
+  .qr-btn:active { transform: scale(.95); }
+  .qr-btn.selected { background: var(--accent); color: #10131a; border-color: var(--accent); font-weight: 700; }
+  .row-input { display: flex; gap: 8px; }
+  input[type=text], input[type=number], input[type=time] { flex: 1; background: var(--panel-2); border: 1px solid var(--border); color: var(--text); padding: 11px 14px; border-radius: 12px; font-size: 14.5px; outline: none; transition: border-color .15s; }
+  input:focus { border-color: var(--accent); }
+  .send-btn { background: var(--accent); border: none; color: #10131a; font-weight: 700; padding: 0 18px; border-radius: 12px; cursor: pointer; font-size: 14px; transition: transform .1s; }
+  .send-btn:active { transform: scale(.95); }
+  .send-btn:disabled { opacity: .5; cursor: default; }
+  .skip-link { font-size: 12px; color: var(--text-dim); text-align: center; cursor: pointer; text-decoration: underline; }
+  .step-label { font-size: 10px; color: var(--text-dim); text-transform: uppercase; letter-spacing: .06em; margin-bottom: -4px; }
+
+  #chat-scroll { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+  #agenda-panel { border-top: 1px solid var(--border); padding: 10px 14px 4px; background: var(--panel-2); max-height: 160px; overflow-y: auto; }
+  #agenda-panel h3 { font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--text-dim); margin: 4px 0 8px; display:flex; justify-content:space-between; }
+  .agenda-item { display: flex; align-items: center; gap: 8px; background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 7px 10px; margin-bottom: 6px; font-size: 13px; animation: itemIn .3s cubic-bezier(.2,.8,.2,1); transition: opacity .3s, transform .3s; }
+  @keyframes itemIn { from { opacity:0; transform: translateX(-6px);} to {opacity:1; transform:none;} }
+  .agenda-item.done { opacity: .55; }
+  .agenda-item.done .task { text-decoration: line-through; }
+  .agenda-item .check { width: 20px; height: 20px; border-radius: 50%; border: 2px solid var(--border); display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink:0; font-size: 11px; transition: .15s; }
+  .agenda-item .check:hover { border-color: var(--accent-2); }
+  .agenda-item.done .check { background: var(--done-color); border-color: var(--done-color); color: #10131a; }
+  .agenda-item .icon { font-size: 15px; flex-shrink: 0; }
+  .agenda-item .time { color: var(--accent-2); font-weight: 700; min-width: 42px; }
+  .agenda-item .task { flex: 1; margin: 0 4px; }
+  .agenda-item .rm { color: var(--text-dim); cursor: pointer; font-size: 12px; flex-shrink:0; }
+  #chat-input { border-top: 1px solid var(--border); padding: 8px 12px 6px; display: flex; gap: 8px; background: var(--panel); }
+  #chat-text { flex: 1; }
+  #demo-tools { padding: 0 12px 12px; text-align: center; }
+  #demo-tools .skip-link { font-size: 11px; }
+  footer.tabbar { display: flex; border-top: 1px solid var(--border); background: var(--panel); }
+  .tab { flex: 1; text-align: center; padding: 10px 0 8px; font-size: 11px; color: var(--text-dim); cursor: pointer; }
+  .tab.active-tab { color: var(--accent); }
+  .tab .ic { font-size: 18px; display: block; margin-bottom: 2px; }
+
+  #view-profile { padding: 20px 18px; overflow-y: auto; }
+  .profile-card { background: var(--panel-2); border: 1px solid var(--border); border-radius: 14px; padding: 16px; margin-bottom: 14px; animation: bubbleIn .3s; }
+  .profile-card h4 { margin: 0 0 10px; font-size: 12px; color: var(--text-dim); text-transform: uppercase; letter-spacing: .05em; }
+  .profile-row { display: flex; justify-content: space-between; padding: 6px 0; font-size: 14px; border-bottom: 1px solid var(--border); gap: 12px; }
+  .profile-row:last-child { border-bottom: none; }
+  .profile-row span:first-child { color: var(--text-dim); flex-shrink: 0; }
+  .profile-row span:last-child { text-align: right; }
+  .stats-row { display: flex; gap: 10px; }
+  .stat-box { flex: 1; background: var(--panel-3); border-radius: 12px; padding: 12px; text-align: center; }
+  .stat-box .num { font-size: 22px; font-weight: 800; color: var(--accent-2); }
+  .stat-box .lbl { font-size: 10.5px; color: var(--text-dim); margin-top: 2px; }
+  .habit-chip { display: inline-flex; align-items: center; gap: 6px; background: var(--panel-3); border-radius: 999px; padding: 6px 12px; font-size: 13px; margin: 3px 4px 3px 0; }
+  .habit-chip .streak { background: var(--accent-3); color: #10131a; border-radius: 999px; padding: 1px 7px; font-size: 11px; font-weight: 800; margin-left: 4px; }
+  .chip-edit-btn { cursor: pointer; margin-left: 6px; opacity: 0.75; font-size: 12px; }
+  .chip-edit-btn:hover { opacity: 1; }
+  .agenda-item .edit { cursor: pointer; opacity: 0.6; padding: 0 4px; }
+  .agenda-item .edit:hover { opacity: 1; }
+  .tag-chip { display: inline-block; background: var(--panel-3); border-radius: 999px; padding: 5px 11px; font-size: 12px; margin: 3px 4px 3px 0; }
+
+  /* ---- sequential ramp (dataviz skill, dark surface) para % de cumplimiento ---- */
+  :root {
+    --seq-0: #171a21;   /* sin datos / 0% */
+    --seq-1: #184f95;   /* 1-24% */
+    --seq-2: #1c5cab;   /* 25-49% */
+    --seq-3: #256abf;   /* 50-74% */
+    --seq-4: #2a78d6;   /* 75-99% */
+    --seq-5: #3987e5;   /* 100% */
+    --status-good: #0ca30c;
+    --status-warning: #fab219;
+    --status-critical: #d03b3b;
+  }
+
+  #view-calendar, #view-metrics { flex: 1; display: none; flex-direction: column; min-height: 0; overflow-y: auto; }
+  #view-calendar.active, #view-metrics.active { display: flex; }
+  .cal-subtabs { display: flex; gap: 6px; padding: 12px 16px 0; }
+  .cal-subtab { flex: 1; text-align: center; padding: 8px 0; border-radius: 10px; font-size: 12.5px; font-weight: 700; cursor: pointer; background: var(--panel-2); color: var(--text-dim); border: 1px solid var(--border); }
+  .cal-subtab.active { background: var(--accent); color: #10131a; border-color: var(--accent); }
+  .cal-body { padding: 14px 16px 24px; }
+
+  /* Día */
+  .day-nav { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+  .day-nav button { background: var(--panel-2); border: 1px solid var(--border); color: var(--text); width: 34px; height: 34px; border-radius: 10px; cursor: pointer; font-size: 15px; }
+  .day-nav button:disabled { opacity: .3; cursor: default; }
+  .day-nav .day-title { font-size: 14px; font-weight: 700; text-align: center; }
+  .day-nav .day-pct { font-size: 11px; color: var(--accent-2); text-align: center; }
+
+  /* Semana */
+  .week-scroll { overflow-x: auto; }
+  .week-grid { display: grid; grid-template-columns: 46px repeat(7, 54px); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; min-width: 424px; }
+  .week-grid .cell { border-right: 1px solid var(--border); border-bottom: 1px solid var(--border); font-size: 10px; display: flex; align-items: center; justify-content: center; min-height: 28px; padding: 2px; }
+  .week-grid .hour-lbl { background: var(--panel-2); color: var(--text-dim); font-size: 9.5px; }
+  .week-grid .day-head { background: var(--panel-2); flex-direction: column; padding: 6px 2px; font-weight: 700; gap: 2px; }
+  .week-grid .day-head .pct { font-size: 9px; font-weight: 800; }
+  .week-grid .slot { background: var(--panel); }
+  .week-grid .slot.has-item { font-size: 13px; }
+  .week-grid .slot.today-col { background: #1a2130; }
+  .week-summary { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; font-size: 12px; color: var(--text-dim); }
+
+  /* Mes */
+  .month-nav { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+  .month-nav button { background: var(--panel-2); border: 1px solid var(--border); color: var(--text); width: 30px; height: 30px; border-radius: 8px; cursor: pointer; }
+  .month-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+  .month-grid .wd { font-size: 10px; color: var(--text-dim); text-align: center; padding-bottom: 4px; }
+  .month-cell { aspect-ratio: 1; border-radius: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 10px; gap: 1px; border: 1px solid transparent; }
+  .month-cell .dnum { font-size: 9px; opacity: .85; }
+  .month-cell .dicon { font-size: 12px; }
+  .month-cell.empty { background: transparent; }
+  .month-cell.today { border-color: var(--accent-2); }
+  .month-legend { display: flex; align-items: center; gap: 6px; margin-top: 12px; font-size: 10.5px; color: var(--text-dim); }
+  .month-legend .sw { width: 12px; height: 12px; border-radius: 3px; }
+
+  /* Métricas */
+  .kpi-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
+  .kpi-tile { background: var(--panel-2); border: 1px solid var(--border); border-radius: 14px; padding: 14px; }
+  .kpi-tile .kpi-num { font-size: 24px; font-weight: 800; color: var(--accent-2); }
+  .kpi-tile .kpi-lbl { font-size: 11px; color: var(--text-dim); margin-top: 2px; }
+  .kpi-tile .kpi-sub { font-size: 10.5px; margin-top: 4px; font-weight: 700; }
+  .metrics-section { background: var(--panel-2); border: 1px solid var(--border); border-radius: 14px; padding: 16px; margin-bottom: 14px; }
+  .metrics-section h4 { margin: 0 0 12px; font-size: 12px; color: var(--text-dim); text-transform: uppercase; letter-spacing: .05em; }
+  .bar-row { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; font-size: 12.5px; }
+  .bar-row .bar-lbl { width: 82px; flex-shrink: 0; color: var(--text-dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .bar-track { flex: 1; background: var(--panel-3); border-radius: 999px; height: 10px; overflow: hidden; }
+  .bar-fill { height: 100%; border-radius: 999px; transition: width .5s ease; }
+  .bar-pct { width: 36px; text-align: right; font-weight: 700; font-size: 12px; flex-shrink: 0; }
+  .weekday-row { display: flex; gap: 4px; align-items: flex-end; height: 90px; margin-bottom: 6px; }
+  .weekday-col { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; height: 100%; gap: 4px; }
+  .weekday-col .wbar { width: 60%; border-radius: 4px 4px 0 0; min-height: 3px; }
+  .weekday-col .wlbl { font-size: 9.5px; color: var(--text-dim); }
+  .status-tag { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 700; padding: 3px 9px; border-radius: 999px; }
+
+  /* Bless flotante — visible en Calendario / Métricas / Perfil, invita a volver al chat */
+  .bless-fab { position: absolute; right: 16px; bottom: 74px; width: 54px; height: 54px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent), var(--accent-2)); display: none; align-items: center; justify-content: center;
+    font-size: 24px; box-shadow: 0 6px 18px rgba(0,0,0,.4); cursor: pointer; z-index: 30; transition: transform .15s;
+    animation: pulseAvatar 2.4s infinite; }
+  .bless-fab.show { display: flex; }
+  .bless-fab.bounce { animation: pulseAvatar 2.4s infinite, avatarBounce .5s ease; }
+  .bless-fab:active { transform: scale(.88); }
+
+  /* Horarios de hábitos en el onboarding */
+  .habit-sched-list { display: flex; flex-direction: column; gap: 8px; max-height: 40vh; overflow-y: auto; padding-right: 2px; }
+  .habit-sched-row { display: flex; align-items: center; gap: 8px; background: var(--panel-2); border: 1px solid var(--border); border-radius: 12px; padding: 8px 10px; }
+  .habit-sched-row .hs-label { flex: 1; font-size: 13px; }
+  .habit-sched-row input[type=time] { flex: 0 0 auto; width: 90px; padding: 8px; font-size: 12.5px; }
+  .habit-sched-row .hs-repeat { display: flex; align-items: center; gap: 4px; font-size: 10px; color: var(--text-dim); white-space: nowrap; }
+
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+  /* Login */
+  #view-login { flex: 1; display: none; flex-direction: column; align-items: center; justify-content: center; padding: 32px; text-align: center; gap: 12px; }
+  #view-login.active { display: flex; }
+  #view-login .login-avatar { width: 64px; height: 64px; border-radius: 50%; background: linear-gradient(135deg, var(--accent), var(--accent-2)); display: flex; align-items: center; justify-content: center; font-size: 30px; margin-bottom: 4px; animation: pulseAvatar 2.4s infinite; }
+  #view-login h2 { margin: 0; font-size: 20px; }
+  #view-login p { margin: 0; color: var(--text-dim); font-size: 13.5px; line-height: 1.5; max-width: 300px; }
+  .google-btn { display: inline-flex; align-items: center; gap: 8px; background: #fff; color: #3c4043; font-weight: 700; padding: 12px 22px; border-radius: 12px; text-decoration: none; font-size: 14px; margin-top: 10px; box-shadow: 0 2px 10px rgba(0,0,0,.3); transition: transform .1s; }
+  .google-btn:active { transform: scale(.96); }
+  #view-login .login-loading { font-size: 12.5px; color: var(--text-dim); }
+  .logout-link { display: inline-block; margin-top: 6px; font-size: 12px; color: var(--text-dim); text-decoration: underline; cursor: pointer; }
+
+  /* Plan Premium (Paddle Billing) + banda de anuncios (plan gratis) */
+  .premium-lock { border-color: #3d4a8a; background: var(--diag-bg); }
+  .premium-lock h4 { color: var(--accent-2); }
+  .premium-btn { width: 100%; background: linear-gradient(135deg, var(--accent), var(--accent-2)); border: none; color: #10131a; font-weight: 800; padding: 12px 16px; border-radius: 12px; cursor: pointer; font-size: 14px; margin-top: 4px; transition: transform .1s; }
+  .premium-btn:active { transform: scale(.97); }
+  .premium-note { font-size: 11.5px; color: var(--text-dim); margin-top: 8px; line-height: 1.4; }
+  .premium-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 800; padding: 3px 10px; border-radius: 999px; background: rgba(124,158,255,.18); color: var(--accent); border: 1px solid rgba(124,158,255,.4); margin-top: 6px; }
+  .ad-slot { margin-top: 16px; padding: 8px; border: 1px dashed var(--border); border-radius: 12px; text-align: center; min-height: 60px; display: flex; align-items: center; justify-content: center; }
+  .ad-slot .ad-fallback-label { font-size: 10px; color: var(--text-dim); text-transform: uppercase; letter-spacing: .06em; }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="onboarding-progress"><div id="onboarding-progress-fill"></div></div>
+
+  <header>
+    <div class="brand">
+      <div class="avatar" id="agent-avatar">🌱</div>
+      <div>
+        <h1 id="header-title">Bless Habit</h1>
+        <p class="sub" id="header-sub">Bless te está conociendo…</p>
+      </div>
+    </div>
+    <div id="header-right"><div class="demo-badge">MODO DEMO · IA simulada</div></div>
+  </header>
+
+  <div id="view-login" class="active">
+    <div class="login-avatar">🌱</div>
+    <h2>Bless Habit</h2>
+    <p>Tu compañero de hábitos y agenda. Inicia sesión para que Bless recuerde tu perfil y tu progreso entre visitas.</p>
+    <a href="/auth/login" class="google-btn" id="google-login-btn">Continuar con Google</a>
+    <div class="login-loading" id="login-loading" style="display:none;">Cargando tu información…</div>
+  </div>
+
+  <div id="view-onboarding">
+    <div id="onboarding-scroll"></div>
+    <div class="onboarding-input" id="onboarding-controls"></div>
+  </div>
+
+  <div id="view-chat">
+    <div id="chat-scroll"></div>
+    <div id="agenda-panel">
+      <h3><span>Agenda de hoy</span><span id="agenda-count"></span></h3>
+      <div id="agenda-list"></div>
+    </div>
+    <div id="chat-input">
+      <input type="text" id="chat-text" placeholder="Cuéntame qué quieres hacer hoy…" />
+      <button class="send-btn" id="chat-send">Enviar</button>
+    </div>
+    <div id="demo-tools"><span class="skip-link" id="simulate-reengage">🧪 Simular: volver después de unos días</span></div>
+  </div>
+
+  <div id="view-calendar">
+    <div class="cal-subtabs">
+      <div class="cal-subtab active" data-calsub="day">Día</div>
+      <div class="cal-subtab" data-calsub="week">Semana</div>
+      <div class="cal-subtab" data-calsub="month">Mes</div>
+    </div>
+    <div class="cal-body" id="cal-body"></div>
+  </div>
+
+  <div id="view-metrics"></div>
+
+  <div id="view-profile"></div>
+
+  <div id="bless-fab" class="bless-fab" title="Hablar con Bless">🌱</div>
+
+  <footer class="tabbar" id="tabbar" style="display:none;">
+    <div class="tab active-tab" data-tab="chat"><span class="ic">💬</span>Bless</div>
+    <div class="tab" data-tab="calendar"><span class="ic">📅</span>Calendario</div>
+    <div class="tab" data-tab="metrics"><span class="ic">📊</span>Métricas</div>
+    <div class="tab" data-tab="profile"><span class="ic">🧑</span>Perfil</div>
+  </footer>
+
+  <div id="habit-editor-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:80;align-items:center;justify-content:center;padding:16px;">
+    <div class="profile-card" style="max-width:380px;width:100%;max-height:85vh;overflow-y:auto;margin:0;">
+      <h4 id="habit-editor-title">Nuevo hábito</h4>
+      <div class="row-input" style="margin-top:6px;">
+        <input type="text" id="he-label" placeholder="Nombre del hábito">
+      </div>
+      <div style="font-size:12px;color:var(--text-dim);margin:12px 0 6px;">¿Qué días de la semana?</div>
+      <div class="quick-replies" id="he-days"></div>
+      <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--text-dim);margin:12px 0 6px;">
+        <input type="checkbox" id="he-same-time" checked> Mismo horario todos los días
+      </label>
+      <div id="he-single-time-row" class="row-input">
+        <input type="time" id="he-time" value="18:00">
+      </div>
+      <div id="he-per-day-times" style="display:none;"></div>
+      <div style="font-size:12px;color:var(--text-dim);margin:12px 0 6px;">¿Por cuánto tiempo?</div>
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:13px;color:var(--text-dim);">
+        <label style="display:flex;align-items:center;gap:4px;"><input type="radio" name="he-duration" id="he-duration-indef" checked> Indefinido</label>
+        <label style="display:flex;align-items:center;gap:4px;"><input type="radio" name="he-duration" id="he-duration-weeks"> Por <input type="number" id="he-weeks" min="1" value="4" style="width:52px;" disabled> semanas</label>
+      </div>
+      <div id="habit-editor-status" style="font-size:12px;color:var(--text-dim);margin-top:10px;min-height:16px;"></div>
+      <button class="send-btn" id="he-save-btn" style="width:100%;margin-top:10px;">Guardar hábito</button>
+      <button id="he-delete-btn" style="width:100%;margin-top:8px;background:none;border:1px solid #a33d3d;color:#e88;border-radius:10px;padding:8px;display:none;">Eliminar hábito</button>
+      <div style="text-align:center;margin-top:10px;"><span class="logout-link" id="he-cancel-btn">Cancelar</span></div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   CONEXIÓN CON OPENAI — vía nuestro propio backend (Flask)
+   ============================================================
+   La key NUNCA vive en este archivo ni en el navegador. Vive solo en el
+   servidor, como variable de entorno OPENAI_API_KEY (en Replit: Secrets).
+   El frontend le pregunta a nuestro backend "/api/status" si hay key
+   configurada, y le pide las respuestas del chat a "/api/bless-reply" —
+   es el backend el que le habla a OpenAI, no el navegador (esto también
+   es necesario porque OpenAI bloquea las llamadas directas desde el
+   navegador — a diferencia de Gemini, aquí no hay opción cliente-only).
+   Si el backend no tiene key (o la llamada falla por cualquier motivo),
+   Bless sigue funcionando igual que antes con sus respuestas simuladas
+   por reglas, para que la app nunca se rompa. */
+let aiReady = false;
+function aiEnabled() { return aiReady; }
+
+(async function checkAiStatus() {
+  try {
+    const res = await fetch('/api/status');
+    const data = await res.json();
+    aiReady = !!(data && data.aiReady);
+  } catch (e) { aiReady = false; }
+  const hr = document.getElementById('header-right');
+  if (hr) hr.innerHTML = badgeHtml();
+})();
+
+async function callBlessAI(situationPrompt) {
+  if (!aiEnabled()) return null;
+  try {
+    const res = await fetch('/api/bless-reply', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ prompt: situationPrompt }) });
+    if (!res.ok) return null;
+    const data = await res.json();
+    return (data && data.ok && data.reply) ? data.reply.trim() : null;
+  } catch (e) { return null; }
+}
+function blessPersonaPrompt(situationDescription) {
+  const p = state.profile;
+  return `Eres Bless, el agente conversacional cálido y cercano de la app "Bless Habit", que ayuda a ${p.nombre || 'la persona'} a construir hábitos y organizar su día. Hablas en español, tono cálido, directo y natural — nunca como un formulario ni una lista. Responde en 1 a 3 líneas, sin markdown, sin viñetas, sin emojis excesivos (máximo 1 o 2).
+
+Perfil de la persona:
+- Le cuesta: ${(p.dificultades||[]).join(', ') || 'sostener la constancia'}
+- Detonantes de fallo: ${(p.detonantes||[]).join(', ') || '—'}
+- Estilo de motivación: ${p.motivacion || '—'}
+- Más energía en: ${p.energia || '—'}
+
+Situación actual: ${situationDescription}
+
+Responde solo con el mensaje que Bless le diría ahora a la persona, nada más (sin comillas, sin explicar lo que vas a decir).`;
+}
+/* Intenta responder con Gemini; si no hay key o falla, usa el texto simulado como respaldo */
+async function say(container, situationDesc, fallbackText, delay) {
+  const aiReply = await callBlessAI(blessPersonaPrompt(situationDesc));
+  await agentSay(container, aiReply || fallbackText, delay);
+}
+
+/* ============================================================
+   ESTADO EN MEMORIA (nunca localStorage — se reinicia al recargar)
+   ============================================================ */
+const state = {
+  profile: {
+    nombre: "", trabajoInicio: "", trabajoFin: "", energia: "", tipo: "", peso: null, talla: null,
+    dificultades: [], intentosPrevios: [], detonantes: [], despertar: "", dormir: "", tiempoLibre: "",
+    motivacion: "", diasDificiles: [], habitos: []
+  },
+  diagnostic: null,
+  agenda: [], streaks: {}, history: [], onboardingStep: 0, pending: null
+};
+
+const HABIT_PRESETS = [
+  { key: 'ejercicio', icon: '🏃', label: 'Ejercicio', match: ['ejercicio','entrenar','gimnasio','correr','deporte'] },
+  { key: 'caminar', icon: '🚶', label: 'Caminar', match: ['caminar','pasos','salir a caminar'] },
+  { key: 'lectura', icon: '📖', label: 'Leer', match: ['leer','lectura','libro'] },
+  { key: 'agua', icon: '💧', label: 'Tomar agua', match: ['tomar agua','hidrat'] },
+  { key: 'meditacion', icon: '🧘', label: 'Meditar', match: ['medit','respirar','mindfulness','yoga'] },
+  { key: 'sueno', icon: '😴', label: 'Dormir mejor', match: ['dormir','sueño','descansar','siesta'] },
+  { key: 'comida', icon: '🥗', label: 'Comer sano', match: ['comer','comida','dieta','nutrición','cocinar'] },
+  { key: 'escritura', icon: '✍️', label: 'Escribir/journaling', match: ['escribir','diario','journaling'] },
+  { key: 'estudio', icon: '📚', label: 'Estudiar', match: ['estudiar','estudio','curso','aprender'] },
+  { key: 'orden', icon: '🧹', label: 'Ordenar espacio', match: ['ordenar','limpiar','organizar espacio'] },
+  { key: 'finanzas', icon: '💰', label: 'Ahorrar dinero', match: ['ahorrar','finanzas','presupuesto'] },
+  { key: 'pantalla', icon: '📵', label: 'Reducir pantalla', match: ['pantalla','redes sociales','celular','instagram','tiktok'] },
+  { key: 'gratitud', icon: '🙏', label: 'Practicar gratitud', match: ['gratitud','agradecer'] },
+  { key: 'fumar', icon: '🚭', label: 'Dejar de fumar', match: ['fumar','cigarro','tabaco'] },
+  { key: 'alcohol', icon: '🍷', label: 'Reducir alcohol', match: ['alcohol','cerveza','vino','trago'] },
+  { key: 'musica', icon: '🎸', label: 'Practicar instrumento', match: ['instrumento','guitarra','piano','tocar música'] },
+  { key: 'idioma', icon: '🗣️', label: 'Aprender idioma', match: ['idioma','inglés','ingles','vocabulario'] },
+  { key: 'familia', icon: '👨‍👩‍👧', label: 'Tiempo en familia', match: ['familia','hijos','pareja'] },
+];
+function pickIcon(text) { const l = text.toLowerCase(); for (const h of HABIT_PRESETS) if (h.match.some(m => l.includes(m))) return h.icon; return '🎯'; }
+function pickHabitKey(text) { const l = text.toLowerCase(); for (const h of HABIT_PRESETS) if (h.match.some(m => l.includes(m))) return h.key; return 'general'; }
+function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+// hora típica por tipo de hábito — usada tanto para sugerir horario en el onboarding
+// como para ubicar el historial simulado en la grilla semanal
+function typicalHourFor(key) {
+  const map = {
+    ejercicio: 7, caminar: 8, lectura: 21, agua: 10, meditacion: 7,
+    sueno: (state.profile.dormir ? parseInt(state.profile.dormir.split(':')[0]) : 22),
+    comida: 13, escritura: 20, estudio: 18, orden: 11, finanzas: 20, pantalla: 21,
+    gratitud: 22, fumar: 12, alcohol: 20, musica: 19, idioma: 19, familia: 19, general: 18
+  };
+  return map[key] ?? 18;
+}
+function defaultTimeFor(key) { return String(typicalHourFor(key)).padStart(2,'0') + ':00'; }
+const WEEKDAY_LABELS = ['D','L','M','M','J','V','S'];
+const WEEKDAY_NAMES = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+// Compatibilidad: hábitos guardados antes de que existiera repeatDays solo tenían
+// repeatWeekly (true = todos los días, false = solo el día en que se agregó).
+function habitRepeatDays(h) {
+  if (Array.isArray(h.repeatDays)) return h.repeatDays;
+  return h.repeatWeekly ? [0,1,2,3,4,5,6] : [];
+}
+function habitTimeForDay(h, dow) {
+  if (h.sameTimeEveryday === false && h.timesByDay && h.timesByDay[dow]) return h.timesByDay[dow];
+  return h.time || defaultTimeFor(h.key);
+}
+function habitActiveOnDate(h, dateStr) {
+  if (!h.durationWeeks || !h.createdAt) return true;
+  const start = new Date(h.createdAt + 'T00:00:00');
+  const end = addDays(start, h.durationWeeks * 7);
+  return new Date(dateStr + 'T00:00:00') <= end;
+}
+function habitDurationLabel(h) {
+  return h.durationWeeks ? `por ${h.durationWeeks} semana${h.durationWeeks === 1 ? '' : 's'}` : 'indefinido';
+}
+function habitDaysLabel(h) {
+  const days = habitRepeatDays(h);
+  if (days.length === 7) return 'toda la semana';
+  if (days.length === 0) return 'sin repetición';
+  return days.slice().sort().map(d => WEEKDAY_NAMES[d]).join(', ');
+}
+function habitDaysCompact(h) {
+  const days = habitRepeatDays(h);
+  if (days.length === 7) return 'todos los días';
+  if (days.length === 0) return 'sin repetir';
+  return days.slice().sort().map(d => WEEKDAY_LABELS[d]).join('');
+}
+
+const ob = document.getElementById('onboarding-scroll');
+const obControls = document.getElementById('onboarding-controls');
+const chatScroll = document.getElementById('chat-scroll');
+const agendaList = document.getElementById('agenda-list');
+const progressFill = document.getElementById('onboarding-progress-fill');
+const avatarEl = document.getElementById('agent-avatar');
+const fabEl = document.getElementById('bless-fab');
+function badgeHtml() { return aiEnabled() ? '<div class="demo-badge live">IA real · OpenAI</div>' : '<div class="demo-badge">MODO DEMO · IA simulada</div>'; }
+document.getElementById('header-right').innerHTML = badgeHtml();
+
+const MOODS = { default: '🌱', thinking: '🤔', happy: '🎉', caring: '🤍', proud: '🌟' };
+function setAvatarMood(mood, revertMs) {
+  avatarEl.textContent = MOODS[mood] || MOODS.default;
+  avatarEl.classList.remove('bounce'); void avatarEl.offsetWidth; avatarEl.classList.add('bounce');
+  if (fabEl) { fabEl.textContent = avatarEl.textContent; fabEl.classList.remove('bounce'); void fabEl.offsetWidth; fabEl.classList.add('bounce'); }
+  if (revertMs) setTimeout(() => { avatarEl.textContent = MOODS.default; if (fabEl) fabEl.textContent = MOODS.default; }, revertMs);
+}
+
+function addBubble(container, text, who) { const div = document.createElement('div'); div.className = 'bubble ' + who; div.textContent = text; container.appendChild(div); container.scrollTop = container.scrollHeight; return div; }
+function addNote(container, text, cls='agenda-note') { const div = document.createElement('div'); div.className = cls; div.textContent = text; container.appendChild(div); container.scrollTop = container.scrollHeight; }
+function addDiagCard(container, diag) {
+  const div = document.createElement('div'); div.className = 'diag-card';
+  div.innerHTML = `<div class="diag-label">Diagnóstico de Bless</div><div class="diag-title">${diag.title}</div><div class="diag-body">${diag.body}</div>`;
+  container.appendChild(div); container.scrollTop = container.scrollHeight;
+}
+function showTyping(container) {
+  setAvatarMood('thinking');
+  const div = document.createElement('div'); div.className = 'typing-bubble'; div.id = 'typing-indicator';
+  div.innerHTML = '<span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span>';
+  container.appendChild(div); container.scrollTop = container.scrollHeight;
+}
+function hideTyping() { const d = document.getElementById('typing-indicator'); if (d) d.remove(); }
+async function agentSay(container, text, delay=420) {
+  showTyping(container);
+  return new Promise(resolve => { setTimeout(() => { hideTyping(); setAvatarMood('default'); addBubble(container, text, 'agent'); resolve(); }, delay); });
+}
+
+/* ============================================================
+   ONBOARDING — evaluación completa
+   ============================================================ */
+function renderTextInput(field, placeholder) {
+  return () => {
+    obControls.innerHTML = '';
+    const row = document.createElement('div'); row.className = 'row-input';
+    const input = document.createElement('input'); input.type = 'text'; input.placeholder = placeholder;
+    const btn = document.createElement('button'); btn.className = 'send-btn'; btn.textContent = 'Enviar';
+    row.appendChild(input); row.appendChild(btn); obControls.appendChild(row); input.focus();
+    function submit() { const val = input.value.trim(); if (!val) return; addBubble(ob, val, 'user'); state.profile[field] = val; advanceOnboarding(); }
+    btn.onclick = submit;
+    input.addEventListener('keydown', e => { if (e.key === 'Enter') submit(); });
+  };
+}
+function renderWorkHours() {
+  return () => {
+    obControls.innerHTML = '';
+    const row = document.createElement('div'); row.className = 'row-input';
+    const t1 = document.createElement('input'); t1.type = 'time'; t1.value = '09:00';
+    const t2 = document.createElement('input'); t2.type = 'time'; t2.value = '18:00';
+    const btn = document.createElement('button'); btn.className = 'send-btn'; btn.textContent = 'Listo';
+    row.appendChild(t1); row.appendChild(t2); row.appendChild(btn); obControls.appendChild(row);
+    btn.onclick = () => { state.profile.trabajoInicio = t1.value; state.profile.trabajoFin = t2.value; addBubble(ob, `De ${t1.value} a ${t2.value}`, 'user'); advanceOnboarding(); };
+  };
+}
+function renderRutina() {
+  return () => {
+    obControls.innerHTML = '';
+    const lbl1 = document.createElement('div'); lbl1.className = 'step-label'; lbl1.textContent = '¿A qué hora despiertas normalmente?';
+    obControls.appendChild(lbl1);
+    const row1 = document.createElement('div'); row1.className = 'row-input';
+    const tDespertar = document.createElement('input'); tDespertar.type = 'time'; tDespertar.value = '07:00';
+    row1.appendChild(tDespertar); obControls.appendChild(row1);
+    const lbl2 = document.createElement('div'); lbl2.className = 'step-label'; lbl2.textContent = '¿A qué hora sueles dormirte?';
+    obControls.appendChild(lbl2);
+    const row2 = document.createElement('div'); row2.className = 'row-input';
+    const tDormir = document.createElement('input'); tDormir.type = 'time'; tDormir.value = '23:00';
+    const btn = document.createElement('button'); btn.className = 'send-btn'; btn.textContent = 'Listo';
+    row2.appendChild(tDormir); row2.appendChild(btn); obControls.appendChild(row2);
+    btn.onclick = () => {
+      state.profile.despertar = tDespertar.value; state.profile.dormir = tDormir.value;
+      addBubble(ob, `Despierto ${tDespertar.value}, duermo ${tDormir.value}`, 'user');
+      advanceOnboarding();
+    };
+  };
+}
+function renderQuickReplies(field, options) {
+  return () => {
+    obControls.innerHTML = '';
+    const wrap = document.createElement('div'); wrap.className = 'quick-replies';
+    options.forEach(opt => {
+      const b = document.createElement('button'); b.className = 'qr-btn'; b.textContent = opt;
+      b.onclick = () => { state.profile[field] = opt; addBubble(ob, opt, 'user'); advanceOnboarding(); };
+      wrap.appendChild(b);
+    });
+    obControls.appendChild(wrap);
+  };
+}
+function renderMultiSelect(field, options, customPlaceholder) {
+  return () => {
+    obControls.innerHTML = '';
+    const selected = new Set();
+    const wrap = document.createElement('div'); wrap.className = 'quick-replies';
+    options.forEach(opt => {
+      const b = document.createElement('button'); b.className = 'qr-btn'; b.textContent = opt;
+      b.onclick = () => { if (selected.has(opt)) { selected.delete(opt); b.classList.remove('selected'); } else { selected.add(opt); b.classList.add('selected'); } };
+      wrap.appendChild(b);
+    });
+    obControls.appendChild(wrap);
+    let customInput = null;
+    if (customPlaceholder) {
+      const row = document.createElement('div'); row.className = 'row-input';
+      customInput = document.createElement('input'); customInput.type = 'text'; customInput.placeholder = customPlaceholder;
+      row.appendChild(customInput); obControls.appendChild(row);
+    }
+    const continueBtn = document.createElement('button'); continueBtn.className = 'send-btn'; continueBtn.style.width = '100%'; continueBtn.style.marginTop = '4px'; continueBtn.textContent = 'Continuar';
+    obControls.appendChild(continueBtn);
+    continueBtn.onclick = () => {
+      const chosen = [...selected];
+      const customVal = customInput ? customInput.value.trim() : '';
+      if (customVal) chosen.push(customVal);
+      if (chosen.length === 0) { addNote(ob, 'Elige al menos una opción o escribe la tuya ✍️'); return; }
+      state.profile[field] = chosen;
+      addBubble(ob, chosen.join(', '), 'user');
+      advanceOnboarding();
+    };
+  };
+}
+function renderPesoTalla() {
+  return () => {
+    obControls.innerHTML = '';
+    const row = document.createElement('div'); row.className = 'row-input';
+    const p = document.createElement('input'); p.type = 'number'; p.placeholder = 'Peso (kg)';
+    const t = document.createElement('input'); t.type = 'number'; t.placeholder = 'Talla (cm)';
+    const btn = document.createElement('button'); btn.className = 'send-btn'; btn.textContent = 'Guardar';
+    row.appendChild(p); row.appendChild(t); row.appendChild(btn); obControls.appendChild(row);
+    const skip = document.createElement('div'); skip.className = 'skip-link'; skip.textContent = 'Prefiero no compartir esto';
+    obControls.appendChild(skip);
+    btn.onclick = () => { state.profile.peso = p.value || null; state.profile.talla = t.value || null; addBubble(ob, (p.value||t.value) ? `Peso: ${p.value||'—'}kg, Talla: ${t.value||'—'}cm` : 'Prefiero no compartirlo', 'user'); advanceOnboarding(); };
+    skip.onclick = () => { addBubble(ob, 'Prefiero no compartirlo', 'user'); advanceOnboarding(); };
+  };
+}
+function renderHabitPicker() {
+  return () => {
+    obControls.innerHTML = '';
+    const selected = new Set();
+    const wrap = document.createElement('div'); wrap.className = 'quick-replies';
+    HABIT_PRESETS.forEach(h => {
+      const b = document.createElement('button'); b.className = 'qr-btn'; b.textContent = `${h.icon} ${h.label}`;
+      b.onclick = () => { if (selected.has(h.key)) { selected.delete(h.key); b.classList.remove('selected'); } else { selected.add(h.key); b.classList.add('selected'); } };
+      wrap.appendChild(b);
+    });
+    obControls.appendChild(wrap);
+    const row = document.createElement('div'); row.className = 'row-input';
+    const custom = document.createElement('input'); custom.type = 'text'; custom.placeholder = 'Otro hábito (opcional)';
+    const addBtn = document.createElement('button'); addBtn.className = 'send-btn'; addBtn.textContent = '+';
+    row.appendChild(custom); row.appendChild(addBtn); obControls.appendChild(row);
+    const customList = [];
+    addBtn.onclick = async () => {
+      const val = custom.value.trim(); if (!val) return;
+      const entry = { key: pickHabitKey(val), icon: pickIcon(val), label: val };
+      customList.push(entry); custom.value = '';
+      await agentSay(ob, pick([
+        `¡Yo puedo ayudarte con eso! ✨ Agregué "${entry.icon} ${val}" a tu lista.`,
+        `Anotado — ${entry.icon} ${val}. Cuenta conmigo para acompañarte también con este.`,
+      ]), 350);
+    };
+    custom.addEventListener('keydown', e => { if (e.key === 'Enter') addBtn.onclick(); });
+    const continueBtn = document.createElement('button'); continueBtn.className = 'send-btn'; continueBtn.style.width = '100%'; continueBtn.style.marginTop = '4px'; continueBtn.textContent = 'Continuar';
+    obControls.appendChild(continueBtn);
+    continueBtn.onclick = () => {
+      const chosen = HABIT_PRESETS.filter(h => selected.has(h.key)).map(h => ({ key: h.key, icon: h.icon, label: h.label }));
+      const all = [...chosen, ...customList];
+      if (all.length === 0) { addNote(ob, 'Elige al menos un hábito o agrega el tuyo ✍️'); return; }
+      state.profile.habitos = all;
+      all.forEach(h => state.streaks[h.key] = state.streaks[h.key] || 0);
+      addBubble(ob, all.map(h => `${h.icon} ${h.label}`).join('   '), 'user');
+      advanceOnboarding();
+    };
+  };
+}
+function renderHabitSchedule() {
+  return () => {
+    obControls.innerHTML = '';
+    const list = document.createElement('div'); list.className = 'habit-sched-list';
+    const rows = [];
+    state.profile.habitos.forEach(h => {
+      const row = document.createElement('div'); row.className = 'habit-sched-row';
+      const lbl = document.createElement('span'); lbl.className = 'hs-label'; lbl.textContent = `${h.icon} ${h.label}`;
+      const time = document.createElement('input'); time.type = 'time'; time.value = defaultTimeFor(h.key);
+      const repWrap = document.createElement('label'); repWrap.className = 'hs-repeat';
+      const rep = document.createElement('input'); rep.type = 'checkbox'; rep.checked = true;
+      repWrap.appendChild(rep); repWrap.appendChild(document.createTextNode('Toda la semana'));
+      row.appendChild(lbl); row.appendChild(time); row.appendChild(repWrap);
+      list.appendChild(row);
+      rows.push({ h, time, rep });
+    });
+    obControls.appendChild(list);
+    const continueBtn = document.createElement('button'); continueBtn.className = 'send-btn'; continueBtn.style.width = '100%'; continueBtn.style.marginTop = '4px'; continueBtn.textContent = 'Guardar horarios';
+    obControls.appendChild(continueBtn);
+    continueBtn.onclick = () => {
+      const todayStr = ymd(new Date());
+      rows.forEach(r => {
+        r.h.time = r.time.value || defaultTimeFor(r.h.key);
+        r.h.repeatWeekly = r.rep.checked;
+        r.h.repeatDays = r.rep.checked ? [0,1,2,3,4,5,6] : [new Date().getDay()];
+        r.h.sameTimeEveryday = true;
+        r.h.timesByDay = {};
+        r.h.durationWeeks = null;
+        r.h.createdAt = todayStr;
+      });
+      addBubble(ob, rows.map(r => `${r.h.icon} ${r.h.time}${r.h.repeatWeekly ? ' · toda la semana' : ' · solo hoy'}`).join('   '), 'user');
+      advanceOnboarding();
+    };
+  };
+}
+
+const steps = [
+  { ask: "¡Hola! 👋 Soy Bless, tu compañero de hábitos y agenda. Antes de empezar quiero conocerte de verdad — esto va a tomar un par de minutos, pero vale la pena. ¿Cómo te llamas?", render: renderTextInput('nombre', 'Tu nombre') },
+  { ask: (p) => `Un gusto, ${p.nombre} 🙌. ¿A qué hora empieza y a qué hora termina tu horario fijo de trabajo?`, render: renderWorkHours() },
+  { ask: "¿En qué momento del día sientes que tienes más energía y concentración? ⚡", render: renderQuickReplies('energia', ['Mañana', 'Tarde', 'Noche']) },
+  { ask: "¿Te consideras más madrugador/a o más nocturno/a? 🌅🌙", render: renderQuickReplies('tipo', ['Madrugador/a', 'Nocturno/a', 'Depende del día']) },
+  { ask: "Si quieres, puedo tomar en cuenta tu peso y talla para sugerirte hábitos de salud más ajustados. Es totalmente opcional.", render: renderPesoTalla() },
+  { ask: "Ahora quiero entender de verdad qué se te dificulta 💭. ¿Qué es lo que más te cuesta cuando intentas construir un hábito?", render: renderMultiSelect('dificultades', ['Procrastino', 'Se me olvida', 'Pierdo la motivación a medio camino', 'Me falta tiempo', 'Me falta consistencia'], 'Otro motivo (opcional)') },
+  { ask: "¿Qué has intentado antes que no te terminó funcionando?", render: renderMultiSelect('intentosPrevios', ['Apps de hábitos', 'Fuerza de voluntad', 'Retos con amigos', 'Calendarios/recordatorios', 'Nada de lo anterior'], 'Otro intento (opcional)') },
+  { ask: "¿Cuáles son tus \"detonantes\" — las situaciones donde sabes que sueles fallar?", render: renderMultiSelect('detonantes', ['Empezar muy grande', 'Hacerlo sola/o', 'No tener quién me recuerde', 'Sentirme forzada/o', 'Falta de recompensa inmediata'], 'Otro (opcional)') },
+  { ask: "Cuéntame tu rutina real, no solo el trabajo.", render: renderRutina() },
+  { ask: "¿Cuándo tienes tiempo libre de verdad en tu día?", render: renderQuickReplies('tiempoLibre', ['Mañana', 'Tarde', 'Noche', 'Varía mucho']) },
+  { ask: "¿Qué te mueve más para sostener algo en el tiempo?", render: renderQuickReplies('motivacion', ['Disciplina', 'Recompensa', 'Competencia', 'Acompañamiento']) },
+  { ask: "Última pregunta difícil, y es importante: ¿hay días donde sabes que te sientes particularmente mal o desmotivada/o? Así nunca te voy a presionar igual esos días.", render: renderMultiSelect('diasDificiles', ['Lunes', 'Fin de semana', 'Cuando estoy cansada/o', 'Cuando tengo mucho trabajo', 'No tengo un patrón claro'], null) },
+  { ask: (p) => `Ya casi, ${p.nombre} 🎯. Elige los hábitos que quieres empezar a construir (puedes elegir varios, o agregar el tuyo).`, render: renderHabitPicker() },
+  { ask: "Última cosa: dime a qué hora sueles hacer cada uno, y si quieres que te lo agende automáticamente toda la semana o solo por hoy.", render: renderHabitSchedule() },
+];
+
+function updateProgress() { const pct = Math.round((state.onboardingStep / steps.length) * 100); progressFill.style.width = pct + '%'; }
+
+async function advanceOnboarding() {
+  state.onboardingStep++; updateProgress(); obControls.innerHTML = '';
+  if (state.onboardingStep < steps.length) {
+    const step = steps[state.onboardingStep];
+    const text = typeof step.ask === 'function' ? step.ask(state.profile) : step.ask;
+    await agentSay(ob, text); step.render();
+  } else { await finishOnboarding(); }
+}
+
+function buildDiagnostic(p) {
+  const TIPO = { 'Madrugador/a': 'madrugadora/or', 'Nocturno/a': 'de energía nocturna', 'Depende del día': 'de energía variable' };
+  const MOTIV = { 'Disciplina': 'la disciplina', 'Recompensa': 'las recompensas', 'Competencia': 'la competencia', 'Acompañamiento': 'sentirte acompañada/o' };
+  const tipoTxt = TIPO[p.tipo] || 'con tu propio ritmo';
+  const motivTxt = MOTIV[p.motivacion] || 'tus propias razones';
+  const dificultad = (p.dificultades[0] || 'mantener la constancia').toLowerCase();
+  const detonante = (p.detonantes[0] || 'los inicios difíciles').toLowerCase();
+  const title = `${p.nombre ? p.nombre + ': ' : ''}${tipoTxt}, motivada por ${motivTxt}`;
+  const body = `Lo que más se te dificulta es "${dificultad}", y sueles fallar cuando "${detonante}". Por eso voy a proponerte pasos pequeños, con recordatorios y sin presión extra en tus días difíciles. No se trata de fuerza de voluntad — se trata de diseñar tu día a tu favor.`;
+  return { title, body };
+}
+
+async function finishOnboarding() {
+  progressFill.style.width = '100%';
+  setAvatarMood('thinking');
+  await agentSay(ob, `Perfecto, ${state.profile.nombre}. Con todo esto ya te entiendo mucho mejor 🧠. Dame un segundo para armar tu diagnóstico…`, 500);
+  await new Promise(r => setTimeout(r, 1100));
+  state.diagnostic = buildDiagnostic(state.profile);
+  generateSimulatedHistory();
+  seedTodayAgendaFromHabits();
+  setAvatarMood('proud');
+  addDiagCard(ob, state.diagnostic);
+  await new Promise(r => setTimeout(r, 700));
+  await agentSay(ob, 'A partir de ahora, cada vez que abras la app te voy a preguntar qué quieres lograr y te ayudo a organizarlo, tomando en cuenta todo esto. ¡Vamos a tu primer día! 🚀', 700);
+  addNote(ob, 'Evaluación completa ✓');
+  setTimeout(startChat, 900);
+}
+
+function beginOnboarding() {
+  document.getElementById('view-login').classList.remove('active');
+  document.getElementById('view-onboarding').classList.add('active');
+  updateProgress();
+  agentSay(ob, steps[0].ask, 300).then(() => steps[0].render());
+}
+
+/* ============================================================
+   PLAN PREMIUM (Paddle Billing) — declarado antes de bootstrapApp() a
+   propósito, para que exista ni bien arranca el script (aunque bootstrapApp
+   recién le asigna el valor real cuando responde /api/me, de forma
+   asíncrona).
+   ============================================================ */
+let isPremium = false;
+let currentUserEmail = ''; // se llena en bootstrapApp() — Paddle lo usa para correlacionar el pago con la cuenta
+const ADSENSE_CLIENT_ID = {{ adsense_client_id | tojson }};
+const ADSENSE_SLOT_ID = {{ adsense_slot_id | tojson }};
+const PADDLE_PRICE_LABEL = {{ paddle_price_label | tojson }};
+const NATIVE_APP_URL_SCHEME = {{ native_app_url_scheme | tojson }};
+
+/* ============================================================
+   APP NATIVA (Capacitor / Android) — detección y ajustes.
+   Cuando esta página corre dentro de la app nativa (no en un navegador
+   normal), el runtime de Capacitor inyecta window.Capacitor automáticamente
+   aunque la app cargue esta misma URL remota (server.url en capacitor.config.json).
+   Dos cosas cambian en modo nativo:
+   1) El login con Google no puede pasar por el WebView embebido (Google lo
+      bloquea con "disallowed_useragent"): hay que abrir el navegador del
+      sistema (plugin Browser) y volver a la app por un enlace personalizado.
+   2) Los botones de "Hazte Premium" se ocultan (patrón "consumption-only"):
+      así Google Play NO exige usar Google Play Billing (que se queda con
+      15%) porque la app nunca vende nada dentro de sí misma — el pago se
+      hace siempre desde la web (Paddle).
+   ============================================================ */
+const IS_NATIVE_APP = !!(window.Capacitor && typeof window.Capacitor.isNativePlatform === 'function' && window.Capacitor.isNativePlatform());
+
+function nativeLoginWithGoogle() {
+  const plugins = window.Capacitor && window.Capacitor.Plugins;
+  if (!plugins || !plugins.Browser) {
+    // Plugin no disponible (falta @capacitor/browser en el proyecto nativo) — mejor esforzarse igual.
+    window.location.href = '/auth/login?native=1';
+    return;
+  }
+  plugins.Browser.open({ url: window.location.origin + '/auth/login?native=1' });
+}
+
+function setupNativeAppUrlListener() {
+  const plugins = window.Capacitor && window.Capacitor.Plugins;
+  if (!plugins || !plugins.App) return;
+  plugins.App.addListener('appUrlOpen', async (data) => {
+    try {
+      const url = new URL(data.url);
+      if (url.protocol.replace(':', '') !== NATIVE_APP_URL_SCHEME) return;
+      if (url.hostname !== 'auth-callback' && url.pathname !== '/auth-callback') return;
+      const token = url.searchParams.get('token');
+      if (!token) return;
+      if (plugins.Browser) { try { await plugins.Browser.close(); } catch (e) {} }
+      const res = await fetch('/auth/native-exchange?token=' + encodeURIComponent(token));
+      if (res.ok) window.location.reload();
+    } catch (e) { /* enlace no reconocido, se ignora */ }
+  });
+}
+
+function hidePremiumButtonsIfNative() {
+  if (!IS_NATIVE_APP) return;
+  document.querySelectorAll('.premium-btn').forEach((btn) => {
+    if (btn.id === 'push-toggle-btn') return; // no es un botón de compra
+    btn.outerHTML = '<div style="font-size:13px;color:var(--text-dim);">Para gestionar tu plan Premium, entra a blesshabit.app desde tu navegador.</div>';
+  });
+}
+
+/* ============================================================
+   LOGIN (Google) + RESTAURAR SESIÓN GUARDADA
+   ============================================================ */
+async function saveStateToServer() {
+  try {
+    await fetch('/api/save-state', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ state }) });
+  } catch (e) { /* no es crítico si falla — el estado sigue en memoria */ }
+}
+
+async function bootstrapApp() {
+  const loginLoading = document.getElementById('login-loading');
+  const loginBtn = document.getElementById('google-login-btn');
+  try {
+    const meRes = await fetch('/api/me');
+    const me = await meRes.json();
+    if (!me.loggedIn) return; // se queda en la pantalla de login, esperando el clic
+
+    isPremium = !!me.premium;
+    currentUserEmail = me.email || '';
+    loginBtn.style.display = 'none';
+    loginLoading.style.display = 'block';
+
+    const stateRes = await fetch('/api/load-state');
+    const stateData = await stateRes.json();
+    if (stateData.ok && stateData.state && stateData.state.profile && stateData.state.profile.nombre) {
+      Object.assign(state, stateData.state);
+      document.getElementById('view-login').classList.remove('active');
+      startChat();
+    } else {
+      beginOnboarding();
+    }
+  } catch (e) {
+    loginLoading.style.display = 'none';
+    loginBtn.style.display = 'inline-flex';
+  }
+}
+if (IS_NATIVE_APP) {
+  const loginBtnEl = document.getElementById('google-login-btn');
+  if (loginBtnEl) {
+    loginBtnEl.addEventListener('click', function (ev) {
+      ev.preventDefault();
+      nativeLoginWithGoogle();
+    });
+  }
+  setupNativeAppUrlListener();
+}
+bootstrapApp();
+
+/* Banda de anuncios — solo se dibuja para usuarios del plan gratuito, y solo hace algo
+   real si ya configuraste ADSENSE_CLIENT_ID / ADSENSE_SLOT_ID en las Secrets del servidor
+   y tu cuenta de AdSense ya aprobó el sitio. Mientras tanto muestra un rótulo de repuesto
+   para que se note dónde va a aparecer el anuncio. */
+function adBannerHtml() {
+  if (isPremium) return '';
+  if (ADSENSE_CLIENT_ID && ADSENSE_SLOT_ID) {
+    return `<div class="ad-slot"><ins class="adsbygoogle" style="display:block;width:100%;" data-ad-client="${ADSENSE_CLIENT_ID}" data-ad-slot="${ADSENSE_SLOT_ID}" data-ad-format="auto" data-full-width-responsive="true"></ins></div>`;
+  }
+  return `<div class="ad-slot"><span class="ad-fallback-label">Espacio de anuncios (AdSense) — configúralo en Secrets</span></div>`;
+}
+function pushAdsenseSlots() {
+  if (isPremium || !ADSENSE_CLIENT_ID || !ADSENSE_SLOT_ID) return;
+  try { (window.adsbygoogle = window.adsbygoogle || []).push({}); } catch (e) { /* AdSense aún no cargó o el sitio no está aprobado */ }
+}
+
+/* Después de que el checkout de Paddle se completa, el que activa el Premium de verdad
+   es el webhook /webhooks/paddle (fuente de la verdad, como recomienda la documentación
+   de Paddle — nunca confiar solo en el callback del navegador). Mientras el webhook llega,
+   esta función pregunta unas cuantas veces seguidas si ya se activó. */
+async function pollPremiumStatus(attempts = 6, delayMs = 1500) {
+  for (let i = 0; i < attempts; i++) {
+    await new Promise(r => setTimeout(r, delayMs));
+    try {
+      const res = await fetch('/api/subscription-status');
+      const data = await res.json();
+      if (data.ok && data.premium) {
+        isPremium = true;
+        renderMetrics();
+        renderProfile();
+        return true;
+      }
+    } catch (e) { /* seguimos intentando */ }
+  }
+  return false;
+}
+
+/* Abre el checkout de Paddle para suscribirse a Bless Habit Premium.
+   Paddle es "Merchant of Record": cobra a cualquier país y se encarga de los
+   impuestos locales — por eso se eligió sobre Culqi para una audiencia internacional. */
+async function openPaddleCheckout() {
+  let cfg;
+  try {
+    cfg = await (await fetch('/api/paddle-config')).json();
+  } catch (e) {
+    alert('No se pudo conectar con el servidor para iniciar el pago. Intenta de nuevo.');
+    return;
+  }
+  if (!cfg.configured || !cfg.clientToken || !cfg.priceId) {
+    alert('El cobro con Paddle todavía no está configurado en el servidor (faltan las Secrets de Paddle). Avísale a quien administra la app.');
+    return;
+  }
+  if (typeof Paddle === 'undefined') {
+    alert('No se pudo cargar el widget de pago de Paddle. Revisa tu conexión e intenta de nuevo.');
+    return;
+  }
+  if (cfg.environment !== 'production') Paddle.Environment.set('sandbox');
+  Paddle.Initialize({
+    token: cfg.clientToken,
+    eventCallback: function (event) {
+      // Solo para feedback visual inmediato — quien de verdad activa el Premium es el
+      // webhook del servidor. Ver pollPremiumStatus().
+      if (event.name === 'checkout.completed') {
+        Paddle.Checkout.close();
+        alert('¡Gracias! Estamos confirmando tu pago — Bless Habit Premium se activa en unos segundos…');
+        pollPremiumStatus();
+      }
+    },
+  });
+  Paddle.Checkout.open({
+    items: [{ priceId: cfg.priceId, quantity: 1 }],
+    customer: currentUserEmail ? { email: currentUserEmail } : undefined,
+    customData: { app_user_email: currentUserEmail },
+  });
+}
+
+async function cancelPremium() {
+  if (!confirm('¿Seguro que quieres cancelar tu suscripción Premium?')) return;
+  try {
+    await fetch('/api/cancel-subscription', { method: 'POST' });
+  } catch (e) { /* igual la quitamos localmente */ }
+  isPremium = false;
+  renderMetrics();
+  renderProfile();
+}
+
+/* ============================================================
+   NOTIFICACIONES PUSH (Web Push + VAPID) — el reenganche compasivo real.
+   El estado de "¿ya está activado?" vive en el propio navegador (API de
+   Push), no hace falta preguntárselo al servidor.
+   ============================================================ */
+function urlBase64ToUint8Array(base64String) {
+  const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
+  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+  const raw = atob(base64);
+  const output = new Uint8Array(raw.length);
+  for (let i = 0; i < raw.length; i++) output[i] = raw.charCodeAt(i);
+  return output;
+}
+
+async function registerServiceWorkerIfNeeded() {
+  if (!('serviceWorker' in navigator)) return null;
+  try {
+    return await navigator.serviceWorker.register('/sw.js');
+  } catch (e) {
+    return null;
+  }
+}
+
+async function getExistingPushSubscription() {
+  if (!('serviceWorker' in navigator) || !('PushManager' in window)) return null;
+  const reg = await navigator.serviceWorker.getRegistration();
+  if (!reg) return null;
+  return reg.pushManager.getSubscription();
+}
+
+async function refreshPushUI() {
+  const textEl = document.getElementById('push-status-text');
+  const btnEl = document.getElementById('push-toggle-btn');
+  if (!textEl || !btnEl) return;
+  if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+    textEl.textContent = 'Este navegador no soporta notificaciones.';
+    btnEl.style.display = 'none';
+    return;
+  }
+  const sub = await getExistingPushSubscription();
+  if (sub) {
+    textEl.textContent = 'Activadas — Bless te escribe si pasas varios días sin abrir la app.';
+    btnEl.textContent = '🔕 Desactivar recordatorios';
+    btnEl.onclick = disablePush;
+  } else {
+    textEl.textContent = 'Desactivadas. Actívalas para que Bless te escriba si pasas varios días sin abrir la app.';
+    btnEl.textContent = '🔔 Activar recordatorios';
+    btnEl.onclick = enablePush;
+  }
+}
+
+async function enablePush() {
+  try {
+    const cfg = await (await fetch('/api/push/vapid-public-key')).json();
+    if (!cfg.configured || !cfg.publicKey) {
+      alert('Las notificaciones todavía no están configuradas en el servidor (faltan las Secrets de VAPID). Avísale a quien administra la app.');
+      return;
+    }
+    const permission = await Notification.requestPermission();
+    if (permission !== 'granted') {
+      alert('No diste permiso de notificaciones — puedes activarlo luego desde los ajustes del navegador.');
+      return;
+    }
+    const reg = await registerServiceWorkerIfNeeded();
+    if (!reg) { alert('No se pudo registrar el service worker.'); return; }
+    const sub = await reg.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: urlBase64ToUint8Array(cfg.publicKey),
+    });
+    await fetch('/api/push/subscribe', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ subscription: sub.toJSON() }),
+    });
+    refreshPushUI();
+  } catch (e) {
+    alert('No se pudo activar las notificaciones. Intenta de nuevo.');
+  }
+}
+
+async function disablePush() {
+  try {
+    const sub = await getExistingPushSubscription();
+    if (sub) {
+      await fetch('/api/push/unsubscribe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ endpoint: sub.endpoint }),
+      });
+      await sub.unsubscribe();
+    }
+  } catch (e) { /* seguimos igual, no es crítico */ }
+  refreshPushUI();
+}
+
+/* ============================================================
+   CHAT DIARIO
+   ============================================================ */
+function startChat() {
+  document.getElementById('view-onboarding').classList.remove('active');
+  document.getElementById('view-chat').classList.add('active');
+  document.getElementById('tabbar').style.display = 'flex';
+  document.getElementById('header-title').textContent = 'Bless Habit';
+  document.getElementById('header-sub').textContent = `Bless · hola, ${state.profile.nombre}`;
+  renderHeaderRing();
+  renderAgenda();
+  say(chatScroll, `La persona acaba de terminar su evaluación inicial y entra al chat por primera vez hoy. Salúdala usando su nombre y pregúntale qué quiere lograr hoy.`, pick([
+    `Buenos días, ${state.profile.nombre}. ¿Qué quieres lograr hoy? ☀️`,
+    `¡Hola de nuevo, ${state.profile.nombre}! ¿Con qué empezamos el día? 🙂`,
+    `${state.profile.nombre}, cuéntame qué tienes en mente para hoy.`
+  ]), 300).then(() => {
+    if (state.agenda.length) addNote(chatScroll, 'Ya dejé tu día armado con los hábitos que elegiste — puedes marcarlos, moverlos o quitarlos cuando quieras. 🗓️');
+  });
+}
+function renderHeaderRing() {
+  const total = state.agenda.length, done = state.agenda.filter(a => a.done).length;
+  const pct = total ? Math.round((done/total)*100) : 0;
+  const r = 16, c = 2*Math.PI*r, offset = c - (pct/100)*c;
+  document.getElementById('header-right').innerHTML = `
+    <div style="display:flex; align-items:center; gap:8px;">
+      ${badgeHtml()}
+      <div class="progress-ring"><svg width="40" height="40"><circle class="bg" cx="20" cy="20" r="${r}"></circle><circle class="fg" cx="20" cy="20" r="${r}" stroke-dasharray="${c}" stroke-dashoffset="${offset}"></circle></svg><div class="label">${total ? done+'/'+total : '0'}</div></div>
+    </div>`;
+  saveStateToServer();
+}
+function timeToMinutes(hhmm) { const [h,m] = hhmm.split(':').map(Number); return h*60+m; }
+function minutesToTime(mins) { mins = ((mins % 1440) + 1440) % 1440; const h = Math.floor(mins/60), m = mins%60; return String(h).padStart(2,'0')+':'+String(m).padStart(2,'0'); }
+function extractTime(text) {
+  text = text.toLowerCase().trim();
+  let m = text.match(/(\d{1,2}):(\d{2})/); if (m) return String(m[1]).padStart(2,'0')+':'+m[2];
+  m = text.match(/(\d{1,2})\s*(am|pm)/);
+  if (m) { let h = parseInt(m[1]); if (m[2]==='pm' && h<12) h+=12; if (m[2]==='am' && h===12) h=0; return String(h).padStart(2,'0')+':00'; }
+  m = text.match(/a las (\d{1,2})/);
+  if (m) { let h = parseInt(m[1]); if (text.includes('tarde') || text.includes('noche')) { if (h<12) h+=12; } return String(h).padStart(2,'0')+':00'; }
+  // formato 24h en texto plano: "19", "19 horas", "19h", "19hrs"
+  m = text.match(/^(\d{1,2})\s*(horas?|hrs?|h)?$/);
+  if (m) { const h = parseInt(m[1]); if (h >= 0 && h <= 23) return String(h).padStart(2,'0')+':00'; }
+  return null;
+}
+function overlapsWork(time) { const t = timeToMinutes(time); const start = timeToMinutes(state.profile.trabajoInicio || '00:00'); const end = timeToMinutes(state.profile.trabajoFin || '00:00'); return t >= start && t < end; }
+function findFreeSlotNear(preferredMins) {
+  const busy = state.agenda.map(a => timeToMinutes(a.time));
+  const workStart = timeToMinutes(state.profile.trabajoInicio || '09:00'), workEnd = timeToMinutes(state.profile.trabajoFin || '18:00');
+  for (let delta = 0; delta < 240; delta += 30) {
+    for (const cand of [preferredMins+delta, preferredMins-delta]) {
+      if (cand < 0 || cand >= 1440) continue;
+      const inWork = cand >= workStart && cand < workEnd;
+      const clash = busy.some(b => Math.abs(b-cand) < 30);
+      if (!inWork && !clash) return cand;
+    }
+  }
+  return preferredMins;
+}
+function addAgendaItem(time, task) {
+  state.agenda.push({ time, task, done: false, icon: pickIcon(task), habitKey: pickHabitKey(task) });
+  state.agenda.sort((a,b)=> timeToMinutes(a.time)-timeToMinutes(b.time));
+  renderAgenda(); renderHeaderRing();
+}
+function seedTodayAgendaFromHabits() {
+  const todayStr = ymd(new Date());
+  const dow = new Date().getDay();
+  state.profile.habitos.forEach(h => {
+    if (!habitRepeatDays(h).includes(dow)) return;
+    if (!habitActiveOnDate(h, todayStr)) return;
+    state.agenda.push({ time: habitTimeForDay(h, dow), task: h.label, done: false, icon: h.icon, habitKey: h.key, recurring: habitRepeatDays(h).length > 0 });
+  });
+  state.agenda.sort((a,b)=> timeToMinutes(a.time)-timeToMinutes(b.time));
+}
+const VALIDATION_PHRASES = [
+  (t) => `Está bien no hacer "${t}" hoy 🤍. ¿Prefieres dejar este hábito para después, o empezamos con algo más pequeño?`,
+  (t) => `Totalmente válido. A veces "${t}" no es lo de hoy — ¿probamos con algo más chiquito en su lugar?`,
+  (t) => `Sin problema, lo quito. Podemos retomar "${t}" cuando te sientas lista/o — eso también cuenta como avanzar.`,
+];
+async function offerValidation(taskLabel) {
+  setAvatarMood('caring');
+  await say(chatScroll, `La persona acaba de quitar "${taskLabel}" de su agenda de hoy. Valida que está bien no hacerlo, sin culpa, y ofrécele dejarlo para después o empezar con algo más pequeño en su lugar.`, pick(VALIDATION_PHRASES)(taskLabel));
+}
+function toggleDone(idx) {
+  const item = state.agenda[idx]; item.done = !item.done;
+  state.streaks[item.habitKey] = Math.max(0, (state.streaks[item.habitKey] || 0) + (item.done ? 1 : -1));
+  renderAgenda(); renderHeaderRing();
+  if (item.done) {
+    setAvatarMood('happy', 1600);
+    if (state.agenda.length > 0 && state.agenda.every(a => a.done)) addNote(chatScroll, '🎉 ¡Completaste todo tu día! Bless está orgulloso de ti.', 'celebrate-note');
+  }
+}
+function renderAgenda() {
+  const total = state.agenda.length, done = state.agenda.filter(a=>a.done).length;
+  document.getElementById('agenda-count').textContent = total ? `${done}/${total}` : '';
+  agendaList.innerHTML = '';
+  if (state.agenda.length === 0) { agendaList.innerHTML = '<div style="font-size:12px;color:var(--text-dim);padding:4px 0;">Aún no hay nada agendado hoy.</div>'; return; }
+  state.agenda.forEach((item, idx) => {
+    const div = document.createElement('div'); div.className = 'agenda-item' + (item.done ? ' done' : '');
+    // solo las tareas que corresponden a un hábito seguido (no las de una sola vez
+    // agregadas por chat libre) muestran el ⚙️ para configurar días/horario/duración
+    const habitIdx = state.profile.habitos.findIndex(h => h.key === item.habitKey && h.label === item.task);
+    div.innerHTML = `<span class="check">${item.done ? '✓' : ''}</span><span class="icon">${item.icon}</span><span class="time">${item.time}</span><span class="task">${item.task}</span>${habitIdx !== -1 ? `<span class="edit" title="Configurar este hábito">⚙️</span>` : ''}<span class="rm">✕</span>`;
+    div.querySelector('.check').onclick = () => toggleDone(idx);
+    const editBtn = div.querySelector('.edit');
+    if (editBtn) editBtn.onclick = () => openHabitEditor(habitIdx);
+    div.querySelector('.rm').onclick = () => { const removed = state.agenda[idx]; state.agenda.splice(idx,1); renderAgenda(); renderHeaderRing(); offerValidation(removed.task); };
+    agendaList.appendChild(div);
+  });
+}
+renderAgenda();
+
+function energyHint() { const map = {'Mañana':'la mañana','Tarde':'la tarde','Noche':'la noche'}; return map[state.profile.energia] || 'tu horario de más energía'; }
+function isAffirmative(t) { return /\b(si|sí|dale|ok|va|bueno|claro|perfecto)\b/.test(t.toLowerCase()); }
+function isNegative(t) { const l = t.toLowerCase().trim(); return l === 'no' || (/^no\b/.test(l) && l.length < 12); }
+
+const PHRASES = {
+  confirmed: (task, time) => pick([`Listo, agregué "${task}" a las ${time}. ¿Algo más para hoy? 😊`, `¡Hecho! "${task}" queda a las ${time}. ¿Qué más te gustaría hacer?`, `Anotado ✅ "${task}" a las ${time}. ¿Seguimos con algo más?`]),
+  conflict: (alt) => pick([`Esa hora choca con tu horario fijo de trabajo. Tienes un espacio libre a las ${alt}, ¿lo agrego ahí?`, `Justo ahí estás trabajando 💼. Veo un huequito libre a las ${alt}, ¿te sirve?`, `Ups, eso cae dentro de tu horario laboral. ¿Qué tal a las ${alt}?`]),
+  askTime: (task) => pick([`Anotado: "${task}". ¿A qué hora te gustaría hacerlo hoy?`, `Me gusta. ¿A qué hora lo hacemos: "${task}"?`, `Perfecto, "${task}" — ¿a qué hora te queda mejor?`]),
+};
+
+async function handleUserMessage(text) {
+  addBubble(chatScroll, text, 'user');
+  const pending = state.pending;
+
+  if (pending && pending.type === 'confirmAlt') {
+    if (isAffirmative(text)) {
+      addAgendaItem(pending.altTime, pending.task); state.pending = null;
+      await say(chatScroll, `La persona aceptó el horario alternativo de las ${pending.altTime} para "${pending.task}" (el horario que pidió originalmente chocaba con su trabajo). Confírmaselo con calidez y pregúntale si quiere algo más para hoy.`, PHRASES.confirmed(pending.task, pending.altTime));
+      return;
+    }
+    if (isNegative(text)) {
+      state.pending = { type: 'needsTime', task: pending.task };
+      await say(chatScroll, `La persona rechazó el horario alternativo para "${pending.task}". Pregúntale a qué otra hora le gustaría, o si prefiere dejarlo pendiente para después.`, pick(['¿A qué otra hora te gustaría hacerlo?', 'Sin problema. ¿A qué otra hora te queda mejor, o prefieres dejarlo para después?']));
+      return;
+    }
+    const t = extractTime(text);
+    if (t) {
+      if (overlapsWork(t)) { const alt = minutesToTime(findFreeSlotNear(timeToMinutes(t))); state.pending = { type: 'confirmAlt', task: pending.task, altTime: alt }; await say(chatScroll, `La nueva hora que pidió para "${pending.task}" también choca con su horario fijo de trabajo. Sugiérele amablemente las ${alt} como alternativa cercana.`, PHRASES.conflict(alt)); return; }
+      addAgendaItem(t, pending.task); state.pending = null;
+      await say(chatScroll, `Se confirmó "${pending.task}" a las ${t}. Celebra brevemente y pregunta si quiere algo más para hoy.`, PHRASES.confirmed(pending.task, t));
+      return;
+    }
+    state.pending = null;
+  }
+
+  if (state.pending && state.pending.type === 'needsTime') {
+    const t = extractTime(text);
+    if (t) {
+      const task = state.pending.task; state.pending = null;
+      if (overlapsWork(t)) { const alt = minutesToTime(findFreeSlotNear(timeToMinutes(t))); state.pending = { type: 'confirmAlt', task, altTime: alt }; await say(chatScroll, `Quiere agendar "${task}" a las ${t}, pero eso choca con su horario fijo de trabajo. Sugiérele amablemente las ${alt} como alternativa cercana.`, PHRASES.conflict(alt)); return; }
+      addAgendaItem(t, task); await say(chatScroll, `Se confirmó "${task}" a las ${t}. Celebra brevemente y pregunta si quiere algo más para hoy.`, PHRASES.confirmed(task, t)); return;
+    }
+    await agentSay(chatScroll, `Dejo pendiente la hora de "${state.pending.task}" para después.`, 250);
+    state.pending = null;
+  }
+
+  const time = extractTime(text);
+  if (time) {
+    if (overlapsWork(time)) {
+      const alt = minutesToTime(findFreeSlotNear(timeToMinutes(time)));
+      state.pending = { type: 'confirmAlt', task: text, altTime: alt };
+      await say(chatScroll, `Quiere agendar "${text}" a las ${time}, pero eso choca con su horario fijo de trabajo. Sugiérele amablemente las ${alt} como alternativa cercana.`, PHRASES.conflict(alt));
+    } else {
+      addAgendaItem(time, text);
+      await say(chatScroll, `Se agendó "${text}" a las ${time}, sin conflicto de horario. Confírmaselo brevemente, y como su momento de más energía es ${energyHint()}, ofrécele mover la actividad ahí si tiene sentido para ese tipo de actividad — pregúntale si lo deja así o lo cambia.`, `Agregado a las ${time} ${pickIcon(text)}. Como tienes más energía en ${energyHint()}, si quieres puedo moverlo ahí para que te rinda más. ¿Lo dejamos así o lo cambio?`);
+    }
+    return;
+  }
+  await say(chatScroll, `La persona escribió "${text}" sin especificar hora. Pregúntale a qué hora quiere hacerlo hoy.`, PHRASES.askTime(text));
+  state.pending = { type: 'needsTime', task: text };
+}
+
+document.getElementById('chat-send').onclick = () => { const input = document.getElementById('chat-text'); const val = input.value.trim(); if (!val) return; input.value = ''; handleUserMessage(val); };
+document.getElementById('chat-text').addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('chat-send').click(); });
+
+/* Simular reenganche compasivo (en producción esto sería una notificación push desde un servidor) */
+document.getElementById('simulate-reengage').onclick = async () => {
+  setAvatarMood('caring');
+  addNote(chatScroll, 'Simulando: pasaron unos días sin abrir la app…', 'agenda-note');
+  await new Promise(r => setTimeout(r, 500));
+  addNote(chatScroll, pick([
+    `Hola de nuevo, ${state.profile.nombre} 🤍. No te sientas culpable — siempre se puede comenzar de nuevo. ¿Retomamos hoy, aunque sea con algo pequeño?`,
+    `Te extrañé, ${state.profile.nombre} 🤍. Esto no se trata de ser perfecta, se trata de volver. ¿Empezamos de nuevo, sin presión?`
+  ]), 'reengage-note');
+};
+
+/* ============================================================
+   TABS
+   ============================================================ */
+const ALL_VIEWS = ['view-chat', 'view-calendar', 'view-metrics', 'view-profile'];
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.onclick = () => {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active-tab'));
+    tab.classList.add('active-tab');
+    ALL_VIEWS.forEach(id => document.getElementById(id).classList.remove('active'));
+    const which = tab.dataset.tab;
+    if (which === 'chat') document.getElementById('view-chat').classList.add('active');
+    else if (which === 'calendar') { document.getElementById('view-calendar').classList.add('active'); renderCalendar(); }
+    else if (which === 'metrics') { renderMetrics(); document.getElementById('view-metrics').classList.add('active'); }
+    else { renderProfile(); document.getElementById('view-profile').classList.add('active'); }
+    fabEl.classList.toggle('show', which !== 'chat');
+  };
+});
+fabEl.onclick = () => {
+  document.querySelector('.tab[data-tab="chat"]').click();
+  addNote(chatScroll, pick(['¿Quieres agregar algo a tu día? Yo puedo ayudarte 💬','Cuéntame qué tienes en mente, yo puedo ayudarte a organizarlo 🙂']));
+};
+function chipList(arr) { return (arr && arr.length) ? arr.map(x => `<span class="tag-chip">${x}</span>`).join('') : '<span style="color:var(--text-dim);font-size:13px;">—</span>'; }
+function renderProfile() {
+  const p = state.profile;
+  const el = document.getElementById('view-profile');
+  const total = state.agenda.length, done = state.agenda.filter(a=>a.done).length;
+  const habitsHtml = p.habitos.map((h, i) => `<span class="habit-chip">${h.icon} ${h.label}<span class="streak">🔥 ${state.streaks[h.key]||0}</span><span style="font-size:11px;color:var(--text-dim);margin-left:6px;">${habitDaysCompact(h)}${h.durationWeeks ? ' · ' + h.durationWeeks + 'sem' : ''}</span><span class="chip-edit-btn" data-idx="${i}" title="Editar">✏️</span></span>`).join('');
+  el.innerHTML = `
+    ${state.diagnostic ? `<div class="diag-card" style="margin-bottom:14px;"><div class="diag-label">Diagnóstico de Bless</div><div class="diag-title">${state.diagnostic.title}</div><div class="diag-body">${state.diagnostic.body}</div></div>` : ''}
+    <div class="stats-row" style="margin-bottom:14px;">
+      <div class="stat-box"><div class="num">${done}/${total||0}</div><div class="lbl">Tareas hoy</div></div>
+      <div class="stat-box"><div class="num">${p.habitos.length}</div><div class="lbl">Hábitos activos</div></div>
+      <div class="stat-box"><div class="num">${Object.values(state.streaks).reduce((a,b)=>a+b,0)}</div><div class="lbl">Racha total 🔥</div></div>
+    </div>
+    <div class="profile-card"><h4>Datos básicos</h4>
+      <div class="profile-row"><span>Nombre</span><span>${p.nombre || '—'}</span></div>
+      <div class="profile-row"><span>Horario fijo</span><span>${p.trabajoInicio || '—'} – ${p.trabajoFin || '—'}</span></div>
+      <div class="profile-row"><span>Despierta / duerme</span><span>${p.despertar || '—'} / ${p.dormir || '—'}</span></div>
+      <div class="profile-row"><span>Más energía en</span><span>${p.energia || '—'}</span></div>
+      <div class="profile-row"><span>Tipo</span><span>${p.tipo || '—'}</span></div>
+      <div class="profile-row"><span>Tiempo libre real</span><span>${p.tiempoLibre || '—'}</span></div>
+      <div class="profile-row"><span>Motivación</span><span>${p.motivacion || '—'}</span></div>
+    </div>
+    <div class="profile-card"><h4>Salud (opcional)</h4>
+      <div class="profile-row"><span>Peso</span><span>${p.peso ? p.peso+' kg' : 'No compartido'}</span></div>
+      <div class="profile-row"><span>Talla</span><span>${p.talla ? p.talla+' cm' : 'No compartido'}</span></div>
+    </div>
+    <div class="profile-card"><h4>Lo que se te dificulta</h4>${chipList(p.dificultades)}</div>
+    <div class="profile-card"><h4>Ya intentaste</h4>${chipList(p.intentosPrevios)}</div>
+    <div class="profile-card"><h4>Tus detonantes</h4>${chipList(p.detonantes)}</div>
+    <div class="profile-card"><h4>Días difíciles para ti</h4>${chipList(p.diasDificiles)}</div>
+    <div class="profile-card"><h4>Hábitos que quiere construir</h4><div>${habitsHtml || '—'}</div></div>
+    <div class="profile-card">
+      <h4>Agregar un hábito nuevo</h4>
+      <div style="font-size:13px;color:var(--text-dim);margin-bottom:10px;">No hace falta esperar a otro onboarding — puedes sumar hábitos nuevos cuando quieras, y configurar cada uno a tu manera (qué días, a qué hora, por cuánto tiempo).</div>
+      <div class="quick-replies" id="add-habit-presets"></div>
+      <button class="send-btn" id="add-habit-custom-btn" style="width:100%;margin-top:8px;background:linear-gradient(135deg, var(--panel-3), var(--panel-2)); color:var(--text);">✏️ Configurar uno personalizado</button>
+      <div id="add-habit-status" style="font-size:12px;color:var(--text-dim);margin-top:8px;"></div>
+    </div>
+    <div class="profile-card" style="border-color:#5a4a24;"><h4 style="color:var(--warn-text);">Nota del prototipo</h4>
+      <div style="font-size:13px;color:var(--text-dim);line-height:1.5;">${aiEnabled() ? 'Bless está conectado a OpenAI de verdad, a través del servidor: sus respuestas del chat diario las genera la IA (con respaldo automático a frases simuladas si la llamada falla). La detección de horas y conflictos con tu horario sigue siendo lógica local, no IA.' : 'Bless simula sus respuestas con reglas (detecta horas, compara con tu horario y varía sus frases) porque el servidor todavía no tiene configurada la OPENAI_API_KEY en sus variables de entorno (Secrets).'}</div>
+    </div>
+    <div class="profile-card">
+      <h4>Plan</h4>
+      ${isPremium
+        ? `<div class="premium-badge">✨ Bless Habit Premium</div>${IS_NATIVE_APP ? '' : '<div style="margin-top:10px;"><span class="logout-link" id="cancel-premium-link">Cancelar suscripción</span></div>'}`
+        : IS_NATIVE_APP
+          ? `<div style="font-size:13px;color:var(--text-dim);">Para hacerte Premium, entra a blesshabit.app desde tu navegador.</div>`
+          : `<div style="font-size:13px;color:var(--text-dim);margin-bottom:10px;">Estás en el plan gratuito (con publicidad y métricas limitadas).</div><button class="premium-btn" id="profile-unlock-premium-btn">Hazte Premium — ${PADDLE_PRICE_LABEL}</button>`}
+    </div>
+    <div class="profile-card">
+      <h4>Notificaciones</h4>
+      <div style="font-size:13px;color:var(--text-dim);margin-bottom:10px;" id="push-status-text">Consultando…</div>
+      <button class="premium-btn" id="push-toggle-btn" style="background:linear-gradient(135deg, var(--panel-3), var(--panel-2)); color:var(--text);">🔔 Activar recordatorios</button>
+    </div>
+    ${adBannerHtml()}
+    <div style="text-align:center; margin-top: 14px;"><a href="/auth/logout" class="logout-link">Cerrar sesión</a></div>
+  `;
+  if (isPremium) {
+    const cancelLink = document.getElementById('cancel-premium-link');
+    if (cancelLink) cancelLink.onclick = cancelPremium;
+  } else {
+    const btn = document.getElementById('profile-unlock-premium-btn');
+    if (btn) btn.onclick = openPaddleCheckout;
+    pushAdsenseSlots();
+  }
+  refreshPushUI();
+  renderAddHabitPresets();
+  if (pendingAddHabitStatus) { setAddHabitStatus(pendingAddHabitStatus); pendingAddHabitStatus = ''; }
+  const addCustomBtn = document.getElementById('add-habit-custom-btn');
+  if (addCustomBtn) addCustomBtn.onclick = () => openHabitEditor(null);
+  el.querySelectorAll('.chip-edit-btn').forEach(btn => {
+    btn.onclick = () => openHabitEditor(parseInt(btn.dataset.idx, 10));
+  });
+}
+
+/* ============================================================
+   AGREGAR / EDITAR HÁBITOS EN CUALQUIER MOMENTO (no solo durante el
+   onboarding) — modal compartido, accesible desde Perfil (tarjeta "Agregar
+   un hábito nuevo" y el lápiz ✏️ de cada hábito) y desde el chat (el ⚙️ de
+   cada tarea agendada que corresponde a un hábito seguido).
+   ============================================================ */
+let pendingAddHabitStatus = '';
+function setAddHabitStatus(text) {
+  const el = document.getElementById('add-habit-status');
+  if (el) el.textContent = text;
+}
+function renderAddHabitPresets() {
+  const wrap = document.getElementById('add-habit-presets');
+  if (!wrap) return;
+  const already = new Set(state.profile.habitos.map(h => h.key));
+  wrap.innerHTML = '';
+  HABIT_PRESETS.filter(h => !already.has(h.key)).forEach(h => {
+    const b = document.createElement('button');
+    b.className = 'qr-btn';
+    b.textContent = `${h.icon} ${h.label}`;
+    b.onclick = () => addManualHabit({ key: h.key, icon: h.icon, label: h.label, repeatDays: [0,1,2,3,4,5,6], sameTimeEveryday: true, time: defaultTimeFor(h.key), durationWeeks: null });
+    wrap.appendChild(b);
+  });
+  if (!wrap.children.length) {
+    wrap.innerHTML = '<div style="font-size:12px;color:var(--text-dim);">Ya agregaste todos los hábitos sugeridos — puedes configurar el tuyo abajo.</div>';
+  }
+}
+// Mantiene sincronizada la entrada de HOY en la agenda con la configuración
+// actual de un hábito (se llama al agregar, editar, o borrar un hábito).
+function syncTodayAgendaForHabit(h) {
+  const dow = new Date().getDay();
+  const todayStr = ymd(new Date());
+  const shouldBeScheduled = habitRepeatDays(h).includes(dow) && habitActiveOnDate(h, todayStr);
+  const idx = state.agenda.findIndex(a => a.habitKey === h.key && a.task === h.label);
+  if (shouldBeScheduled) {
+    const time = habitTimeForDay(h, dow);
+    if (idx === -1) {
+      state.agenda.push({ time, task: h.label, done: false, icon: h.icon, habitKey: h.key, recurring: true });
+    } else {
+      state.agenda[idx].time = time; // conserva si ya estaba marcado como hecho
+    }
+  } else if (idx !== -1 && !state.agenda[idx].done) {
+    state.agenda.splice(idx, 1);
+  }
+  state.agenda.sort((a,b) => timeToMinutes(a.time) - timeToMinutes(b.time));
+}
+function addManualHabit({ key, icon, label, repeatDays, sameTimeEveryday, time, timesByDay, durationWeeks }) {
+  if (state.profile.habitos.some(h => h.label.toLowerCase() === label.toLowerCase())) {
+    setAddHabitStatus('Ese hábito ya lo tienes agregado 🌱');
+    return;
+  }
+  const entry = {
+    key, icon, label,
+    repeatDays: repeatDays && repeatDays.length ? repeatDays : [0,1,2,3,4,5,6],
+    sameTimeEveryday: sameTimeEveryday !== false,
+    time: time || defaultTimeFor(key),
+    timesByDay: timesByDay || {},
+    durationWeeks: durationWeeks || null,
+    createdAt: ymd(new Date()),
+  };
+  entry.repeatWeekly = entry.repeatDays.length === 7; // compatibilidad con lecturas antiguas
+  state.profile.habitos.push(entry);
+  state.streaks[key] = state.streaks[key] || 0;
+  syncTodayAgendaForHabit(entry);
+  saveStateToServer();
+  setAvatarMood('happy');
+  pendingAddHabitStatus = `¡Listo! Agregué "${icon} ${label}" (${habitDaysLabel(entry)}) 🌱`;
+  renderProfile();
+  renderAgenda();
+  renderHeaderRing();
+}
+
+/* ---- Modal de configuración (crear o editar) ---- */
+let editingHabitIndex = null; // null = hábito nuevo; número = índice en state.profile.habitos
+
+function getSelectedEditorDays() {
+  return Array.from(document.querySelectorAll('#he-days .qr-btn.selected')).map(b => parseInt(b.dataset.day, 10));
+}
+function renderPerDayTimeInputs(selectedDays, existingHabit) {
+  const sameTime = document.getElementById('he-same-time').checked;
+  document.getElementById('he-single-time-row').style.display = sameTime ? 'flex' : 'none';
+  const wrap = document.getElementById('he-per-day-times');
+  wrap.style.display = sameTime ? 'none' : 'block';
+  wrap.innerHTML = '';
+  if (sameTime) return;
+  selectedDays.slice().sort().forEach(d => {
+    const row = document.createElement('div'); row.className = 'row-input'; row.style.marginTop = '6px'; row.style.alignItems = 'center';
+    const lbl = document.createElement('span'); lbl.style.fontSize = '13px'; lbl.style.color = 'var(--text-dim)'; lbl.style.minWidth = '90px'; lbl.textContent = WEEKDAY_NAMES[d];
+    const time = document.createElement('input'); time.type = 'time'; time.dataset.day = d;
+    time.value = (existingHabit && existingHabit.timesByDay && existingHabit.timesByDay[d]) || (existingHabit && existingHabit.time) || defaultTimeFor(existingHabit ? existingHabit.key : 'general');
+    row.appendChild(lbl); row.appendChild(time);
+    wrap.appendChild(row);
+  });
+}
+function openHabitEditor(index) {
+  editingHabitIndex = (index === null || index === undefined || index < 0) ? null : index;
+  const h = editingHabitIndex !== null ? state.profile.habitos[editingHabitIndex] : null;
+  document.getElementById('habit-editor-title').textContent = h ? 'Editar hábito' : 'Nuevo hábito personalizado';
+  document.getElementById('he-label').value = h ? h.label : '';
+  document.getElementById('habit-editor-status').textContent = '';
+
+  const days = h ? habitRepeatDays(h) : [0,1,2,3,4,5,6];
+  const daysWrap = document.getElementById('he-days');
+  daysWrap.innerHTML = '';
+  WEEKDAY_LABELS.forEach((lbl, i) => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'qr-btn' + (days.includes(i) ? ' selected' : '');
+    b.textContent = lbl;
+    b.dataset.day = i;
+    b.title = WEEKDAY_NAMES[i];
+    b.onclick = () => { b.classList.toggle('selected'); renderPerDayTimeInputs(getSelectedEditorDays(), h); };
+    daysWrap.appendChild(b);
+  });
+
+  const sameTimeCheckbox = document.getElementById('he-same-time');
+  sameTimeCheckbox.checked = h ? h.sameTimeEveryday !== false : true;
+  document.getElementById('he-time').value = h ? (h.time || defaultTimeFor(h.key)) : defaultTimeFor('general');
+  sameTimeCheckbox.onchange = () => renderPerDayTimeInputs(getSelectedEditorDays(), h);
+  renderPerDayTimeInputs(days, h);
+
+  const hasWeeks = !!(h && h.durationWeeks);
+  document.getElementById('he-duration-indef').checked = !hasWeeks;
+  document.getElementById('he-duration-weeks').checked = hasWeeks;
+  const weeksInput = document.getElementById('he-weeks');
+  weeksInput.disabled = !hasWeeks;
+  weeksInput.value = hasWeeks ? h.durationWeeks : 4;
+  document.getElementById('he-duration-indef').onchange = () => { weeksInput.disabled = true; };
+  document.getElementById('he-duration-weeks').onchange = () => { weeksInput.disabled = false; };
+
+  document.getElementById('he-delete-btn').style.display = h ? 'block' : 'none';
+  document.getElementById('he-save-btn').onclick = saveHabitEditor;
+  document.getElementById('he-delete-btn').onclick = deleteHabitFromEditor;
+  document.getElementById('he-cancel-btn').onclick = closeHabitEditor;
+
+  document.getElementById('habit-editor-overlay').style.display = 'flex';
+}
+function closeHabitEditor() {
+  document.getElementById('habit-editor-overlay').style.display = 'none';
+  editingHabitIndex = null;
+}
+document.getElementById('habit-editor-overlay').addEventListener('click', (e) => {
+  if (e.target.id === 'habit-editor-overlay') closeHabitEditor();
+});
+function saveHabitEditor() {
+  const label = document.getElementById('he-label').value.trim();
+  if (!label) { document.getElementById('habit-editor-status').textContent = 'Escribe un nombre para el hábito ✍️'; return; }
+  const days = getSelectedEditorDays();
+  const isNew = editingHabitIndex === null;
+  const dup = state.profile.habitos.some((hh, i) => i !== editingHabitIndex && hh.label.toLowerCase() === label.toLowerCase());
+  if (dup) { document.getElementById('habit-editor-status').textContent = 'Ya tienes un hábito con ese nombre 🌱'; return; }
+
+  const sameTimeEveryday = document.getElementById('he-same-time').checked;
+  let time, timesByDay = {};
+  if (sameTimeEveryday) {
+    time = document.getElementById('he-time').value || '18:00';
+  } else {
+    document.querySelectorAll('#he-per-day-times input[type=time]').forEach(inp => { timesByDay[inp.dataset.day] = inp.value; });
+    time = Object.values(timesByDay)[0] || '18:00';
+  }
+  const usingWeeks = document.getElementById('he-duration-weeks').checked;
+  const durationWeeks = usingWeeks ? (parseInt(document.getElementById('he-weeks').value, 10) || 4) : null;
+
+  const existing = isNew ? null : state.profile.habitos[editingHabitIndex];
+  const key = existing ? existing.key : pickHabitKey(label);
+  const icon = existing ? existing.icon : pickIcon(label);
+  const entry = {
+    key, icon, label,
+    repeatDays: days,
+    sameTimeEveryday,
+    time,
+    timesByDay,
+    durationWeeks,
+    createdAt: existing ? (existing.createdAt || ymd(new Date())) : ymd(new Date()),
+  };
+  entry.repeatWeekly = entry.repeatDays.length === 7;
+
+  if (isNew) {
+    state.profile.habitos.push(entry);
+    state.streaks[key] = state.streaks[key] || 0;
+    pendingAddHabitStatus = `¡Listo! Agregué "${icon} ${label}" (${habitDaysLabel(entry)}) 🌱`;
+  } else {
+    state.profile.habitos[editingHabitIndex] = entry;
+    pendingAddHabitStatus = `Actualicé "${icon} ${label}" (${habitDaysLabel(entry)}) 🌱`;
+  }
+  syncTodayAgendaForHabit(entry);
+  saveStateToServer();
+  setAvatarMood('happy');
+  closeHabitEditor();
+  renderProfile();
+  renderAgenda();
+  renderHeaderRing();
+}
+function deleteHabitFromEditor() {
+  if (editingHabitIndex === null) return;
+  const h = state.profile.habitos[editingHabitIndex];
+  state.profile.habitos.splice(editingHabitIndex, 1);
+  const idx = state.agenda.findIndex(a => a.habitKey === h.key && a.task === h.label && !a.done);
+  if (idx !== -1) state.agenda.splice(idx, 1);
+  saveStateToServer();
+  pendingAddHabitStatus = `Eliminé "${h.icon} ${h.label}" de tus hábitos.`;
+  closeHabitEditor();
+  renderProfile();
+  renderAgenda();
+  renderHeaderRing();
+}
+
+/* ============================================================
+   HISTORIAL SIMULADO (para poblar calendario y métricas)
+   ============================================================ */
+const DAY_NAMES = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+const DAY_NAMES_SHORT = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+const HISTORY_DAYS = 34; // ~5 semanas hacia atrás, sin contar hoy
+
+function ymd(d) { return d.toISOString().slice(0,10); }
+function addDays(d, n) { const r = new Date(d); r.setDate(r.getDate()+n); return r; }
+
+function generateSimulatedHistory() {
+  const habitos = state.profile.habitos;
+  if (!habitos.length) { state.history = []; return; }
+  const dificiles = new Set((state.profile.diasDificiles || []).map(d => d.toLowerCase()));
+  const esDiaDificil = (dow) => {
+    const name = DAY_NAMES[dow].toLowerCase();
+    if (dificiles.has('fin de semana') && (dow === 0 || dow === 6)) return true;
+    if (dificiles.has('lunes') && dow === 1) return true;
+    return [...dificiles].some(d => d.includes(name));
+  };
+  // a cada hábito le asignamos una "propensión" fija para que uno sea claramente
+  // el más cumplido y otro el más abandonado (para el ranking de hábitos)
+  const propensity = {};
+  habitos.forEach((h, i) => { propensity[h.key] = 0.85 - i * 0.16; }); // primero elegido = mejor cumplido
+
+  // hora típica por tipo de hábito, para que el cuadro semanal tenga sentido
+  const habitHour = {};
+  habitos.forEach(h => { habitHour[h.key] = typicalHourFor(h.key); });
+
+  const today = new Date();
+  const days = [];
+  for (let i = HISTORY_DAYS; i >= 1; i--) {
+    const date = addDays(today, -i);
+    const dow = date.getDay();
+    const baseChance = esDiaDificil(dow) ? 0.35 : 0.78;
+    const items = habitos.map(h => {
+      const p = Math.max(0.05, Math.min(0.97, (propensity[h.key] ?? 0.6) * (baseChance / 0.78)));
+      const scheduled = Math.random() < 0.9; // casi siempre programado ese día
+      const done = scheduled && Math.random() < p;
+      const jitter = Math.floor(Math.random()*3) - 1; // -1, 0, +1 hora
+      const hour = Math.max(5, Math.min(23, (habitHour[h.key] ?? 18) + jitter));
+      const time = String(hour).padStart(2,'0') + ':00';
+      return scheduled ? { habitKey: h.key, icon: h.icon, label: h.label, done, time } : null;
+    }).filter(Boolean);
+    const total = items.length, doneCt = items.filter(x=>x.done).length;
+    days.push({ date: ymd(date), dow, items, pct: total ? Math.round((doneCt/total)*100) : null });
+  }
+  state.history = days;
+}
+
+function todayDayEntry() {
+  const items = state.agenda.map(a => ({ habitKey: a.habitKey, icon: a.icon, label: a.task, done: a.done, time: a.time }));
+  const total = items.length, doneCt = items.filter(x=>x.done).length;
+  return { date: ymd(new Date()), dow: new Date().getDay(), items, pct: total ? Math.round((doneCt/total)*100) : null, isToday: true };
+}
+function fullHistory() { return [...(state.history||[]), todayDayEntry()]; }
+function futureDayEntry(dateStr) {
+  // proyecta los hábitos recurrentes en días que aún no llegan, respetando qué
+  // días de la semana les tocan y hasta cuándo duran (si tienen fecha de fin)
+  const dow = new Date(dateStr).getDay();
+  const items = state.profile.habitos
+    .filter(h => habitRepeatDays(h).includes(dow) && habitActiveOnDate(h, dateStr))
+    .map(h => ({ habitKey: h.key, icon: h.icon, label: h.label, done: false, time: habitTimeForDay(h, dow) }));
+  return { date: dateStr, dow, items, pct: null, isFuture: true };
+}
+function findDay(dateStr) {
+  const todayStr = ymd(new Date());
+  if (dateStr === todayStr) return todayDayEntry();
+  if (dateStr > todayStr) return futureDayEntry(dateStr);
+  return (state.history||[]).find(d => d.date === dateStr) || { date: dateStr, dow: new Date(dateStr).getDay(), items: [], pct: null };
+}
+
+function heatColor(pct) {
+  if (pct === null || pct === undefined) return 'var(--seq-0)';
+  if (pct === 0) return 'var(--seq-0)';
+  if (pct < 25) return 'var(--seq-1)';
+  if (pct < 50) return 'var(--seq-2)';
+  if (pct < 75) return 'var(--seq-3)';
+  if (pct < 100) return 'var(--seq-4)';
+  return 'var(--seq-5)';
+}
+
+/* ============================================================
+   CALENDARIO — Día / Semana / Mes
+   ============================================================ */
+let calSubTab = 'day';
+let calDayOffset = 0; // 0 = hoy, -1 = ayer, etc.
+const calBody = document.getElementById('cal-body');
+
+document.querySelectorAll('.cal-subtab').forEach(t => {
+  t.onclick = () => {
+    document.querySelectorAll('.cal-subtab').forEach(x => x.classList.remove('active'));
+    t.classList.add('active');
+    calSubTab = t.dataset.calsub;
+    renderCalendar();
+  };
+});
+
+function toggleDoneFromCal(idx) { toggleDone(idx); renderCalDay(); }
+
+function renderCalendar() {
+  if (calSubTab === 'day') renderCalDay();
+  else if (calSubTab === 'week') renderCalWeek();
+  else renderCalMonth();
+}
+
+function renderCalDay() {
+  const date = addDays(new Date(), calDayOffset);
+  const dateStr = ymd(date);
+  const day = calDayOffset === 0 ? todayDayEntry() : findDay(dateStr);
+  const isToday = calDayOffset === 0;
+  const label = isToday ? 'Hoy' : `${DAY_NAMES[day.dow]} ${date.getDate()}/${date.getMonth()+1}`;
+  const itemsHtml = day.items.length ? day.items.map((it, idx) => `
+    <div class="agenda-item ${it.done ? 'done' : ''}">
+      <span class="check" ${isToday ? `onclick="toggleDoneFromCal(${idx})" style="cursor:pointer;"` : ''}>${it.done ? '✓' : ''}</span>
+      <span class="icon">${it.icon}</span>
+      ${it.time ? `<span class="time">${it.time}</span>` : ''}
+      <span class="task">${it.label}</span>
+    </div>`).join('') : '<div style="font-size:12px;color:var(--text-dim);">Sin actividades registradas.</div>';
+  const pctLabel = day.pct !== null ? day.pct + '% cumplido' : (day.items.length ? 'Programado con Bless' : 'sin datos');
+  calBody.innerHTML = `
+    <div class="day-nav">
+      <button id="day-prev">‹</button>
+      <div><div class="day-title">${label}</div><div class="day-pct">${pctLabel}</div></div>
+      <button id="day-next" ${calDayOffset >= 6 ? 'disabled' : ''}>›</button>
+    </div>
+    <div id="day-items">${itemsHtml}</div>
+  `;
+  document.getElementById('day-prev').onclick = () => { calDayOffset--; renderCalDay(); };
+  document.getElementById('day-next').onclick = () => { if (calDayOffset < 6) { calDayOffset++; renderCalDay(); } };
+}
+
+function startOfWeek(d) { const r = new Date(d); const dow = r.getDay(); const diff = dow === 0 ? -6 : 1 - dow; return addDays(r, diff); } // lunes
+
+let weekOffset = 0; // 0 = semana actual, -1 = semana pasada, etc.
+function renderCalWeek() {
+  const monday = addDays(startOfWeek(new Date()), weekOffset * 7);
+  const weekDays = Array.from({length:7}, (_,i) => addDays(monday, i));
+  const dayEntries = weekDays.map(d => findDay(ymd(d)));
+  const todayStr = ymd(new Date());
+
+  // rango de horas a mostrar: de la hora más temprana con actividad a la más tardía (min 7am-9pm)
+  let minH = 7, maxH = 21;
+  dayEntries.forEach(d => d.items.forEach(it => { if (it.time) { const h = parseInt(it.time.split(':')[0]); minH = Math.min(minH,h); maxH = Math.max(maxH,h); } }));
+  const hours = []; for (let h = minH; h <= maxH; h++) hours.push(h);
+
+  let grid = `<div class="week-grid">`;
+  grid += `<div class="cell hour-lbl"></div>`;
+  weekDays.forEach((d,i) => {
+    const isToday = ymd(d) === todayStr;
+    const pctTxt = dayEntries[i].pct !== null ? dayEntries[i].pct + '%' : (dayEntries[i].items.length ? 'prog.' : '—');
+    grid += `<div class="cell day-head"><span>${DAY_NAMES_SHORT[d.getDay()]} ${d.getDate()}</span><span class="pct" style="color:${dayEntries[i].pct!==null?heatColor(dayEntries[i].pct):'var(--text-dim)'}">${pctTxt}</span></div>`;
+  });
+  hours.forEach(h => {
+    grid += `<div class="cell hour-lbl">${String(h).padStart(2,'0')}:00</div>`;
+    weekDays.forEach((d,i) => {
+      const isToday = ymd(d) === todayStr;
+      const isFuture = ymd(d) > todayStr;
+      const items = dayEntries[i].items.filter(it => it.time && parseInt(it.time.split(':')[0]) === h);
+      grid += `<div class="cell slot ${items.length?'has-item':''} ${isToday?'today-col':''}" style="${isFuture?'opacity:.55;':''}" title="${items.map(x=>x.label).join(', ')}${isFuture&&items.length?' (programado)':''}">${items.map(x=>x.icon).join('')}</div>`;
+    });
+  });
+  grid += `</div>`;
+
+  const totalItems = dayEntries.reduce((a,d)=>a+d.items.length,0);
+  const doneItems = dayEntries.reduce((a,d)=>a+d.items.filter(x=>x.done).length,0);
+  const weekPct = totalItems ? Math.round((doneItems/totalItems)*100) : 0;
+
+  const weekLabel = weekOffset === 0 ? 'Semana actual' : `${weekDays[0].getDate()}/${weekDays[0].getMonth()+1} – ${weekDays[6].getDate()}/${weekDays[6].getMonth()+1}`;
+  calBody.innerHTML = `
+    <div class="month-nav">
+      <button id="week-prev">‹</button>
+      <div style="font-weight:700;font-size:13px;">${weekLabel}</div>
+      <button id="week-next" ${weekOffset>=0?'disabled':''}>›</button>
+    </div>
+    <div class="week-scroll">${grid}</div>
+    <div class="week-summary"><span>Cumplimiento de la semana</span><span style="color:${heatColor(weekPct)};font-weight:800;">${weekPct}%</span></div>
+  `;
+  document.getElementById('week-prev').onclick = () => { weekOffset--; renderCalWeek(); };
+  document.getElementById('week-next').onclick = () => { if (weekOffset < 0) { weekOffset++; renderCalWeek(); } };
+}
+
+let monthOffset = 0; // 0 = mes actual
+function renderCalMonth() {
+  const base = new Date(); base.setDate(1); base.setMonth(base.getMonth() + monthOffset);
+  const year = base.getFullYear(), month = base.getMonth();
+  const firstDow = (new Date(year, month, 1).getDay() + 6) % 7; // lunes=0
+  const daysInMonth = new Date(year, month+1, 0).getDate();
+  const monthName = base.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' });
+  const todayStr = ymd(new Date());
+
+  let cells = '';
+  ['L','M','X','J','V','S','D'].forEach(w => cells += `<div class="wd">${w}</div>`);
+  for (let i=0;i<firstDow;i++) cells += `<div class="month-cell empty"></div>`;
+  for (let d=1; d<=daysInMonth; d++) {
+    const dateStr = ymd(new Date(year, month, d));
+    const entry = findDay(dateStr);
+    const isToday = dateStr === todayStr;
+    const isFuture = dateStr > todayStr;
+    const bg = isFuture ? 'transparent' : heatColor(entry.pct);
+    const mainIcon = entry.items.length ? (entry.items.reduce((best,it) => (!best || it.done) ? it : best, null)?.icon) : '';
+    const titleTxt = entry.pct !== null ? entry.pct + '%' : (entry.items.length ? 'Programado' : '');
+    cells += `<div class="month-cell ${isToday?'today':''}" style="background:${bg}; ${isFuture&&mainIcon?'border:1px dashed var(--border);':''}" title="${titleTxt}">
+      <span class="dnum">${d}</span>${mainIcon ? `<span class="dicon" style="${isFuture?'opacity:.5;':''}">${mainIcon}</span>` : ''}
+    </div>`;
+  }
+
+  calBody.innerHTML = `
+    <div class="month-nav">
+      <button id="month-prev">‹</button>
+      <div style="font-weight:700;font-size:13.5px;text-transform:capitalize;">${monthName}</div>
+      <button id="month-next" ${monthOffset>=0?'disabled':''}>›</button>
+    </div>
+    <div class="month-grid">${cells}</div>
+    <div class="month-legend">
+      <span>Menos</span>
+      <span class="sw" style="background:var(--seq-0);"></span><span class="sw" style="background:var(--seq-1);"></span>
+      <span class="sw" style="background:var(--seq-2);"></span><span class="sw" style="background:var(--seq-3);"></span>
+      <span class="sw" style="background:var(--seq-4);"></span><span class="sw" style="background:var(--seq-5);"></span>
+      <span>Más</span>
+    </div>
+  `;
+  document.getElementById('month-prev').onclick = () => { monthOffset--; renderCalMonth(); };
+  document.getElementById('month-next').onclick = () => { if (monthOffset < 0) { monthOffset++; renderCalMonth(); } };
+}
+
+/* ============================================================
+   MÉTRICAS — dashboard de KPIs
+   ============================================================ */
+function pctOf(items) { const total = items.length, done = items.filter(x=>x.done).length; return total ? Math.round((done/total)*100) : null; }
+
+function computeMetrics() {
+  const all = fullHistory(); // 35 días: 34 simulados + hoy
+  const today = all[all.length-1];
+  const last7 = all.slice(-7);
+  const last30 = all.slice(-30);
+
+  const pctToday = pctOf(today.items);
+  const pctWeek = pctOf(last7.flatMap(d=>d.items));
+  const pctMonth = pctOf(last30.flatMap(d=>d.items));
+
+  // racha global: días consecutivos (terminando hoy) con >=60% cumplido y con datos
+  function isDiaCumplido(d) { return d.pct !== null && d.pct >= 60; }
+  let rachaActual = 0;
+  for (let i = all.length-1; i >= 0; i--) { if (isDiaCumplido(all[i])) rachaActual++; else break; }
+  let rachaMax = 0, run = 0;
+  all.forEach(d => { if (isDiaCumplido(d)) { run++; rachaMax = Math.max(rachaMax, run); } else run = 0; });
+
+  // patrones por día de la semana
+  const byDow = Array.from({length:7}, () => ({done:0,total:0}));
+  all.forEach(d => { d.items.forEach(it => { byDow[d.dow].total++; if (it.done) byDow[d.dow].done++; }); });
+  const dowPct = byDow.map(x => x.total ? Math.round((x.done/x.total)*100) : null);
+  let bestDow = null, worstDow = null;
+  dowPct.forEach((p,i) => { if (p===null) return; if (bestDow===null || p > dowPct[bestDow]) bestDow = i; if (worstDow===null || p < dowPct[worstDow]) worstDow = i; });
+
+  // ranking de hábitos
+  const habitStats = {};
+  state.profile.habitos.forEach(h => habitStats[h.key] = { label: h.label, icon: h.icon, done:0, total:0 });
+  all.forEach(d => d.items.forEach(it => { if (habitStats[it.habitKey]) { habitStats[it.habitKey].total++; if (it.done) habitStats[it.habitKey].done++; } }));
+  const ranking = Object.values(habitStats).map(h => ({...h, pct: h.total ? Math.round((h.done/h.total)*100) : 0})).sort((a,b)=>b.pct-a.pct);
+
+  // racha por hábito (consecutiva, terminando hoy)
+  const habitStreak = {};
+  state.profile.habitos.forEach(h => {
+    let s = 0;
+    for (let i = all.length-1; i >= 0; i--) {
+      const it = all[i].items.find(x => x.habitKey === h.key);
+      if (!it) continue; // no programado ese día, no rompe racha
+      if (it.done) s++; else break;
+    }
+    habitStreak[h.key] = s;
+  });
+
+  return { pctToday, pctWeek, pctMonth, rachaActual, rachaMax, dowPct, bestDow, worstDow, ranking, habitStreak };
+}
+
+function renderMetrics() {
+  const el = document.getElementById('view-metrics');
+  if (!state.profile.habitos.length) { el.innerHTML = '<div style="padding:20px;color:var(--text-dim);">Aún no hay hábitos configurados.</div>'; return; }
+  const m = computeMetrics();
+  const tileColor = (p) => p===null ? 'var(--text-dim)' : p>=70 ? 'var(--status-good)' : p>=40 ? 'var(--status-warning)' : 'var(--status-critical)';
+
+  const weekdayBars = m.dowPct.map((p,i) => `
+    <div class="weekday-col">
+      <div style="font-size:9.5px;font-weight:700;color:${p!==null?heatColor(p):'var(--text-dim)'};">${p!==null?p+'%':''}</div>
+      <div class="wbar" style="height:${p!==null?Math.max(4,p*0.7):3}px;background:${p!==null?heatColor(p):'var(--panel-3)'};"></div>
+      <div class="wlbl">${DAY_NAMES_SHORT[i]}</div>
+    </div>`).join('');
+
+  const rankingBars = m.ranking.map((h,i) => `
+    <div class="bar-row">
+      <div class="bar-lbl">${h.icon} ${h.label}</div>
+      <div class="bar-track"><div class="bar-fill" style="width:${h.pct}%; background:${i===0?'var(--status-good)': i===m.ranking.length-1 ? 'var(--status-critical)' : 'var(--accent)'};"></div></div>
+      <div class="bar-pct">${h.pct}%</div>
+    </div>`).join('');
+
+  // Racha actual, patrones semanales, ranking de hábitos y racha por hábito son
+  // solo para Premium — el plan gratis se queda con el resumen del día/semana/mes.
+  const fullSectionsHtml = `
+      <div class="metrics-section">
+        <h4>Patrones por día de la semana</h4>
+        <div class="weekday-row">${weekdayBars}</div>
+        <div style="display:flex; gap:8px; flex-wrap:wrap;">
+          ${m.bestDow!==null ? `<span class="status-tag" style="background:rgba(12,163,12,.15); color:var(--status-good);">✓ Mejor: ${DAY_NAMES[m.bestDow]}</span>` : ''}
+          ${m.worstDow!==null ? `<span class="status-tag" style="background:rgba(208,59,59,.15); color:var(--status-critical);">⚠ Más difícil: ${DAY_NAMES[m.worstDow]}</span>` : ''}
+        </div>
+      </div>
+
+      <div class="metrics-section">
+        <h4>Ranking de hábitos</h4>
+        ${rankingBars}
+        <div style="font-size:11px; color:var(--text-dim); margin-top:4px;">Bless usa esto para enfocar sus sugerencias en lo que más te cuesta.</div>
+      </div>
+
+      <div class="metrics-section">
+        <h4>Racha por hábito</h4>
+        ${state.profile.habitos.map(h => `<div class="profile-row"><span>${h.icon} ${h.label}</span><span>🔥 ${m.habitStreak[h.key]||0} días</span></div>`).join('')}
+      </div>`;
+
+  const lockedSectionHtml = `
+      <div class="metrics-section premium-lock">
+        <h4>🔒 Métricas completas</h4>
+        <div style="font-size:13px;color:var(--text-dim);line-height:1.5;">Racha actual, patrones por día de la semana, ranking de hábitos y racha por hábito son parte de Bless Habit Premium.</div>
+        ${IS_NATIVE_APP
+          ? `<div style="font-size:13px;color:var(--text-dim);">Para hacerte Premium, entra a blesshabit.app desde tu navegador.</div>`
+          : `<button class="premium-btn" id="unlock-premium-btn">Hazte Premium — ${PADDLE_PRICE_LABEL}</button>
+        <div class="premium-note">Sin publicidad + métricas completas. Cobro automático vía Paddle, cancelas cuando quieras.</div>`}
+      </div>`;
+
+  el.innerHTML = `
+    <div style="padding:18px 16px 24px;">
+      <div class="kpi-grid">
+        <div class="kpi-tile"><div class="kpi-num" style="color:${tileColor(m.pctToday)}">${m.pctToday!==null?m.pctToday+'%':'—'}</div><div class="kpi-lbl">Cumplimiento hoy</div></div>
+        <div class="kpi-tile"><div class="kpi-num" style="color:${tileColor(m.pctWeek)}">${m.pctWeek!==null?m.pctWeek+'%':'—'}</div><div class="kpi-lbl">Cumplimiento semana</div></div>
+        <div class="kpi-tile"><div class="kpi-num" style="color:${tileColor(m.pctMonth)}">${m.pctMonth!==null?m.pctMonth+'%':'—'}</div><div class="kpi-lbl">Cumplimiento mes</div></div>
+        <div class="kpi-tile"><div class="kpi-num">${isPremium ? m.rachaActual+' 🔥' : '🔒'}</div><div class="kpi-lbl">Racha actual (días)</div><div class="kpi-sub" style="color:var(--text-dim);">${isPremium ? 'Máxima: '+m.rachaMax+' días' : 'Solo Premium'}</div></div>
+      </div>
+
+      ${isPremium ? fullSectionsHtml : lockedSectionHtml}
+
+      <div class="metrics-section" style="border-color:#5a4a24;">
+        <h4 style="color:var(--warn-text);">Nota del prototipo</h4>
+        <div style="font-size:13px;color:var(--text-dim);line-height:1.5;">Los últimos ${HISTORY_DAYS} días son datos de ejemplo generados para que veas el dashboard "vivido". Hoy es el único día 100% real, tomado de tu agenda actual.</div>
+      </div>
+
+      ${adBannerHtml()}
+    </div>
+  `;
+  if (!isPremium) {
+    const btn = document.getElementById('unlock-premium-btn');
+    if (btn) btn.onclick = openPaddleCheckout;
+    pushAdsenseSlots();
+  }
+}
+</script>
+</body>
+</html>

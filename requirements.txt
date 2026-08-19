@@ -1,0 +1,5 @@
+flask==3.0.3
+openai==1.54.4
+authlib==1.7.2
+requests==2.32.3
+pywebpush==2.4.0
