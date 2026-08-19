@@ -10,8 +10,10 @@ from flask import Flask, request, jsonify, render_template, session, redirect, u
 from openai import OpenAI
 from authlib.integrations.flask_client import OAuth
 from pywebpush import webpush, WebPushException
+from werkzeug.middleware.proxy_fix import ProxyFix
 
 app = Flask(__name__)
+app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
 app.secret_key = os.environ.get("FLASK_SECRET_KEY", "dev-secret-cambia-esto-en-produccion")
 
 # ============================================================
