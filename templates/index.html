@@ -21,7 +21,7 @@
     --accent: #7c9eff; --accent-2: #6ee7b7; --accent-3: #ffb86c;
     --user-bubble: #2d3546; --agent-bubble: #1f2530;
     --warn-bg: #3a2f1a; --warn-text: #f0c975; --done-color: #6ee7b7;
-    --diag-bg: linear-gradient(135deg, #2a2f5c, #1e2a4a); --radius: 16px;
+    --diag-bg: linear-gradient(135deg, #2a2f5c, #1e2a4a); --diag-text: #d3d8f5; --radius: 16px;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   }
   * { box-sizing: border-box; }
@@ -72,10 +72,17 @@
   @keyframes confettiShift { 0%{background-position:0% 50%;} 50%{background-position:100% 50%;} 100%{background-position:0% 50%;} }
   .celebrate-trophy { animation: popIn .6s cubic-bezier(.34,1.9,.64,1), trophyGlow 1.8s ease .6s 1; background: linear-gradient(135deg, #ffd76c, var(--accent-3), var(--accent-2)); font-size: 14.5px; padding: 12px 20px; }
   @keyframes trophyGlow { 0%,100%{box-shadow:0 0 0 0 rgba(255,215,108,0);} 40%{box-shadow:0 0 22px 6px rgba(255,215,108,.55);} }
+
+  /* Celebración flotante — "explosión" que aparece encima de CUALQUIER pestaña al
+     marcar una actividad (ya no se inserta como mensaje dentro del chat de Bless). */
+  .celebrate-float { position: absolute; inset: 0; pointer-events: none; z-index: 90; display: flex; align-items: center; justify-content: center; }
+  .celebrate-float .celebrate-note { box-shadow: 0 10px 34px rgba(0,0,0,.4); }
+  .celebrate-particle { position: absolute; left: 50%; top: 50%; font-size: 20px; pointer-events: none; animation: particleBurst .9s cubic-bezier(.15,.8,.3,1) forwards; }
+  @keyframes particleBurst { 0% { transform: translate(-50%,-50%) scale(.4); opacity: 1; } 100% { transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(1); opacity: 0; } }
   .diag-card { align-self: stretch; background: var(--diag-bg); border: 1px solid #3d4a8a; border-radius: 18px; padding: 18px; animation: popIn .5s cubic-bezier(.34,1.56,.64,1); }
   .diag-card .diag-label { font-size: 10px; text-transform: uppercase; letter-spacing: .08em; color: var(--accent-2); margin-bottom: 6px; }
   .diag-card .diag-title { font-size: 17px; font-weight: 800; margin-bottom: 8px; }
-  .diag-card .diag-body { font-size: 13.5px; color: #d3d8f5; line-height: 1.5; }
+  .diag-card .diag-body { font-size: 13.5px; color: var(--diag-text); line-height: 1.5; }
   .reengage-note { align-self: center; font-size: 13px; background: var(--panel-3); border: 1px solid var(--border); padding: 10px 16px; border-radius: 14px; animation: popIn .45s; text-align: center; }
 
   .typing-bubble { align-self: flex-start; background: var(--agent-bubble); padding: 12px 16px; border-radius: var(--radius); border-bottom-left-radius: 4px; display: flex; gap: 4px; animation: bubbleIn .2s; }
@@ -164,7 +171,7 @@
     --accent: #4c6fe0; --accent-2: #17a878; --accent-3: #e08a2c;
     --user-bubble: #dfe6ff; --agent-bubble: #eef0f5;
     --warn-bg: #fdeecb; --warn-text: #8a5a10; --done-color: #17a878;
-    --diag-bg: linear-gradient(135deg, #e4e9ff, #dfe6ff);
+    --diag-bg: linear-gradient(135deg, #e4e9ff, #dfe6ff); --diag-text: #33396b;
     --seq-0: #e6e8ee; --seq-1: #b7cbf5; --seq-2: #8fb0ec; --seq-3: #679ce6; --seq-4: #3f83de; --seq-5: #1f66c9;
   }
   html[data-theme="premium"] {
@@ -173,7 +180,7 @@
     --accent: #e0b84c; --accent-2: #f0d78c; --accent-3: #caa23a;
     --user-bubble: #3a2f16; --agent-bubble: #241f14;
     --warn-bg: #3a2f1a; --warn-text: #f0c975; --done-color: #e0b84c;
-    --diag-bg: linear-gradient(135deg, #3a2f16, #241f14);
+    --diag-bg: linear-gradient(135deg, #3a2f16, #241f14); --diag-text: #f0e6c8;
     --seq-0: #241f14; --seq-1: #6b551f; --seq-2: #8a6d26; --seq-3: #ab862c; --seq-4: #cca233; --seq-5: #f0c33d;
   }
 
@@ -245,6 +252,14 @@
   .bless-fab.show { display: flex; }
   .bless-fab.bounce { animation: pulseAvatar 2.4s infinite, avatarBounce .5s ease; }
   .bless-fab:active { transform: scale(.88); }
+
+  /* Botón flotante "+" para agregar hábito desde Calendario Día — mismos colores y
+     estilo que el flotante de Bless, al lado izquierdo. */
+  .day-add-fab { position: absolute; right: 78px; bottom: 74px; width: 50px; height: 50px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent), var(--accent-2)); display: none; align-items: center; justify-content: center;
+    font-size: 22px; font-weight: 800; color: #10131a; box-shadow: 0 6px 18px rgba(0,0,0,.4); cursor: pointer; z-index: 30; transition: transform .15s; }
+  .day-add-fab.show { display: flex; }
+  .day-add-fab:active { transform: scale(.88); }
 
   /* Horarios de hábitos en el onboarding */
   .habit-sched-list { display: flex; flex-direction: column; gap: 8px; max-height: 40vh; overflow-y: auto; padding-right: 2px; }
@@ -334,6 +349,9 @@
   <div id="view-profile"></div>
 
   <div id="bless-fab" class="bless-fab" data-i18n-title="blessFabTitle" title="Hablar con Bless">🌱</div>
+  <div id="day-add-fab" class="day-add-fab" data-i18n-title="addHabitTitleAttr" title="Agregar hábito">＋</div>
+
+  <div id="celebrate-float" class="celebrate-float"></div>
 
   <footer class="tabbar" id="tabbar" style="display:none;">
     <div class="tab active-tab" data-tab="chat"><span class="ic">💬</span><span data-i18n="tabChat">Bless</span></div>
@@ -341,6 +359,24 @@
     <div class="tab" data-tab="metrics"><span class="ic">📊</span><span data-i18n="tabMetrics">Métricas</span></div>
     <div class="tab" data-tab="profile"><span class="ic">🧑</span><span data-i18n="tabProfile">Perfil</span></div>
   </footer>
+
+  <div id="add-habit-picker-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:81;align-items:center;justify-content:center;padding:16px;">
+    <div class="profile-card" style="max-width:380px;width:100%;max-height:85vh;overflow-y:auto;margin:0;">
+      <h4 data-i18n="addHabitTitle">Agregar un hábito nuevo</h4>
+      <div style="font-size:13px;color:var(--text-dim);margin-bottom:10px;" data-i18n="addHabitDesc"></div>
+      <div class="quick-replies" id="add-habit-picker-presets"></div>
+      <button class="send-btn" id="add-habit-picker-custom-btn" style="width:100%;margin-top:8px;background:linear-gradient(135deg, var(--panel-3), var(--panel-2)); color:var(--text);" data-i18n="configureCustomBtn"></button>
+      <div style="text-align:center;margin-top:10px;"><span class="logout-link" id="add-habit-picker-cancel-btn" data-i18n="cancelBtn">Cancelar</span></div>
+    </div>
+  </div>
+
+  <div id="option-picker-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:83;align-items:center;justify-content:center;padding:16px;">
+    <div class="profile-card" style="max-width:380px;width:100%;max-height:85vh;overflow-y:auto;margin:0;">
+      <h4 id="option-picker-title"></h4>
+      <div class="quick-replies" id="option-picker-options" style="margin-top:10px;"></div>
+      <div style="text-align:center;margin-top:14px;"><span class="logout-link" id="option-picker-cancel-btn"></span></div>
+    </div>
+  </div>
 
   <div id="habit-editor-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:80;align-items:center;justify-content:center;padding:16px;">
     <div class="profile-card" style="max-width:380px;width:100%;max-height:85vh;overflow-y:auto;margin:0;">
@@ -611,6 +647,7 @@ const I18N = {
     recurringDeclinedFallback: 'Sin problema, lo dejamos solo por hoy 🙂. Si cambias de opinión, dímelo cuando quieras.',
     otherTimeQuestion: ['¿A qué otra hora te gustaría hacerlo?', 'Sin problema. ¿A qué otra hora te queda mejor, o prefieres dejarlo para después?'],
     needsTimeDropFallback: (task) => `Dejo pendiente la hora de "${task}" para después.`,
+    genericQuestionFallback: ['Mmm, cuéntame un poco más para poder ayudarte 🙂. Si quieres, revisa tu agenda de hoy y dime qué te gustaría hacer.', '¡Buena pregunta! Dime qué tienes en mente y lo vemos juntas/os, o revisa tu agenda de hoy para una idea rápida.'],
     scheduledEnergyFallback: (time, icon, hint) => `Agregado a las ${time} ${icon}. Como tienes más energía en ${hint}, si quieres puedo moverlo ahí para que te rinda más. ¿Lo dejamos así o lo cambio?`,
     offerRecurringFallback: (time, icon) => `Agregado a las ${time} ${icon} ✅. Oye, ¿quieres que te ayude a convertir esto en un hábito que repitamos? Así te acompaño a construirlo de verdad, no solo por hoy.`,
 
@@ -639,6 +676,8 @@ const I18N = {
     basicDataTitle: 'Datos básicos', nombreLabel: 'Nombre', edadLabel: 'Edad',
     aniosSuffix: (n) => `${n} años`, noCompartida: 'No compartida',
     horarioFijoLabel: 'Horario fijo', despiertaDuermeLabel: 'Despierta / duerme',
+    horarioInicioLabel: 'Hora de inicio (HH:MM)', horarioFinLabel: 'Hora de fin (HH:MM)',
+    despiertaLabel: 'Hora en que despiertas (HH:MM)', duermeLabel: 'Hora en que duermes (HH:MM)',
     masEnergiaLabel: 'Más energía en', tipoLabel: 'Tipo', tiempoLibreLabel: 'Tiempo libre real', motivacionLabel: 'Motivación',
     saludTitle: 'Salud (opcional)', pesoLabel: 'Peso', kgSuffix: (n) => `${n} kg`, noCompartido: 'No compartido',
     tallaLabel: 'Talla', cmSuffix: (n) => `${n} cm`,
@@ -832,6 +871,7 @@ const I18N = {
     recurringDeclinedFallback: "No problem, we'll leave it just for today 🙂. If you change your mind, just tell me.",
     otherTimeQuestion: ['What other time would you like to do it?', 'No problem. What other time works better, or would you rather leave it for later?'],
     needsTimeDropFallback: (task) => `I'll leave the time for "${task}" pending for later.`,
+    genericQuestionFallback: ["Hmm, tell me a bit more so I can help 🙂. You could also check today's agenda for a quick idea.", "Good question! Tell me what's on your mind and we'll figure it out together, or check today's agenda for a quick idea."],
     scheduledEnergyFallback: (time, icon, hint) => `Added at ${time} ${icon}. Since you have more energy in ${hint}, I can move it there if you want it to be more effective. Should we leave it as is or change it?`,
     offerRecurringFallback: (time, icon) => `Added at ${time} ${icon} ✅. Hey, want me to help turn this into a habit we repeat? That way I can really help you build it, not just for today.`,
 
@@ -860,6 +900,8 @@ const I18N = {
     basicDataTitle: 'Basic info', nombreLabel: 'Name', edadLabel: 'Age',
     aniosSuffix: (n) => `${n} yrs`, noCompartida: 'Not shared',
     horarioFijoLabel: 'Fixed schedule', despiertaDuermeLabel: 'Wake / sleep',
+    horarioInicioLabel: 'Start time (HH:MM)', horarioFinLabel: 'End time (HH:MM)',
+    despiertaLabel: 'What time you wake up (HH:MM)', duermeLabel: 'What time you go to sleep (HH:MM)',
     masEnergiaLabel: 'More energy in', tipoLabel: 'Type', tiempoLibreLabel: 'Real free time', motivacionLabel: 'Motivation',
     saludTitle: 'Health (optional)', pesoLabel: 'Weight', kgSuffix: (n) => `${n} kg`, noCompartido: 'Not shared',
     tallaLabel: 'Height', cmSuffix: (n) => `${n} cm`,
@@ -1116,6 +1158,8 @@ const agendaList = document.getElementById('agenda-list');
 const progressFill = document.getElementById('onboarding-progress-fill');
 const avatarEl = document.getElementById('agent-avatar');
 const fabEl = document.getElementById('bless-fab');
+const dayAddFabEl = document.getElementById('day-add-fab');
+dayAddFabEl.onclick = () => openAddHabitPicker();
 function badgeHtml() { return ''; }
 
 const MOODS = { default: '🌱', thinking: '🤔', happy: '🎉', caring: '🤍', proud: '🌟' };
@@ -1914,17 +1958,39 @@ const CELEBRATION_TIERS = [
   { min: 90,  emoji: '🌈✨',   anim: 'celebrate-sparkle',  kind: 'encouragement' },
   { min: 100, emoji: '🏆🎊✨', anim: 'celebrate-trophy',   kind: 'quote' },
 ];
+// Celebración flotante tipo "explosión" — aparece encima de la pantalla actual
+// (no importa en qué pestaña estés cuando marcas algo hecho), en vez de quedar
+// escondida dentro del chat de Bless donde solo se veía si estabas ahí.
+function celebrateExplosion(emoji, phrase, animClass) {
+  const overlay = document.getElementById('celebrate-float');
+  overlay.innerHTML = '';
+  const pill = document.createElement('div');
+  pill.className = 'celebrate-note ' + animClass;
+  pill.textContent = `${emoji} ${phrase}`;
+  overlay.appendChild(pill);
+  const particles = ['✨', '🎉', '⭐', '💥', '🌟'];
+  const count = 10;
+  for (let i = 0; i < count; i++) {
+    const p = document.createElement('div');
+    p.className = 'celebrate-particle';
+    p.textContent = particles[i % particles.length];
+    const angle = (Math.PI * 2 * i) / count;
+    const dist = 90 + (i % 3) * 24;
+    p.style.setProperty('--dx', `${Math.cos(angle) * dist}px`);
+    p.style.setProperty('--dy', `${Math.sin(angle) * dist}px`);
+    p.style.animationDelay = `${i * 0.02}s`;
+    overlay.appendChild(p);
+  }
+  clearTimeout(celebrateExplosion._t);
+  celebrateExplosion._t = setTimeout(() => { overlay.innerHTML = ''; }, 1900);
+}
 function maybeCelebrate(pct) {
   const tier = [...CELEBRATION_TIERS].reverse().find(t => pct >= t.min && lastCelebratedPct < t.min);
   if (!tier) return;
   lastCelebratedPct = tier.min;
   const phrase = tier.kind === 'quote' ? tp('habitQuotes') : tp('encouragementPhrases');
   const extra = tier.min === 100 ? t('celebrateAllDone') : '';
-  const div = document.createElement('div');
-  div.className = 'celebrate-note ' + tier.anim;
-  div.textContent = `${tier.emoji} ${phrase}${extra}`;
-  chatScroll.appendChild(div);
-  chatScroll.scrollTop = chatScroll.scrollHeight;
+  celebrateExplosion(tier.emoji, `${phrase}${extra}`, tier.anim);
 }
 
 function toggleDone(idx) {
@@ -1980,8 +2046,11 @@ const PHRASES = {
    ============================================================ */
 function detectAchievementMention(text) {
   const l = text.toLowerCase();
-  return /(logr[eé]|conseguí|consegui|baj[eé] de peso|sub[ií] de peso|complet[eé]|alcanc[eé]|cumpl[ií]|por fin (pude|logré)|lo logré)/.test(l)
-    || /(i (achieved|managed to|finally|completed|accomplished|hit my goal)|i lost weight|i gained weight|i did it)/.test(l);
+  // Cubre tanto el verbo ("logré...") como el sustantivo que la propia app usa
+  // ("tengo un logro", "logro", "mi logro") — antes solo el verbo disparaba esto,
+  // así que alguien usando la palabra que ve en la pestaña de Perfil no activaba nada.
+  return /(logr[eé]|\blogros?\b|conseguí|consegui|baj[eé] de peso|sub[ií] de peso|complet[eé]|alcanc[eé]|cumpl[ií]|por fin (pude|logré)|lo logré|meta cumplida)/.test(l)
+    || /(i (achieved|managed to|finally|completed|accomplished|hit my goal)|i lost weight|i gained weight|i did it|\bachievements?\b)/.test(l);
 }
 function addLogro(text) {
   state.profile.logros = state.profile.logros || [];
@@ -2122,8 +2191,25 @@ async function handleUserMessage(text) {
     }
     return;
   }
+  // Antes de asumir "esto es una tarea nueva, a qué hora la hago" — que es lo que
+  // pasaba con CUALQUIER texto sin hora, incluidas preguntas sueltas como "¿qué hago?"
+  // (Bless terminaba preguntando "¿a qué hora hacemos 'que hago?'?", sin sentido) —
+  // si el mensaje suena a pregunta genérica, respondemos de forma conversacional en
+  // vez de arrancar el flujo de agendar.
+  if (looksLikeGenericQuestion(text)) {
+    await say(chatScroll, `La persona te hizo una pregunta general ("${text}"), no te está pidiendo agendar nada todavía. Respóndele de forma natural y cercana, como su mejor amigo/a — si tiene sentido, puedes mencionar brevemente lo que le queda pendiente hoy en su agenda para ayudarla a decidir. No le preguntes a qué hora quiere hacer "${text}", porque eso no es el nombre de una tarea.`, t('genericQuestionFallback'));
+    return;
+  }
   await say(chatScroll, `La persona escribió "${text}" sin especificar hora. Pregúntale a qué hora quiere hacerlo hoy.`, PHRASES.askTime(text));
   state.pending = { type: 'needsTime', task: text };
+}
+// Detecta si el mensaje es una pregunta genérica ("¿qué hago?", "how does this work?")
+// en vez de el nombre de una tarea/hábito que la persona quiere agendar.
+function looksLikeGenericQuestion(text) {
+  const l = text.trim().toLowerCase();
+  if (!l) return false;
+  if (/\?\s*$/.test(l)) return true;
+  return /^(qu[eé]|c[oó]mo|cu[aá]ndo|por qu[eé]|d[oó]nde|qui[eé]n|para qu[eé]|what|how|when|why|where|who|which)\b/.test(l);
 }
 
 document.getElementById('chat-send').onclick = () => { const input = document.getElementById('chat-text'); const val = input.value.trim(); if (!val) return; input.value = ''; handleUserMessage(val); };
@@ -2139,10 +2225,10 @@ document.querySelectorAll('.tab').forEach(tab => {
     tab.classList.add('active-tab');
     ALL_VIEWS.forEach(id => document.getElementById(id).classList.remove('active'));
     const which = tab.dataset.tab;
-    if (which === 'chat') document.getElementById('view-chat').classList.add('active');
+    if (which === 'chat') { document.getElementById('view-chat').classList.add('active'); dayAddFabEl.classList.remove('show'); }
     else if (which === 'calendar') { document.getElementById('view-calendar').classList.add('active'); renderCalendar(); }
-    else if (which === 'metrics') { renderMetrics(); document.getElementById('view-metrics').classList.add('active'); }
-    else { renderProfile(); document.getElementById('view-profile').classList.add('active'); }
+    else if (which === 'metrics') { renderMetrics(); document.getElementById('view-metrics').classList.add('active'); dayAddFabEl.classList.remove('show'); }
+    else { renderProfile(); document.getElementById('view-profile').classList.add('active'); dayAddFabEl.classList.remove('show'); }
     fabEl.classList.toggle('show', which !== 'chat');
   };
 });
@@ -2167,12 +2253,12 @@ function renderProfile() {
     <div class="profile-card"><h4>${t('basicDataTitle')}</h4>
       <div class="profile-row"><span>${t('nombreLabel')}</span><span>${p.nombre || '—'} <span class="chip-edit-btn" data-field="nombre" data-label-key="nombreLabel" title="${t('editIconTitle')}">✏️</span></span></div>
       <div class="profile-row"><span>${t('edadLabel')}</span><span>${p.edad ? t('aniosSuffix', p.edad) : t('noCompartida')} <span class="chip-edit-btn" data-field="edad" data-label-key="edadLabel" data-numeric="1" title="${t('editIconTitle')}">✏️</span></span></div>
-      <div class="profile-row"><span>${t('horarioFijoLabel')}</span><span>${p.trabajoInicio || '—'} – ${p.trabajoFin || '—'}</span></div>
-      <div class="profile-row"><span>${t('despiertaDuermeLabel')}</span><span>${p.despertar || '—'} / ${p.dormir || '—'}</span></div>
-      <div class="profile-row"><span>${t('masEnergiaLabel')}</span><span>${optLabel('energia', p.energia) || '—'}</span></div>
-      <div class="profile-row"><span>${t('tipoLabel')}</span><span>${optLabel('tipo', p.tipo) || '—'}</span></div>
-      <div class="profile-row"><span>${t('tiempoLibreLabel')}</span><span>${optLabel('tiempoLibre', p.tiempoLibre) || '—'}</span></div>
-      <div class="profile-row"><span>${t('motivacionLabel')}</span><span>${optLabel('motivacion', p.motivacion) || '—'}</span></div>
+      <div class="profile-row"><span>${t('horarioFijoLabel')}</span><span>${p.trabajoInicio || '—'} – ${p.trabajoFin || '—'} <span class="chip-edit-btn" data-timepair="horario" title="${t('editIconTitle')}">✏️</span></span></div>
+      <div class="profile-row"><span>${t('despiertaDuermeLabel')}</span><span>${p.despertar || '—'} / ${p.dormir || '—'} <span class="chip-edit-btn" data-timepair="sueno" title="${t('editIconTitle')}">✏️</span></span></div>
+      <div class="profile-row"><span>${t('masEnergiaLabel')}</span><span>${optLabel('energia', p.energia) || '—'} <span class="chip-edit-btn" data-option-field="energia" data-label-key="masEnergiaLabel" title="${t('editIconTitle')}">✏️</span></span></div>
+      <div class="profile-row"><span>${t('tipoLabel')}</span><span>${optLabel('tipo', p.tipo) || '—'} <span class="chip-edit-btn" data-option-field="tipo" data-label-key="tipoLabel" title="${t('editIconTitle')}">✏️</span></span></div>
+      <div class="profile-row"><span>${t('tiempoLibreLabel')}</span><span>${optLabel('tiempoLibre', p.tiempoLibre) || '—'} <span class="chip-edit-btn" data-option-field="tiempoLibre" data-label-key="tiempoLibreLabel" title="${t('editIconTitle')}">✏️</span></span></div>
+      <div class="profile-row"><span>${t('motivacionLabel')}</span><span>${optLabel('motivacion', p.motivacion) || '—'} <span class="chip-edit-btn" data-option-field="motivacion" data-label-key="motivacionLabel" title="${t('editIconTitle')}">✏️</span></span></div>
     </div>
     <div class="profile-card"><h4>${t('saludTitle')}</h4>
       <div class="profile-row"><span>${t('pesoLabel')}</span><span>${p.peso ? t('kgSuffix', p.peso) : t('noCompartido')} <span class="chip-edit-btn" data-field="peso" data-label-key="pesoPh" data-numeric="1" title="${t('editIconTitle')}">✏️</span></span></div>
@@ -2234,6 +2320,14 @@ function renderProfile() {
   });
   el.querySelectorAll('.chip-edit-btn[data-field]').forEach(btn => {
     btn.onclick = () => editProfileField(btn.dataset.field, btn.dataset.labelKey, !!btn.dataset.numeric);
+  });
+  el.querySelectorAll('.chip-edit-btn[data-option-field]').forEach(btn => {
+    btn.onclick = () => openOptionPicker(btn.dataset.optionField, btn.dataset.labelKey);
+  });
+  el.querySelectorAll('.chip-edit-btn[data-timepair]').forEach(btn => {
+    btn.onclick = () => btn.dataset.timepair === 'horario'
+      ? editProfileTimePair('trabajoInicio', 'trabajoFin', 'horarioInicioLabel', 'horarioFinLabel')
+      : editProfileTimePair('despertar', 'dormir', 'despiertaLabel', 'duermeLabel');
   });
 }
 function editProfileField(field, labelKey, numeric) {
@@ -2316,6 +2410,80 @@ function addManualHabit({ key, icon, label, repeatDays, sameTimeEveryday, time, 
   renderProfile();
   renderAgenda();
   renderHeaderRing();
+}
+
+/* ---- Picker de "agregar hábito" desde el botón flotante "+" de Calendario Día:
+   desglosa los presets que todavía no tiene (igual que la tarjeta de Perfil),
+   sin dejar de tener la opción de "otro" (personalizado). ---- */
+function openAddHabitPicker() {
+  const wrap = document.getElementById('add-habit-picker-presets');
+  wrap.innerHTML = '';
+  const already = new Set(state.profile.habitos.map(h => h.key));
+  HABIT_PRESETS.filter(h => !already.has(h.key)).forEach(h => {
+    const b = document.createElement('button');
+    b.className = 'qr-btn';
+    b.textContent = `${h.icon} ${t2(h)}`;
+    b.onclick = () => {
+      addManualHabit({ key: h.key, icon: h.icon, label: h.label, repeatDays: [0,1,2,3,4,5,6], sameTimeEveryday: true, time: defaultTimeFor(h.key), durationWeeks: null });
+      closeAddHabitPicker();
+      if (document.getElementById('view-calendar').classList.contains('active')) renderCalendar();
+    };
+    wrap.appendChild(b);
+  });
+  if (!wrap.children.length) wrap.innerHTML = `<div style="font-size:12px;color:var(--text-dim);">${t('allAddedMsg')}</div>`;
+  document.getElementById('add-habit-picker-overlay').style.display = 'flex';
+}
+function closeAddHabitPicker() {
+  document.getElementById('add-habit-picker-overlay').style.display = 'none';
+}
+document.getElementById('add-habit-picker-overlay').addEventListener('click', (e) => {
+  if (e.target.id === 'add-habit-picker-overlay') closeAddHabitPicker();
+});
+document.getElementById('add-habit-picker-cancel-btn').onclick = closeAddHabitPicker;
+document.getElementById('add-habit-picker-custom-btn').onclick = () => { closeAddHabitPicker(); openHabitEditor(null); };
+
+/* ---- Picker genérico para editar un campo de selección única del perfil
+   (energía, tipo, tiempo libre, motivación) — mismo patrón visual que el resto
+   de los modales, en vez de un prompt() de texto libre que había que escribir
+   exacto. ---- */
+function openOptionPicker(field, labelKey) {
+  document.getElementById('option-picker-title').textContent = t(labelKey);
+  const wrap = document.getElementById('option-picker-options');
+  wrap.innerHTML = '';
+  (OPTIONS[field] || []).forEach(o => {
+    const b = document.createElement('button');
+    b.className = 'qr-btn' + (state.profile[field] === o.key ? ' selected' : '');
+    b.textContent = currentLang() === 'en' ? o.en : o.es;
+    b.onclick = () => {
+      state.profile[field] = o.key;
+      saveStateToServer();
+      closeOptionPicker();
+      renderProfile();
+    };
+    wrap.appendChild(b);
+  });
+  document.getElementById('option-picker-cancel-btn').textContent = t('cancelBtn');
+  document.getElementById('option-picker-overlay').style.display = 'flex';
+}
+function closeOptionPicker() {
+  document.getElementById('option-picker-overlay').style.display = 'none';
+}
+document.getElementById('option-picker-overlay').addEventListener('click', (e) => {
+  if (e.target.id === 'option-picker-overlay') closeOptionPicker();
+});
+document.getElementById('option-picker-cancel-btn').onclick = closeOptionPicker;
+
+// Editar un par de horas (horario fijo, o despertar/dormir) — mismo patrón simple
+// de prompt() ya usado para nombre/edad/peso/talla, aplicado ahora también aquí.
+function editProfileTimePair(field1, field2, label1Key, label2Key) {
+  const v1 = prompt(t('editFieldPrompt', t(label1Key)), state.profile[field1] || '');
+  if (v1 === null) return;
+  const v2 = prompt(t('editFieldPrompt', t(label2Key)), state.profile[field2] || '');
+  if (v2 === null) return;
+  state.profile[field1] = v1.trim() || null;
+  state.profile[field2] = v2.trim() || null;
+  saveStateToServer();
+  renderProfile();
 }
 
 /* ---- Modal de configuración (crear o editar) ---- */
@@ -2575,6 +2743,7 @@ document.querySelectorAll('.cal-subtab').forEach(t => {
 function toggleDoneFromCal(idx) { toggleDone(idx); renderCalDay(); }
 
 function renderCalendar() {
+  dayAddFabEl.classList.remove('show'); // solo Calendario Día lo vuelve a mostrar
   if (calSubTab === 'day') renderCalDay();
   else if (calSubTab === 'week') renderCalWeek();
   else renderCalMonth();
@@ -2627,14 +2796,13 @@ function renderCalDay() {
     <div class="day-nav">
       <button id="day-prev">‹</button>
       <div><div class="day-title">${label}</div><div class="day-pct">${pctLabel}</div></div>
-      <button id="day-add" title="${t('addHabitTitleAttr')}">＋</button>
       <button id="day-next" ${calDayOffset >= 6 ? 'disabled' : ''}>›</button>
     </div>
     <div id="day-items">${itemsHtml}</div>
   `;
   document.getElementById('day-prev').onclick = () => { calDayOffset--; renderCalDay(); };
   document.getElementById('day-next').onclick = () => { if (calDayOffset < 6) { calDayOffset++; renderCalDay(); } };
-  document.getElementById('day-add').onclick = () => openHabitEditor(null);
+  dayAddFabEl.classList.add('show');
   calBody.querySelectorAll('[data-cal-edit]').forEach(btn => {
     btn.onclick = () => promptDeleteDayItem(dateStr, day.items[parseInt(btn.dataset.calEdit, 10)]);
   });
