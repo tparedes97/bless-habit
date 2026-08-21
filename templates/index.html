@@ -63,8 +63,15 @@
   .agent { background: var(--agent-bubble); align-self: flex-start; border-bottom-left-radius: 4px; }
   .user { background: var(--user-bubble); align-self: flex-end; border-bottom-right-radius: 4px; color: #fff; }
   .agenda-note { align-self: center; font-size: 12px; color: var(--text-dim); background: var(--panel-2); padding: 6px 12px; border-radius: 999px; animation: bubbleIn .3s; }
-  .celebrate-note { align-self: center; font-size: 13px; color: #10131a; background: linear-gradient(135deg, var(--accent-2), var(--accent-3)); padding: 8px 16px; border-radius: 999px; font-weight: 700; animation: popIn .45s cubic-bezier(.34,1.56,.64,1); }
+  .celebrate-note { align-self: center; font-size: 13px; color: #10131a; background: linear-gradient(135deg, var(--accent-2), var(--accent-3)); padding: 10px 18px; border-radius: 999px; font-weight: 700; text-align: center; max-width: 90%; }
   @keyframes popIn { 0%{opacity:0; transform: scale(.6);} 70%{transform: scale(1.08);} 100%{opacity:1; transform: scale(1);} }
+  .celebrate-sparkle { animation: popIn .45s cubic-bezier(.34,1.56,.64,1), sparkleWiggle 1.2s ease .45s 1; }
+  @keyframes sparkleWiggle { 0%,100%{transform:rotate(0);} 25%{transform:rotate(-2deg) scale(1.02);} 75%{transform:rotate(2deg) scale(1.02);} }
+  .celebrate-pop { animation: popIn .5s cubic-bezier(.34,1.76,.64,1); box-shadow: 0 0 0 0 rgba(255,184,108,.5); }
+  .celebrate-confetti { animation: popIn .5s cubic-bezier(.34,1.56,.64,1), confettiShift 1.6s ease .5s 1; background: linear-gradient(120deg, var(--accent-3), var(--accent-2), var(--accent)); background-size: 220% 220%; }
+  @keyframes confettiShift { 0%{background-position:0% 50%;} 50%{background-position:100% 50%;} 100%{background-position:0% 50%;} }
+  .celebrate-trophy { animation: popIn .6s cubic-bezier(.34,1.9,.64,1), trophyGlow 1.8s ease .6s 1; background: linear-gradient(135deg, #ffd76c, var(--accent-3), var(--accent-2)); font-size: 14.5px; padding: 12px 20px; }
+  @keyframes trophyGlow { 0%,100%{box-shadow:0 0 0 0 rgba(255,215,108,0);} 40%{box-shadow:0 0 22px 6px rgba(255,215,108,.55);} }
   .diag-card { align-self: stretch; background: var(--diag-bg); border: 1px solid #3d4a8a; border-radius: 18px; padding: 18px; animation: popIn .5s cubic-bezier(.34,1.56,.64,1); }
   .diag-card .diag-label { font-size: 10px; text-transform: uppercase; letter-spacing: .08em; color: var(--accent-2); margin-bottom: 6px; }
   .diag-card .diag-title { font-size: 17px; font-weight: 800; margin-bottom: 8px; }
@@ -109,8 +116,6 @@
   .agenda-item .rm { color: var(--text-dim); cursor: pointer; font-size: 12px; flex-shrink:0; }
   #chat-input { border-top: 1px solid var(--border); padding: 8px 12px 6px; display: flex; gap: 8px; background: var(--panel); }
   #chat-text { flex: 1; }
-  #demo-tools { padding: 0 12px 12px; text-align: center; }
-  #demo-tools .skip-link { font-size: 11px; }
   footer.tabbar { display: flex; border-top: 1px solid var(--border); background: var(--panel); }
   .tab { flex: 1; text-align: center; padding: 10px 0 8px; font-size: 11px; color: var(--text-dim); cursor: pointer; }
   .tab.active-tab { color: var(--accent); }
@@ -134,6 +139,10 @@
   .agenda-item .edit { cursor: pointer; opacity: 0.6; padding: 0 4px; }
   .agenda-item .edit:hover { opacity: 1; }
   .tag-chip { display: inline-block; background: var(--panel-3); border-radius: 999px; padding: 5px 11px; font-size: 12px; margin: 3px 4px 3px 0; }
+  .logros-card { border-color: #7a5f1e; background: linear-gradient(135deg, #2a2311, #1c1810); }
+  .logros-card h4 { color: #f0d78c; }
+  .logro-chip { display: flex; align-items: center; gap: 8px; background: linear-gradient(135deg, #caa23a, #f0d78c); color: #3b2e08; border-radius: 12px; padding: 8px 12px; font-size: 13px; font-weight: 700; margin-bottom: 6px; }
+  .logro-chip .logro-date { font-size: 10px; font-weight: 700; opacity: .75; margin-left: auto; white-space: nowrap; }
 
   /* ---- sequential ramp (dataviz skill, dark surface) para % de cumplimiento ---- */
   :root {
@@ -146,6 +155,26 @@
     --status-good: #0ca30c;
     --status-warning: #fab219;
     --status-critical: #d03b3b;
+  }
+
+  /* ---- Temas — claro / oscuro (por defecto) / dorado Premium ---- */
+  html[data-theme="light"] {
+    --bg: #f3f4f7; --panel: #ffffff; --panel-2: #f0f1f5; --panel-3: #e6e8ee;
+    --border: #dcdfe6; --text: #1c2029; --text-dim: #6b7280;
+    --accent: #4c6fe0; --accent-2: #17a878; --accent-3: #e08a2c;
+    --user-bubble: #dfe6ff; --agent-bubble: #eef0f5;
+    --warn-bg: #fdeecb; --warn-text: #8a5a10; --done-color: #17a878;
+    --diag-bg: linear-gradient(135deg, #e4e9ff, #dfe6ff);
+    --seq-0: #e6e8ee; --seq-1: #b7cbf5; --seq-2: #8fb0ec; --seq-3: #679ce6; --seq-4: #3f83de; --seq-5: #1f66c9;
+  }
+  html[data-theme="premium"] {
+    --bg: #131107; --panel: #1c1810; --panel-2: #241f14; --panel-3: #302819;
+    --border: #4a3c22; --text: #f5ecd8; --text-dim: #b9a877;
+    --accent: #e0b84c; --accent-2: #f0d78c; --accent-3: #caa23a;
+    --user-bubble: #3a2f16; --agent-bubble: #241f14;
+    --warn-bg: #3a2f1a; --warn-text: #f0c975; --done-color: #e0b84c;
+    --diag-bg: linear-gradient(135deg, #3a2f16, #241f14);
+    --seq-0: #241f14; --seq-1: #6b551f; --seq-2: #8a6d26; --seq-3: #ab862c; --seq-4: #cca233; --seq-5: #f0c33d;
   }
 
   #view-calendar, #view-metrics { flex: 1; display: none; flex-direction: column; min-height: 0; overflow-y: auto; }
@@ -179,13 +208,15 @@
   .month-nav button { background: var(--panel-2); border: 1px solid var(--border); color: var(--text); width: 30px; height: 30px; border-radius: 8px; cursor: pointer; }
   .month-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
   .month-grid .wd { font-size: 10px; color: var(--text-dim); text-align: center; padding-bottom: 4px; }
-  .month-cell { aspect-ratio: 1; border-radius: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 10px; gap: 1px; border: 1px solid transparent; }
-  .month-cell .dnum { font-size: 9px; opacity: .85; }
-  .month-cell .dicon { font-size: 12px; }
+  .month-cell { position: relative; aspect-ratio: 1; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 10px; border: 1px solid transparent; }
+  .month-cell .dnum { position: absolute; top: 3px; left: 5px; font-size: 8.5px; opacity: .8; color: var(--text-dim); }
+  .month-cell.has-pct .dnum { color: rgba(255,255,255,.85); text-shadow: 0 1px 2px rgba(0,0,0,.5); }
+  .month-cell .dicon { position: absolute; top: 2px; right: 4px; font-size: 10px; }
+  .month-cell .dpct { font-size: 13px; font-weight: 800; color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,.55); }
   .month-cell.empty { background: transparent; }
   .month-cell.today { border-color: var(--accent-2); }
-  .month-legend { display: flex; align-items: center; gap: 6px; margin-top: 12px; font-size: 10.5px; color: var(--text-dim); }
-  .month-legend .sw { width: 12px; height: 12px; border-radius: 3px; }
+  .month-legend { display: flex; align-items: center; gap: 8px; margin-top: 12px; font-size: 10.5px; color: var(--text-dim); }
+  .month-legend .grad-bar { flex: 1; max-width: 140px; height: 10px; border-radius: 999px; background: linear-gradient(90deg, hsl(0,72%,42%), hsl(60,72%,42%), hsl(120,72%,42%)); }
 
   /* Métricas */
   .kpi-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
@@ -256,18 +287,18 @@
       <div class="avatar" id="agent-avatar">🌱</div>
       <div>
         <h1 id="header-title">Bless Habit</h1>
-        <p class="sub" id="header-sub">Bless te está conociendo…</p>
+        <p class="sub" id="header-sub" data-i18n="headerSubKnowing">Bless te está conociendo…</p>
       </div>
     </div>
-    <div id="header-right"><div class="demo-badge">MODO DEMO · IA simulada</div></div>
+    <div id="header-right"></div>
   </header>
 
   <div id="view-login" class="active">
     <div class="login-avatar">🌱</div>
     <h2>Bless Habit</h2>
-    <p>Tu compañero de hábitos y agenda. Inicia sesión para que Bless recuerde tu perfil y tu progreso entre visitas.</p>
-    <a href="/auth/login" class="google-btn" id="google-login-btn">Continuar con Google</a>
-    <div class="login-loading" id="login-loading" style="display:none;">Cargando tu información…</div>
+    <p data-i18n="loginDesc">Tu compañero de hábitos y agenda. Inicia sesión para que Bless recuerde tu perfil y tu progreso entre visitas.</p>
+    <a href="/auth/login" class="google-btn" id="google-login-btn" data-i18n="loginBtn">Continuar con Google</a>
+    <div class="login-loading" id="login-loading" style="display:none;" data-i18n="loginLoading">Cargando tu información…</div>
   </div>
 
   <div id="view-onboarding">
@@ -278,62 +309,77 @@
   <div id="view-chat">
     <div id="chat-scroll"></div>
     <div id="agenda-panel">
-      <h3><span>Agenda de hoy</span><span id="agenda-count"></span></h3>
+      <h3><span data-i18n="agendaTitle">Agenda de hoy</span><span id="agenda-count"></span></h3>
       <div id="agenda-list"></div>
     </div>
+    <div id="chat-ad-slot"></div>
     <div id="chat-input">
-      <input type="text" id="chat-text" placeholder="Cuéntame qué quieres hacer hoy…" />
-      <button class="send-btn" id="chat-send">Enviar</button>
+      <input type="text" id="chat-text" data-i18n-ph="chatPlaceholder" placeholder="Cuéntame qué quieres hacer hoy…" />
+      <button class="send-btn" id="chat-send" data-i18n="sendBtn">Enviar</button>
     </div>
-    <div id="demo-tools"><span class="skip-link" id="simulate-reengage">🧪 Simular: volver después de unos días</span></div>
   </div>
 
   <div id="view-calendar">
     <div class="cal-subtabs">
-      <div class="cal-subtab active" data-calsub="day">Día</div>
-      <div class="cal-subtab" data-calsub="week">Semana</div>
-      <div class="cal-subtab" data-calsub="month">Mes</div>
+      <div class="cal-subtab active" data-calsub="day" data-i18n="calDay">Día</div>
+      <div class="cal-subtab" data-calsub="week" data-i18n="calWeek">Semana</div>
+      <div class="cal-subtab" data-calsub="month" data-i18n="calMonth">Mes</div>
     </div>
     <div class="cal-body" id="cal-body"></div>
+    <div id="cal-ad-slot" style="padding:0 16px 20px;"></div>
   </div>
 
   <div id="view-metrics"></div>
 
   <div id="view-profile"></div>
 
-  <div id="bless-fab" class="bless-fab" title="Hablar con Bless">🌱</div>
+  <div id="bless-fab" class="bless-fab" data-i18n-title="blessFabTitle" title="Hablar con Bless">🌱</div>
 
   <footer class="tabbar" id="tabbar" style="display:none;">
-    <div class="tab active-tab" data-tab="chat"><span class="ic">💬</span>Bless</div>
-    <div class="tab" data-tab="calendar"><span class="ic">📅</span>Calendario</div>
-    <div class="tab" data-tab="metrics"><span class="ic">📊</span>Métricas</div>
-    <div class="tab" data-tab="profile"><span class="ic">🧑</span>Perfil</div>
+    <div class="tab active-tab" data-tab="chat"><span class="ic">💬</span><span data-i18n="tabChat">Bless</span></div>
+    <div class="tab" data-tab="calendar"><span class="ic">📅</span><span data-i18n="tabCalendar">Calendario</span></div>
+    <div class="tab" data-tab="metrics"><span class="ic">📊</span><span data-i18n="tabMetrics">Métricas</span></div>
+    <div class="tab" data-tab="profile"><span class="ic">🧑</span><span data-i18n="tabProfile">Perfil</span></div>
   </footer>
 
   <div id="habit-editor-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:80;align-items:center;justify-content:center;padding:16px;">
     <div class="profile-card" style="max-width:380px;width:100%;max-height:85vh;overflow-y:auto;margin:0;">
-      <h4 id="habit-editor-title">Nuevo hábito</h4>
+      <h4 id="habit-editor-title" data-i18n="heTitleNew">Nuevo hábito</h4>
       <div class="row-input" style="margin-top:6px;">
-        <input type="text" id="he-label" placeholder="Nombre del hábito">
+        <input type="text" id="he-label" data-i18n-ph="heLabelPh" placeholder="Nombre del hábito">
       </div>
-      <div style="font-size:12px;color:var(--text-dim);margin:12px 0 6px;">¿Qué días de la semana?</div>
+      <div style="font-size:12px;color:var(--text-dim);margin:12px 0 6px;" data-i18n="heDaysQ">¿Qué días de la semana?</div>
       <div class="quick-replies" id="he-days"></div>
       <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--text-dim);margin:12px 0 6px;">
-        <input type="checkbox" id="he-same-time" checked> Mismo horario todos los días
+        <input type="checkbox" id="he-same-time" checked> <span data-i18n="heSameTime">Mismo horario todos los días</span>
       </label>
       <div id="he-single-time-row" class="row-input">
         <input type="time" id="he-time" value="18:00">
       </div>
       <div id="he-per-day-times" style="display:none;"></div>
-      <div style="font-size:12px;color:var(--text-dim);margin:12px 0 6px;">¿Por cuánto tiempo?</div>
+      <div style="font-size:12px;color:var(--text-dim);margin:12px 0 6px;" data-i18n="heDurationQ">¿Por cuánto tiempo?</div>
       <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:13px;color:var(--text-dim);">
-        <label style="display:flex;align-items:center;gap:4px;"><input type="radio" name="he-duration" id="he-duration-indef" checked> Indefinido</label>
-        <label style="display:flex;align-items:center;gap:4px;"><input type="radio" name="he-duration" id="he-duration-weeks"> Por <input type="number" id="he-weeks" min="1" value="4" style="width:52px;" disabled> semanas</label>
+        <label style="display:flex;align-items:center;gap:4px;"><input type="radio" name="he-duration" id="he-duration-indef" checked> <span data-i18n="heIndef">Indefinido</span></label>
+        <label style="display:flex;align-items:center;gap:4px;"><input type="radio" name="he-duration" id="he-duration-weeks"> <span data-i18n="heForLabel">Por</span> <input type="number" id="he-weeks" min="1" value="4" style="width:52px;" disabled> <span data-i18n="heWeeksLabel">semanas</span></label>
       </div>
       <div id="habit-editor-status" style="font-size:12px;color:var(--text-dim);margin-top:10px;min-height:16px;"></div>
-      <button class="send-btn" id="he-save-btn" style="width:100%;margin-top:10px;">Guardar hábito</button>
-      <button id="he-delete-btn" style="width:100%;margin-top:8px;background:none;border:1px solid #a33d3d;color:#e88;border-radius:10px;padding:8px;display:none;">Eliminar hábito</button>
-      <div style="text-align:center;margin-top:10px;"><span class="logout-link" id="he-cancel-btn">Cancelar</span></div>
+      <button class="send-btn" id="he-save-btn" style="width:100%;margin-top:10px;" data-i18n="heSaveBtn">Guardar hábito</button>
+      <button id="he-delete-btn" style="width:100%;margin-top:8px;background:none;border:1px solid #a33d3d;color:#e88;border-radius:10px;padding:8px;display:none;" data-i18n="heDeleteBtn">Eliminar hábito</button>
+      <div style="text-align:center;margin-top:10px;"><span class="logout-link" id="he-cancel-btn" data-i18n="cancelBtn">Cancelar</span></div>
+    </div>
+  </div>
+
+  <div id="settings-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:85;align-items:center;justify-content:center;padding:16px;">
+    <div class="profile-card" style="max-width:380px;width:100%;max-height:85vh;overflow-y:auto;margin:0;">
+      <h4 data-i18n="settingsTitle">⚙️ Configuración</h4>
+      <div style="font-size:12px;color:var(--text-dim);margin:10px 0 6px;" data-i18n="settingsTheme">Tema</div>
+      <div class="quick-replies" id="settings-theme-options"></div>
+      <div style="font-size:12px;color:var(--text-dim);margin:14px 0 6px;" data-i18n="settingsLang">Idioma</div>
+      <div class="quick-replies" id="settings-lang-options"></div>
+      <div style="font-size:12px;color:var(--text-dim);margin:14px 0 6px;" data-i18n="settingsCountry">País</div>
+      <div class="row-input"><input type="text" id="settings-country-input" data-i18n-ph="settingsCountryPh" placeholder="Tu país"></div>
+      <button class="send-btn" id="settings-save-btn" style="width:100%;margin-top:14px;" data-i18n="saveBtn">Guardar</button>
+      <div style="text-align:center;margin-top:10px;"><span class="logout-link" id="settings-cancel-btn" data-i18n="closeBtn">Cerrar</span></div>
     </div>
   </div>
 </div>
@@ -376,7 +422,8 @@ async function callBlessAI(situationPrompt) {
 }
 function blessPersonaPrompt(situationDescription) {
   const p = state.profile;
-  return `Eres Bless, el agente conversacional cálido y cercano de la app "Bless Habit", que ayuda a ${p.nombre || 'la persona'} a construir hábitos y organizar su día. Hablas en español, tono cálido, directo y natural — nunca como un formulario ni una lista. Responde en 1 a 3 líneas, sin markdown, sin viñetas, sin emojis excesivos (máximo 1 o 2).
+  const lang = (state.settings && state.settings.language === 'en') ? 'inglés' : 'español';
+  return `Eres Bless, la o el mejor amigo/a de ${p.nombre || 'la persona'} dentro de la app "Bless Habit" — no un asistente formal ni un bot de soporte, sino alguien cercano que de verdad se alegra por sus logros y la acompaña en sus días difíciles, que la ayuda a construir hábitos y organizar su día con calidez real, sin sermonear. Hablas en ${lang}, tono cálido, directo y natural, como lo haría una amiga o amigo de confianza — nunca como un formulario ni una lista. Responde en 1 a 3 líneas, sin markdown, sin viñetas, sin emojis excesivos (máximo 1 o 2).
 
 Perfil de la persona:
 - Le cuesta: ${(p.dificultades||[]).join(', ') || 'sostener la constancia'}
@@ -399,37 +446,605 @@ async function say(container, situationDesc, fallbackText, delay) {
    ============================================================ */
 const state = {
   profile: {
-    nombre: "", trabajoInicio: "", trabajoFin: "", energia: "", tipo: "", peso: null, talla: null,
+    nombre: "", edad: null, trabajoInicio: "", trabajoFin: "", energia: "", tipo: "", peso: null, talla: null,
     dificultades: [], intentosPrevios: [], detonantes: [], despertar: "", dormir: "", tiempoLibre: "",
-    motivacion: "", diasDificiles: [], habitos: []
+    motivacion: "", diasDificiles: [], habitos: [], logros: []
   },
+  settings: { language: null, country: null, theme: 'dark' },
   diagnostic: null,
-  agenda: [], streaks: {}, history: [], onboardingStep: 0, pending: null
+  agenda: [], streaks: {}, history: [], lastActiveDate: null, onboardingStep: 0, pending: null
 };
 
+/* ============================================================
+   I18N — español / inglés. state.settings.language decide el idioma de
+   TODA la interfaz (no solo las respuestas de la IA). Los valores del
+   diccionario pueden ser: string, función (para interpolar variables) o
+   array (banco de frases, se elige una al azar con pick()).
+   ============================================================ */
+function currentLang() { return (state.settings && state.settings.language === 'en') ? 'en' : 'es'; }
+function t(key, ...args) {
+  const l = currentLang();
+  let v = (I18N[l] && I18N[l][key] !== undefined) ? I18N[l][key] : (I18N.es[key] !== undefined ? I18N.es[key] : key);
+  if (Array.isArray(v)) v = pick(v);
+  if (typeof v === 'function') return v(...args);
+  return v;
+}
+// alias — mismo comportamiento, existe para dejar explícito en el código
+// cuando se está tomando una frase al azar de un banco.
+function tp(key, ...args) { return t(key, ...args); }
+// texto de un preset de hábito (HABIT_PRESETS) en el idioma actual.
+function t2(preset) { return currentLang() === 'en' ? preset.en : preset.label; }
+
+const I18N = {
+  es: {
+    headerSubKnowing: 'Bless te está conociendo…',
+    loginDesc: 'Tu compañero de hábitos y agenda. Inicia sesión para que Bless recuerde tu perfil y tu progreso entre visitas.',
+    loginBtn: 'Continuar con Google',
+    loginLoading: 'Cargando tu información…',
+    agendaTitle: 'Agenda de hoy',
+    chatPlaceholder: 'Cuéntame qué quieres hacer hoy…',
+    sendBtn: 'Enviar',
+    calDay: 'Día', calWeek: 'Semana', calMonth: 'Mes',
+    tabChat: 'Bless', tabCalendar: 'Calendario', tabMetrics: 'Métricas', tabProfile: 'Perfil',
+    blessFabTitle: 'Hablar con Bless',
+    heTitleNew: 'Nuevo hábito',
+    heLabelPh: 'Nombre del hábito',
+    heDaysQ: '¿Qué días de la semana?',
+    heSameTime: 'Mismo horario todos los días',
+    heDurationQ: '¿Por cuánto tiempo?',
+    heIndef: 'Indefinido',
+    heForLabel: 'Por', heWeeksLabel: 'semanas',
+    heSaveBtn: 'Guardar hábito', heDeleteBtn: 'Eliminar hábito',
+    cancelBtn: 'Cancelar',
+    settingsTitle: '⚙️ Configuración', settingsTheme: 'Tema', settingsLang: 'Idioma', settingsCountry: 'País',
+    settingsCountryPh: 'Tu país', saveBtn: 'Guardar', closeBtn: 'Cerrar',
+
+    nombrePh: 'Tu nombre', listoBtn: 'Listo',
+    rutinaWakeQ: '¿A qué hora despiertas normalmente?', rutinaSleepQ: '¿A qué hora sueles dormirte?',
+    otherReasonPh: 'Otro motivo (opcional)', otherAttemptPh: 'Otro intento (opcional)', otherPh: 'Otro (opcional)',
+    continueBtn: 'Continuar', chooseOneOrCustom: 'Elige al menos una opción o escribe la tuya ✍️',
+    edadPh: 'Tu edad', guardarBtn: 'Guardar', skipShare: 'Prefiero no compartir esto', skipShared: 'Prefiero no compartirlo',
+    tengoAnios: (v) => `Tengo ${v} años`,
+    pesoPh: 'Peso (kg)', tallaPh: 'Talla (cm)',
+    pesoTallaResumen: (p, ta) => `Peso: ${p||'—'}kg, Talla: ${ta||'—'}cm`,
+    otroHabitoPh: 'Otro hábito (opcional)',
+    customHabitAdded: [
+      (icon, val) => `¡Yo puedo ayudarte con eso! ✨ Agregué "${icon} ${val}" a tu lista.`,
+      (icon, val) => `Anotado — ${icon} ${val}. Cuenta conmigo para acompañarte también con este.`,
+    ],
+    chooseHabitOrCustom: 'Elige al menos un hábito o agrega el tuyo ✍️',
+    todaSemana: 'Toda la semana', guardarHorarios: 'Guardar horarios',
+    horarioResumen: (icon, time, repeatWeekly) => `${icon} ${time}${repeatWeekly ? ' · toda la semana' : ' · solo hoy'}`,
+    deDespiertoADuermo: (a, b) => `Despierto ${a}, duermo ${b}`,
+    deAaB: (a, b) => `De ${a} a ${b}`,
+
+    obAsk1: '¡Hola! 👋 Soy Bless, tu compañero de hábitos y agenda. Antes de empezar quiero conocerte de verdad — esto va a tomar un par de minutos, pero vale la pena. ¿Cómo te llamas?',
+    obAsk2: (p) => `Un gusto, ${p.nombre} 🙌. ¿A qué hora empieza y a qué hora termina tu horario fijo de trabajo?`,
+    obAsk3: '¿En qué momento del día sientes que tienes más energía y concentración? ⚡',
+    obAsk4: '¿Te consideras más madrugador/a o más nocturno/a? 🌅🌙',
+    obAsk5: '¿Cuántos años tienes? Me ayuda a ajustar mis sugerencias a tu etapa de vida. También es opcional.',
+    obAsk6: 'Si quieres, puedo tomar en cuenta tu peso y talla para sugerirte hábitos de salud más ajustados. Es totalmente opcional.',
+    obAsk7: 'Ahora quiero entender de verdad qué se te dificulta 💭. ¿Qué es lo que más te cuesta cuando intentas construir un hábito?',
+    obAsk8: '¿Qué has intentado antes que no te terminó funcionando?',
+    obAsk9: '¿Cuáles son tus "detonantes" — las situaciones donde sabes que sueles fallar?',
+    obAsk10: 'Cuéntame tu rutina real, no solo el trabajo.',
+    obAsk11: '¿Cuándo tienes tiempo libre de verdad en tu día?',
+    obAsk12: '¿Qué te mueve más para sostener algo en el tiempo?',
+    obAsk13: 'Última pregunta difícil, y es importante: ¿hay días donde sabes que te sientes particularmente mal o desmotivada/o? Así nunca te voy a presionar igual esos días.',
+    obAsk14: (p) => `Ya casi, ${p.nombre} 🎯. Elige los hábitos que quieres empezar a construir (puedes elegir varios, o agregar el tuyo).`,
+    obAsk15: 'Última cosa: dime a qué hora sueles hacer cada uno, y si quieres que te lo agende automáticamente toda la semana o solo por hoy.',
+
+    diagLabel: 'Diagnóstico de Bless',
+    diagnosingMsg: (n) => `Perfecto, ${n}. Con todo esto ya te entiendo mucho mejor 🧠. Dame un segundo para armar tu diagnóstico…`,
+    afterDiagMsg: 'A partir de ahora, cada vez que abras la app te voy a preguntar qué quieres lograr y te ayudo a organizarlo, tomando en cuenta todo esto. ¡Vamos a tu primer día! 🚀',
+    evalCompleteNote: 'Evaluación completa ✓',
+    langSelectIntro: '¡Hola! 👋 Antes de empezar, confirma tu idioma y tu país — detecté esto automáticamente, pero puedes cambiarlo.',
+
+    themeDark: '🌙 Oscuro', themeLight: '☀️ Claro', themePremium: '✨ Dorado Premium',
+
+    headerSubHello: (n) => `Bless · hola, ${n}`,
+    greetingFallback: [
+      (n) => `Buenos días, ${n}. ¿Qué quieres lograr hoy? ☀️`,
+      (n) => `¡Hola de nuevo, ${n}! ¿Con qué empezamos el día? 🙂`,
+      (n) => `${n}, cuéntame qué tienes en mente para hoy.`,
+    ],
+    dayArmedNote: 'Ya dejé tu día armado con los hábitos que elegiste — puedes marcarlos, moverlos o quitarlos cuando quieras. 🗓️',
+    fabPrompt: ['¿Quieres agregar algo a tu día? Yo puedo ayudarte 💬', 'Cuéntame qué tienes en mente, yo puedo ayudarte a organizarlo 🙂'],
+
+    energyHintManana: 'la mañana', energyHintTarde: 'la tarde', energyHintNoche: 'la noche', energyHintDefault: 'tu horario de más energía',
+
+    confirmedFallback: [
+      (task, time) => `Listo, agregué "${task}" a las ${time}. ¿Algo más para hoy? 😊`,
+      (task, time) => `¡Hecho! "${task}" queda a las ${time}. ¿Qué más te gustaría hacer?`,
+      (task, time) => `Anotado ✅ "${task}" a las ${time}. ¿Seguimos con algo más?`,
+    ],
+    conflictFallback: [
+      (alt) => `Esa hora choca con tu horario fijo de trabajo. Tienes un espacio libre a las ${alt}, ¿lo agrego ahí?`,
+      (alt) => `Justo ahí estás trabajando 💼. Veo un huequito libre a las ${alt}, ¿te sirve?`,
+      (alt) => `Ups, eso cae dentro de tu horario laboral. ¿Qué tal a las ${alt}?`,
+    ],
+    askTimeFallback: [
+      (task) => `Anotado: "${task}". ¿A qué hora te gustaría hacerlo hoy?`,
+      (task) => `Me gusta. ¿A qué hora lo hacemos: "${task}"?`,
+      (task) => `Perfecto, "${task}" — ¿a qué hora te queda mejor?`,
+    ],
+
+    validationFallback: [
+      (t) => `Está bien no hacer "${t}" hoy 🤍. ¿Prefieres dejar este hábito para después, o empezamos con algo más pequeño?`,
+      (t) => `Totalmente válido. A veces "${t}" no es lo de hoy — ¿probamos con algo más chiquito en su lugar?`,
+      (t) => `Sin problema, lo quito. Podemos retomar "${t}" cuando te sientas lista/o — eso también cuenta como avanzar.`,
+    ],
+    encouragementPhrases: [
+      'Vas muy bien, cada pasito cuenta 🌱',
+      'Me encanta ver tu progreso hoy — sigue a tu ritmo 💛',
+      'Esto es constancia real, no perfección, y eso es justo lo que importa.',
+      'Estoy orgulloso de ti, en serio. Sigamos así.',
+      'No necesitas hacerlo perfecto, solo seguir apareciendo. Y hoy apareciste.',
+      'Cada check es una prueba de que sí puedes. Vamos por más.',
+      'Te lo dije: pasito a pasito se construye todo esto 🙌',
+      'Hoy te elegiste a ti. Eso ya es un montón.',
+    ],
+    habitQuotes: [
+      '"Somos lo que hacemos repetidamente. La excelencia no es un acto, es un hábito." — Aristóteles',
+      '"No te elevas al nivel de tus metas, caes al nivel de tus sistemas." — James Clear',
+      '"Primero formamos nuestros hábitos, y luego nuestros hábitos nos forman a nosotros." — John Dryden',
+      '"No importa qué tan lento vayas, siempre y cuando no te detengas." — Confucio',
+      '"La disciplina de hoy es la libertad de mañana." — Robin Sharma',
+      '"Los hábitos pequeños no se suman, se multiplican." — BJ Fogg',
+      '"El éxito es la suma de pequeños esfuerzos repetidos día tras día." — Robert Collier',
+      '"Cada acción que tomas es un voto por el tipo de persona que quieres ser." — James Clear',
+    ],
+    celebrateAllDone: ' ¡Completaste todo tu día!',
+
+    noAgendaYet: 'Aún no hay nada agendado hoy.',
+    configureHabitTitle: 'Configurar este hábito',
+
+    addHabitFallback: [
+      'Vamos a armarlo juntos 🌱. Te abro el configurador para que elijas los días y la hora.',
+      '¡Con gusto! Te abro el formulario y armamos tu hábito nuevo ahí mismo.',
+      'Hecho, ábreme el detalle y elegimos juntos los días y la hora que te acomoden.',
+    ],
+    achievementFallback: '¡Qué buena noticia! 🎉 ¿Quieres que lo guarde en tu perfil como un logro?',
+    achievementSavedFallback: '¡Guardado! 🏆 Ya lo vas a ver en tu perfil, en tu sección de logros.',
+    achievementDeclinedFallback: 'Va, no lo guardo — pero igual me alegra mucho por ti 🤍',
+    recurringConfirmedFallback: '¡Genial! 🌱 Ya lo agregué como hábito — lo vas a ver marcado como "Sugerencia de Bless" en tu perfil. Vamos a construir esto juntas/os.',
+    recurringDeclinedFallback: 'Sin problema, lo dejamos solo por hoy 🙂. Si cambias de opinión, dímelo cuando quieras.',
+    otherTimeQuestion: ['¿A qué otra hora te gustaría hacerlo?', 'Sin problema. ¿A qué otra hora te queda mejor, o prefieres dejarlo para después?'],
+    needsTimeDropFallback: (task) => `Dejo pendiente la hora de "${task}" para después.`,
+    scheduledEnergyFallback: (time, icon, hint) => `Agregado a las ${time} ${icon}. Como tienes más energía en ${hint}, si quieres puedo moverlo ahí para que te rinda más. ¿Lo dejamos así o lo cambio?`,
+    offerRecurringFallback: (time, icon) => `Agregado a las ${time} ${icon} ✅. Oye, ¿quieres que te ayude a convertir esto en un hábito que repitamos? Así te acompaño a construirlo de verdad, no solo por hoy.`,
+
+    nativePremiumManageMsg: 'Para gestionar tu plan Premium, entra a blesshabit.app desde tu navegador.',
+    nativePremiumEntryMsg: 'Para hacerte Premium, entra a blesshabit.app desde tu navegador.',
+    adFallbackLabel: 'Espacio de anuncios (AdSense) — configúralo en Secrets',
+
+    pushNotSupported: 'Este navegador no soporta notificaciones.',
+    pushEnabledText: 'Activadas — Bless te escribe si pasas varios días sin abrir la app.',
+    pushDisableBtn: '🔕 Desactivar recordatorios',
+    pushDisabledText: 'Desactivadas. Actívalas para que Bless te escriba si pasas varios días sin abrir la app.',
+    pushEnableBtn: '🔔 Activar recordatorios',
+    pushNotConfigured: 'Las notificaciones todavía no están configuradas en el servidor (faltan las Secrets de VAPID). Avísale a quien administra la app.',
+    pushPermissionDenied: 'No diste permiso de notificaciones — puedes activarlo luego desde los ajustes del navegador.',
+    pushSwFail: 'No se pudo registrar el service worker.',
+    pushEnableFail: 'No se pudo activar las notificaciones. Intenta de nuevo.',
+
+    paddleConnFail: 'No se pudo conectar con el servidor para iniciar el pago. Intenta de nuevo.',
+    paddleNotConfigured: 'El cobro con Paddle todavía no está configurado en el servidor (faltan las Secrets de Paddle). Avísale a quien administra la app.',
+    paddleWidgetFail: 'No se pudo cargar el widget de pago de Paddle. Revisa tu conexión e intenta de nuevo.',
+    paddleThanks: '¡Gracias! Estamos confirmando tu pago — Bless Habit Premium se activa en unos segundos…',
+    cancelConfirm: '¿Seguro que quieres cancelar tu suscripción Premium?',
+
+    tareasHoy: 'Tareas hoy', habitosActivos: 'Hábitos activos', rachaTotal: 'Racha total 🔥',
+
+    basicDataTitle: 'Datos básicos', nombreLabel: 'Nombre', edadLabel: 'Edad',
+    aniosSuffix: (n) => `${n} años`, noCompartida: 'No compartida',
+    horarioFijoLabel: 'Horario fijo', despiertaDuermeLabel: 'Despierta / duerme',
+    masEnergiaLabel: 'Más energía en', tipoLabel: 'Tipo', tiempoLibreLabel: 'Tiempo libre real', motivacionLabel: 'Motivación',
+    saludTitle: 'Salud (opcional)', pesoLabel: 'Peso', kgSuffix: (n) => `${n} kg`, noCompartido: 'No compartido',
+    tallaLabel: 'Talla', cmSuffix: (n) => `${n} cm`,
+    dificultadTitle: 'Lo que se te dificulta', intentosTitle: 'Ya intentaste', detonantesTitle: 'Tus detonantes',
+    diasDificilesTitle: 'Días difíciles para ti', habitosTitle: 'Hábitos que quiere construir',
+    logrosTitle: '🏆 Tus logros', noLogros: 'Aún no tienes logros guardados — cuéntale a Bless cuando consigas algo importante y lo guarda aquí. 🌟',
+    addHabitTitle: 'Agregar un hábito nuevo',
+    addHabitDesc: 'No hace falta esperar a otro onboarding — puedes sumar hábitos nuevos cuando quieras, y configurar cada uno a tu manera (qué días, a qué hora, por cuánto tiempo).',
+    configureCustomBtn: '✏️ Configurar uno personalizado',
+    configTitle: '⚙️ Configuración', configDesc: (extra) => `Tema (claro/oscuro${extra}), idioma y país.`,
+    configDescPremiumExtra: '/dorado Premium',
+    openConfigBtn: 'Abrir configuración',
+    planTitle: 'Plan', premiumBadge: '✨ Bless Habit Premium', cancelSubLink: 'Cancelar suscripción',
+    freePlanDesc: 'Estás en el plan gratuito (con publicidad y métricas limitadas).',
+    becomePremiumBtn: (price) => `Hazte Premium — ${price}`,
+    notifTitle: 'Notificaciones', consultando: 'Consultando…', logoutLink: 'Cerrar sesión',
+    editFieldPrompt: (label) => `Editar ${label}:`,
+    editIconTitle: 'Editar', weekSuffix: 'sem', sugerenciaBless: '✨ Sugerencia de Bless',
+
+    allAddedMsg: 'Ya agregaste todos los hábitos sugeridos — puedes configurar el tuyo abajo.',
+    alreadyHaveMsg: 'Ese hábito ya lo tienes agregado 🌱',
+    addedHabitMsg: (icon, label, days) => `¡Listo! Agregué "${icon} ${label}" (${days}) 🌱`,
+    updatedHabitMsg: (icon, label, days) => `Actualicé "${icon} ${label}" (${days}) 🌱`,
+    deletedHabitMsg: (icon, label) => `Eliminé "${icon} ${label}" de tus hábitos.`,
+    habitNameEmptyMsg: 'Escribe un nombre para el hábito ✍️',
+    dupHabitMsg: 'Ya tienes un hábito con ese nombre 🌱',
+
+    todaLaSemana: 'toda la semana', sinRepeticion: 'sin repetición', todosLosDias: 'todos los días', sinRepetir: 'sin repetir',
+    porNSemanas: (n) => `por ${n} semana${n===1?'':'s'}`, indefinido: 'indefinido',
+
+    editHabitTitle: 'Editar hábito', newCustomHabitTitle: 'Nuevo hábito personalizado',
+
+    deleteConfirmText: (label) => `"${label}"\n\nAceptar = quitarlo solo este día.\nCancelar = editar o eliminar toda la serie del hábito.`,
+
+    hoy: 'Hoy', sinActividades: 'Sin actividades registradas.', editRemoveTitle: 'Editar / quitar',
+    addHabitTitleAttr: 'Agregar hábito nuevo', pctCumplido: (n) => `${n}% cumplido`,
+    programadoConBless: 'Programado con Bless', sinDatos: 'sin datos',
+
+    semanaActual: 'Semana actual', tusHabitosSemana: 'Tus hábitos esta semana',
+    sinHabitosComparar: 'Aún no tienes hábitos para comparar.', programadoParen: ' (programado)',
+
+    menos: 'Menos', mas: 'Más', programado: 'Programado',
+
+    noHabitsYet: 'Aún no hay hábitos configurados.',
+    patronesTitle: 'Patrones por día de la semana',
+    mejorLabel: (day) => `✓ Mejor: ${day}`, masDificilLabel: (day) => `⚠ Más difícil: ${day}`,
+    rankingTitle: 'Ranking de hábitos',
+    rankingDesc: 'Bless usa esto para enfocar sus sugerencias en lo que más te cuesta.',
+    rachaPorHabitoTitle: 'Racha por hábito', diasSuffix: (n) => `🔥 ${n} días`,
+    lockedTitle: '🔒 Métricas completas',
+    lockedDesc: 'Racha actual, patrones por día de la semana, ranking de hábitos y racha por hábito son parte de Bless Habit Premium.',
+    premiumNote: 'Sin publicidad + métricas completas. Cobro automático vía Paddle, cancelas cuando quieras.',
+    noDataTitle: 'No hay datos todavía',
+    noDataDesc: 'Bless va a ir guardando tu progreso real cada día que uses la app. Vuelve mañana para empezar a ver tus patrones, tu racha y el ranking de tus hábitos.',
+    cumplimientoHoy: 'Cumplimiento hoy', cumplimientoSemana: 'Cumplimiento semana', cumplimientoMes: 'Cumplimiento mes',
+    rachaActualLbl: 'Racha actual (días)', maximaLbl: (n) => `Máxima: ${n} días`, soloPremium: 'Solo Premium',
+    sinDatosCap: 'Sin datos',
+  },
+  en: {
+    headerSubKnowing: 'Bless is getting to know you…',
+    loginDesc: 'Your habit and schedule companion. Sign in so Bless remembers your profile and progress between visits.',
+    loginBtn: 'Continue with Google',
+    loginLoading: 'Loading your info…',
+    agendaTitle: "Today's agenda",
+    chatPlaceholder: 'Tell me what you want to do today…',
+    sendBtn: 'Send',
+    calDay: 'Day', calWeek: 'Week', calMonth: 'Month',
+    tabChat: 'Bless', tabCalendar: 'Calendar', tabMetrics: 'Metrics', tabProfile: 'Profile',
+    blessFabTitle: 'Talk to Bless',
+    heTitleNew: 'New habit',
+    heLabelPh: 'Habit name',
+    heDaysQ: 'Which days of the week?',
+    heSameTime: 'Same time every day',
+    heDurationQ: 'For how long?',
+    heIndef: 'Indefinite',
+    heForLabel: 'For', heWeeksLabel: 'weeks',
+    heSaveBtn: 'Save habit', heDeleteBtn: 'Delete habit',
+    cancelBtn: 'Cancel',
+    settingsTitle: '⚙️ Settings', settingsTheme: 'Theme', settingsLang: 'Language', settingsCountry: 'Country',
+    settingsCountryPh: 'Your country', saveBtn: 'Save', closeBtn: 'Close',
+
+    nombrePh: 'Your name', listoBtn: 'Done',
+    rutinaWakeQ: 'What time do you usually wake up?', rutinaSleepQ: 'What time do you usually go to sleep?',
+    otherReasonPh: 'Other reason (optional)', otherAttemptPh: 'Other attempt (optional)', otherPh: 'Other (optional)',
+    continueBtn: 'Continue', chooseOneOrCustom: 'Choose at least one option or write your own ✍️',
+    edadPh: 'Your age', guardarBtn: 'Save', skipShare: "I'd rather not share this", skipShared: "I'd rather not share it",
+    tengoAnios: (v) => `I'm ${v} years old`,
+    pesoPh: 'Weight (kg)', tallaPh: 'Height (cm)',
+    pesoTallaResumen: (p, ta) => `Weight: ${p||'—'}kg, Height: ${ta||'—'}cm`,
+    otroHabitoPh: 'Other habit (optional)',
+    customHabitAdded: [
+      (icon, val) => `I can help you with that! ✨ I added "${icon} ${val}" to your list.`,
+      (icon, val) => `Noted — ${icon} ${val}. Count on me to help you with this one too.`,
+    ],
+    chooseHabitOrCustom: 'Choose at least one habit or add your own ✍️',
+    todaSemana: 'All week', guardarHorarios: 'Save schedule',
+    horarioResumen: (icon, time, repeatWeekly) => `${icon} ${time}${repeatWeekly ? ' · all week' : ' · just today'}`,
+    deDespiertoADuermo: (a, b) => `Wake ${a}, sleep ${b}`,
+    deAaB: (a, b) => `${a} to ${b}`,
+
+    obAsk1: "Hi! 👋 I'm Bless, your habit and schedule companion. Before we start I want to really get to know you — this will take a couple of minutes, but it's worth it. What's your name?",
+    obAsk2: (p) => `Nice to meet you, ${p.nombre} 🙌. What time does your fixed work schedule start and end?`,
+    obAsk3: 'What time of day do you feel you have the most energy and focus? ⚡',
+    obAsk4: 'Would you say you\'re more of an early bird or a night owl? 🌅🌙',
+    obAsk5: 'How old are you? It helps me tailor my suggestions to your stage of life. This is also optional.',
+    obAsk6: 'If you want, I can factor in your weight and height to suggest more tailored health habits. This is totally optional.',
+    obAsk7: "Now I really want to understand what's hard for you 💭. What's the thing that trips you up most when you try to build a habit?",
+    obAsk8: "What have you tried before that didn't quite work out?",
+    obAsk9: 'What are your "triggers" — the situations where you know you tend to slip up?',
+    obAsk10: 'Tell me about your real routine, not just work.',
+    obAsk11: 'When do you actually have free time in your day?',
+    obAsk12: 'What motivates you most to stick with something over time?',
+    obAsk13: "Last tough question, and it's important: are there days when you know you feel particularly low or unmotivated? That way I'll never push you the same on those days.",
+    obAsk14: (p) => `Almost there, ${p.nombre} 🎯. Pick the habits you want to start building (you can choose several, or add your own).`,
+    obAsk15: "Last thing: tell me what time you usually do each one, and whether you want it scheduled automatically every day of the week or just for today.",
+
+    diagLabel: "Bless's diagnosis",
+    diagnosingMsg: (n) => `Perfect, ${n}. With all this I already understand you much better 🧠. Give me a second to put together your diagnosis…`,
+    afterDiagMsg: "From now on, every time you open the app I'll ask you what you want to accomplish and help you organize it, taking all this into account. Let's get to your first day! 🚀",
+    evalCompleteNote: 'Assessment complete ✓',
+    langSelectIntro: "Hi! 👋 Before we start, confirm your language and country — I detected this automatically, but you can change it.",
+
+    themeDark: '🌙 Dark', themeLight: '☀️ Light', themePremium: '✨ Premium Gold',
+
+    headerSubHello: (n) => `Bless · hi, ${n}`,
+    greetingFallback: [
+      (n) => `Good morning, ${n}. What do you want to accomplish today? ☀️`,
+      (n) => `Hey again, ${n}! What should we start the day with? 🙂`,
+      (n) => `${n}, tell me what you have in mind for today.`,
+    ],
+    dayArmedNote: "I already set up your day with the habits you chose — you can check them off, move them, or remove them whenever you want. 🗓️",
+    fabPrompt: ['Want to add something to your day? I can help 💬', 'Tell me what you have in mind, I can help you organize it 🙂'],
+
+    energyHintManana: 'the morning', energyHintTarde: 'the afternoon', energyHintNoche: 'the night', energyHintDefault: 'your highest-energy time',
+
+    confirmedFallback: [
+      (task, time) => `Done, I added "${task}" at ${time}. Anything else for today? 😊`,
+      (task, time) => `Done! "${task}" is set for ${time}. What else would you like to do?`,
+      (task, time) => `Noted ✅ "${task}" at ${time}. Shall we add something else?`,
+    ],
+    conflictFallback: [
+      (alt) => `That time clashes with your fixed work schedule. You have a free spot at ${alt}, should I add it there?`,
+      (alt) => `You're working right then 💼. I see a little free slot at ${alt}, does that work?`,
+      (alt) => `Oops, that falls within your work hours. How about ${alt}?`,
+    ],
+    askTimeFallback: [
+      (task) => `Noted: "${task}". What time would you like to do it today?`,
+      (task) => `I like it. What time should we do "${task}"?`,
+      (task) => `Perfect, "${task}" — what time works best for you?`,
+    ],
+
+    validationFallback: [
+      (t) => `It's okay not to do "${t}" today 🤍. Would you rather leave this habit for later, or start with something smaller?`,
+      (t) => `Totally valid. Sometimes "${t}" just isn't happening today — want to try something smaller instead?`,
+      (t) => `No problem, I'll remove it. We can pick "${t}" back up whenever you're ready — that counts as progress too.`,
+    ],
+    encouragementPhrases: [
+      "You're doing great, every little step counts 🌱",
+      'I love seeing your progress today — keep going at your own pace 💛',
+      "This is real consistency, not perfection, and that's exactly what matters.",
+      "I'm proud of you, truly. Let's keep going.",
+      "You don't need to do it perfectly, just keep showing up. And you showed up today.",
+      "Every check is proof that you can do this. Let's get more.",
+      "I told you: this is all built step by step 🙌",
+      'Today you chose yourself. That already means a lot.',
+    ],
+    habitQuotes: [
+      '"We are what we repeatedly do. Excellence, then, is not an act, but a habit." — Aristotle',
+      '"You do not rise to the level of your goals. You fall to the level of your systems." — James Clear',
+      '"First we make our habits, then our habits make us." — John Dryden',
+      "\"It does not matter how slowly you go as long as you do not stop.\" — Confucius",
+      '"Discipline today is freedom tomorrow." — Robin Sharma',
+      '"Tiny habits don\'t add up. They compound." — BJ Fogg',
+      '"Success is the sum of small efforts, repeated day in and day out." — Robert Collier',
+      '"Every action you take is a vote for the type of person you wish to become." — James Clear',
+    ],
+    celebrateAllDone: ' You completed your whole day!',
+
+    noAgendaYet: 'Nothing scheduled for today yet.',
+    configureHabitTitle: 'Configure this habit',
+
+    addHabitFallback: [
+      "Let's build it together 🌱. I'll open the setup so you can choose the days and time.",
+      "Sure thing! I'll open the form and we'll set up your new habit right there.",
+      "Done, open the details and we'll pick the days and time that work for you together.",
+    ],
+    achievementFallback: 'That is great news! 🎉 Want me to save it to your profile as an achievement?',
+    achievementSavedFallback: 'Saved! 🏆 You will see it in your profile, in your achievements section.',
+    achievementDeclinedFallback: "Okay, I won't save it — but I'm still really happy for you 🤍",
+    recurringConfirmedFallback: 'Great! 🌱 I added it as a habit — you\'ll see it marked as "Bless suggestion" in your profile. Let\'s build this together.',
+    recurringDeclinedFallback: "No problem, we'll leave it just for today 🙂. If you change your mind, just tell me.",
+    otherTimeQuestion: ['What other time would you like to do it?', 'No problem. What other time works better, or would you rather leave it for later?'],
+    needsTimeDropFallback: (task) => `I'll leave the time for "${task}" pending for later.`,
+    scheduledEnergyFallback: (time, icon, hint) => `Added at ${time} ${icon}. Since you have more energy in ${hint}, I can move it there if you want it to be more effective. Should we leave it as is or change it?`,
+    offerRecurringFallback: (time, icon) => `Added at ${time} ${icon} ✅. Hey, want me to help turn this into a habit we repeat? That way I can really help you build it, not just for today.`,
+
+    nativePremiumManageMsg: 'To manage your Premium plan, go to blesshabit.app from your browser.',
+    nativePremiumEntryMsg: 'To go Premium, go to blesshabit.app from your browser.',
+    adFallbackLabel: 'Ad space (AdSense) — configure it in Secrets',
+
+    pushNotSupported: "This browser doesn't support notifications.",
+    pushEnabledText: "Enabled — Bless will message you if you go several days without opening the app.",
+    pushDisableBtn: '🔕 Disable reminders',
+    pushDisabledText: "Disabled. Turn them on so Bless can message you if you go several days without opening the app.",
+    pushEnableBtn: '🔔 Enable reminders',
+    pushNotConfigured: 'Notifications are not configured on the server yet (missing VAPID Secrets). Let whoever manages the app know.',
+    pushPermissionDenied: "You didn't grant notification permission — you can enable it later from your browser settings.",
+    pushSwFail: 'Could not register the service worker.',
+    pushEnableFail: 'Could not enable notifications. Please try again.',
+
+    paddleConnFail: 'Could not connect to the server to start the payment. Please try again.',
+    paddleNotConfigured: 'Paddle billing is not configured on the server yet (missing Paddle Secrets). Let whoever manages the app know.',
+    paddleWidgetFail: "Could not load Paddle's payment widget. Check your connection and try again.",
+    paddleThanks: 'Thank you! We are confirming your payment — Bless Habit Premium will activate in a few seconds…',
+    cancelConfirm: 'Are you sure you want to cancel your Premium subscription?',
+
+    tareasHoy: "Today's tasks", habitosActivos: 'Active habits', rachaTotal: 'Total streak 🔥',
+
+    basicDataTitle: 'Basic info', nombreLabel: 'Name', edadLabel: 'Age',
+    aniosSuffix: (n) => `${n} yrs`, noCompartida: 'Not shared',
+    horarioFijoLabel: 'Fixed schedule', despiertaDuermeLabel: 'Wake / sleep',
+    masEnergiaLabel: 'More energy in', tipoLabel: 'Type', tiempoLibreLabel: 'Real free time', motivacionLabel: 'Motivation',
+    saludTitle: 'Health (optional)', pesoLabel: 'Weight', kgSuffix: (n) => `${n} kg`, noCompartido: 'Not shared',
+    tallaLabel: 'Height', cmSuffix: (n) => `${n} cm`,
+    dificultadTitle: "What's hard for you", intentosTitle: 'Already tried', detonantesTitle: 'Your triggers',
+    diasDificilesTitle: 'Hard days for you', habitosTitle: 'Habits you want to build',
+    logrosTitle: '🏆 Your achievements', noLogros: "You don't have any saved achievements yet — tell Bless when you accomplish something important and it'll be saved here. 🌟",
+    addHabitTitle: 'Add a new habit',
+    addHabitDesc: "No need to wait for another onboarding — you can add new habits whenever you want, and configure each one your way (which days, what time, for how long).",
+    configureCustomBtn: '✏️ Configure a custom one',
+    configTitle: '⚙️ Settings', configDesc: (extra) => `Theme (light/dark${extra}), language and country.`,
+    configDescPremiumExtra: '/Premium gold',
+    openConfigBtn: 'Open settings',
+    planTitle: 'Plan', premiumBadge: '✨ Bless Habit Premium', cancelSubLink: 'Cancel subscription',
+    freePlanDesc: 'You are on the free plan (with ads and limited metrics).',
+    becomePremiumBtn: (price) => `Go Premium — ${price}`,
+    notifTitle: 'Notifications', consultando: 'Checking…', logoutLink: 'Log out',
+    editFieldPrompt: (label) => `Edit ${label}:`,
+    editIconTitle: 'Edit', weekSuffix: 'wk', sugerenciaBless: '✨ Bless suggestion',
+
+    allAddedMsg: "You already added all the suggested habits — you can configure your own below.",
+    alreadyHaveMsg: 'You already have that habit added 🌱',
+    addedHabitMsg: (icon, label, days) => `Done! I added "${icon} ${label}" (${days}) 🌱`,
+    updatedHabitMsg: (icon, label, days) => `I updated "${icon} ${label}" (${days}) 🌱`,
+    deletedHabitMsg: (icon, label) => `I removed "${icon} ${label}" from your habits.`,
+    habitNameEmptyMsg: 'Write a name for the habit ✍️',
+    dupHabitMsg: 'You already have a habit with that name 🌱',
+
+    todaLaSemana: 'all week', sinRepeticion: 'no repeat', todosLosDias: 'every day', sinRepetir: 'no repeat',
+    porNSemanas: (n) => `for ${n} week${n===1?'':'s'}`, indefinido: 'indefinite',
+
+    editHabitTitle: 'Edit habit', newCustomHabitTitle: 'New custom habit',
+
+    deleteConfirmText: (label) => `"${label}"\n\nOK = remove only for this day.\nCancel = edit or delete the whole habit series.`,
+
+    hoy: 'Today', sinActividades: 'No activities recorded.', editRemoveTitle: 'Edit / remove',
+    addHabitTitleAttr: 'Add new habit', pctCumplido: (n) => `${n}% done`,
+    programadoConBless: 'Scheduled with Bless', sinDatos: 'no data',
+
+    semanaActual: 'Current week', tusHabitosSemana: 'Your habits this week',
+    sinHabitosComparar: "You don't have habits to compare yet.", programadoParen: ' (scheduled)',
+
+    menos: 'Less', mas: 'More', programado: 'Scheduled',
+
+    noHabitsYet: 'No habits configured yet.',
+    patronesTitle: 'Patterns by day of the week',
+    mejorLabel: (day) => `✓ Best: ${day}`, masDificilLabel: (day) => `⚠ Hardest: ${day}`,
+    rankingTitle: 'Habit ranking',
+    rankingDesc: "Bless uses this to focus its suggestions on what's hardest for you.",
+    rachaPorHabitoTitle: 'Streak by habit', diasSuffix: (n) => `🔥 ${n} days`,
+    lockedTitle: '🔒 Full metrics',
+    lockedDesc: 'Current streak, day-of-week patterns, habit ranking and streak by habit are part of Bless Habit Premium.',
+    premiumNote: 'No ads + full metrics. Automatic billing via Paddle, cancel anytime.',
+    noDataTitle: 'No data yet',
+    noDataDesc: 'Bless will keep saving your real progress every day you use the app. Come back tomorrow to start seeing your patterns, your streak, and your habit ranking.',
+    cumplimientoHoy: "Today's completion", cumplimientoSemana: "Week's completion", cumplimientoMes: "Month's completion",
+    rachaActualLbl: 'Current streak (days)', maximaLbl: (n) => `Best: ${n} days`, soloPremium: 'Premium only',
+    sinDatosCap: 'No data',
+  },
+};
+
+/* ============================================================
+   OPCIONES del onboarding — antes eran strings en español guardados
+   directamente en el perfil; ahora cada opción tiene una key estable que
+   se guarda en el perfil (compatible con perfiles viejos que aún tienen el
+   texto en español guardado, ver optLabel()).
+   ============================================================ */
+const OPTIONS = {
+  energia: [
+    { key: 'manana', es: 'Mañana', en: 'Morning' },
+    { key: 'tarde', es: 'Tarde', en: 'Afternoon' },
+    { key: 'noche', es: 'Noche', en: 'Night' },
+  ],
+  tipo: [
+    { key: 'madrugador', es: 'Madrugador/a', en: 'Early bird' },
+    { key: 'nocturno', es: 'Nocturno/a', en: 'Night owl' },
+    { key: 'depende', es: 'Depende del día', en: 'Depends on the day' },
+  ],
+  tiempoLibre: [
+    { key: 'manana', es: 'Mañana', en: 'Morning' },
+    { key: 'tarde', es: 'Tarde', en: 'Afternoon' },
+    { key: 'noche', es: 'Noche', en: 'Night' },
+    { key: 'varia', es: 'Varía mucho', en: 'Varies a lot' },
+  ],
+  motivacion: [
+    { key: 'disciplina', es: 'Disciplina', en: 'Discipline' },
+    { key: 'recompensa', es: 'Recompensa', en: 'Reward' },
+    { key: 'competencia', es: 'Competencia', en: 'Competition' },
+    { key: 'acompanamiento', es: 'Acompañamiento', en: 'Companionship' },
+  ],
+  dificultades: [
+    { key: 'procrastino', es: 'Procrastino', en: 'I procrastinate' },
+    { key: 'olvido', es: 'Se me olvida', en: 'I forget' },
+    { key: 'pierdo_motivacion', es: 'Pierdo la motivación a medio camino', en: 'I lose motivation halfway through' },
+    { key: 'falta_tiempo', es: 'Me falta tiempo', en: 'I lack time' },
+    { key: 'falta_consistencia', es: 'Me falta consistencia', en: 'I lack consistency' },
+  ],
+  intentosPrevios: [
+    { key: 'apps', es: 'Apps de hábitos', en: 'Habit apps' },
+    { key: 'fuerza_voluntad', es: 'Fuerza de voluntad', en: 'Willpower' },
+    { key: 'retos_amigos', es: 'Retos con amigos', en: 'Challenges with friends' },
+    { key: 'calendarios', es: 'Calendarios/recordatorios', en: 'Calendars/reminders' },
+    { key: 'nada', es: 'Nada de lo anterior', en: 'None of the above' },
+  ],
+  detonantes: [
+    { key: 'empezar_grande', es: 'Empezar muy grande', en: 'Starting too big' },
+    { key: 'hacerlo_solo', es: 'Hacerlo sola/o', en: 'Doing it alone' },
+    { key: 'sin_recordatorio', es: 'No tener quién me recuerde', en: 'No one to remind me' },
+    { key: 'sentirse_forzado', es: 'Sentirme forzada/o', en: 'Feeling forced' },
+    { key: 'falta_recompensa', es: 'Falta de recompensa inmediata', en: 'Lack of immediate reward' },
+  ],
+  diasDificiles: [
+    { key: 'lunes', es: 'Lunes', en: 'Monday' },
+    { key: 'fin_semana', es: 'Fin de semana', en: 'Weekend' },
+    { key: 'cansado', es: 'Cuando estoy cansada/o', en: "When I'm tired" },
+    { key: 'mucho_trabajo', es: 'Cuando tengo mucho trabajo', en: 'When I have a lot of work' },
+    { key: 'sin_patron', es: 'No tengo un patrón claro', en: 'No clear pattern' },
+  ],
+};
+// Muestra el valor guardado de un campo de opciones en el idioma actual.
+// Busca primero por key (dato nuevo); si no matchea, intenta por texto
+// exacto en es/en (compatibilidad con perfiles guardados antes de este
+// cambio, cuando se guardaba el label en español directamente); si tampoco
+// matchea, es texto libre escrito por la persona (opción "otro") y se
+// muestra tal cual, sin traducir.
+function optLabel(field, value) {
+  const opts = OPTIONS[field];
+  if (!opts || value === null || value === undefined) return value;
+  let found = opts.find(o => o.key === value);
+  if (!found) found = opts.find(o => o.es === value || o.en === value);
+  if (!found) return value;
+  return currentLang() === 'en' ? found.en : found.es;
+}
+function optLabelList(field, values) { return (values || []).map(v => optLabel(field, v)); }
+
+function applyStaticI18n() {
+  document.querySelectorAll('[data-i18n]').forEach(el => { el.textContent = t(el.getAttribute('data-i18n')); });
+  document.querySelectorAll('[data-i18n-ph]').forEach(el => { el.placeholder = t(el.getAttribute('data-i18n-ph')); });
+  document.querySelectorAll('[data-i18n-title]').forEach(el => { el.title = t(el.getAttribute('data-i18n-title')); });
+  document.documentElement.setAttribute('lang', currentLang());
+}
+
 const HABIT_PRESETS = [
-  { key: 'ejercicio', icon: '🏃', label: 'Ejercicio', match: ['ejercicio','entrenar','gimnasio','correr','deporte'] },
-  { key: 'caminar', icon: '🚶', label: 'Caminar', match: ['caminar','pasos','salir a caminar'] },
-  { key: 'lectura', icon: '📖', label: 'Leer', match: ['leer','lectura','libro'] },
-  { key: 'agua', icon: '💧', label: 'Tomar agua', match: ['tomar agua','hidrat'] },
-  { key: 'meditacion', icon: '🧘', label: 'Meditar', match: ['medit','respirar','mindfulness','yoga'] },
-  { key: 'sueno', icon: '😴', label: 'Dormir mejor', match: ['dormir','sueño','descansar','siesta'] },
-  { key: 'comida', icon: '🥗', label: 'Comer sano', match: ['comer','comida','dieta','nutrición','cocinar'] },
-  { key: 'escritura', icon: '✍️', label: 'Escribir/journaling', match: ['escribir','diario','journaling'] },
-  { key: 'estudio', icon: '📚', label: 'Estudiar', match: ['estudiar','estudio','curso','aprender'] },
-  { key: 'orden', icon: '🧹', label: 'Ordenar espacio', match: ['ordenar','limpiar','organizar espacio'] },
-  { key: 'finanzas', icon: '💰', label: 'Ahorrar dinero', match: ['ahorrar','finanzas','presupuesto'] },
-  { key: 'pantalla', icon: '📵', label: 'Reducir pantalla', match: ['pantalla','redes sociales','celular','instagram','tiktok'] },
-  { key: 'gratitud', icon: '🙏', label: 'Practicar gratitud', match: ['gratitud','agradecer'] },
-  { key: 'fumar', icon: '🚭', label: 'Dejar de fumar', match: ['fumar','cigarro','tabaco'] },
-  { key: 'alcohol', icon: '🍷', label: 'Reducir alcohol', match: ['alcohol','cerveza','vino','trago'] },
-  { key: 'musica', icon: '🎸', label: 'Practicar instrumento', match: ['instrumento','guitarra','piano','tocar música'] },
-  { key: 'idioma', icon: '🗣️', label: 'Aprender idioma', match: ['idioma','inglés','ingles','vocabulario'] },
-  { key: 'familia', icon: '👨‍👩‍👧', label: 'Tiempo en familia', match: ['familia','hijos','pareja'] },
+  { key: 'ejercicio', icon: '🏃', label: 'Ejercicio', en: 'Exercise', match: ['ejercicio','entrenar','gimnasio','correr','deporte','exercise','workout','gym','run','sport'] },
+  { key: 'caminar', icon: '🚶', label: 'Caminar', en: 'Walking', match: ['caminar','pasos','salir a caminar','walk','walking','steps'] },
+  { key: 'lectura', icon: '📖', label: 'Leer', en: 'Reading', match: ['leer','lectura','libro','read','reading','book'] },
+  { key: 'agua', icon: '💧', label: 'Tomar agua', en: 'Drink water', match: ['tomar agua','hidrat','drink water','hydrate','water'] },
+  { key: 'meditacion', icon: '🧘', label: 'Meditar', en: 'Meditate', match: ['medit','respirar','mindfulness','yoga','meditate','breathing'] },
+  { key: 'sueno', icon: '😴', label: 'Dormir mejor', en: 'Sleep better', match: ['dormir','sueño','descansar','siesta','sleep','nap','rest'] },
+  { key: 'comida', icon: '🥗', label: 'Comer sano', en: 'Eat healthy', match: ['comer','comida','dieta','nutrición','cocinar','eat','diet','nutrition','cook'] },
+  { key: 'escritura', icon: '✍️', label: 'Escribir/journaling', en: 'Write/journaling', match: ['escribir','diario','journaling','write','writing','journal'] },
+  { key: 'estudio', icon: '📚', label: 'Estudiar', en: 'Study', match: ['estudiar','estudio','curso','aprender','study','course','learn'] },
+  { key: 'orden', icon: '🧹', label: 'Ordenar espacio', en: 'Tidy up', match: ['ordenar','limpiar','organizar espacio','tidy','clean','organize'] },
+  { key: 'finanzas', icon: '💰', label: 'Ahorrar dinero', en: 'Save money', match: ['ahorrar','finanzas','presupuesto','save money','finances','budget'] },
+  { key: 'pantalla', icon: '📵', label: 'Reducir pantalla', en: 'Reduce screen time', match: ['pantalla','redes sociales','celular','instagram','tiktok','screen time','social media','phone'] },
+  { key: 'gratitud', icon: '🙏', label: 'Practicar gratitud', en: 'Practice gratitude', match: ['gratitud','agradecer','gratitude','grateful'] },
+  { key: 'fumar', icon: '🚭', label: 'Dejar de fumar', en: 'Quit smoking', match: ['fumar','cigarro','tabaco','smoking','cigarette','tobacco'] },
+  { key: 'alcohol', icon: '🍷', label: 'Reducir alcohol', en: 'Reduce alcohol', match: ['alcohol','cerveza','vino','trago','beer','wine','drink less'] },
+  { key: 'musica', icon: '🎸', label: 'Practicar instrumento', en: 'Practice an instrument', match: ['instrumento','guitarra','piano','tocar música','instrument','guitar','play music'] },
+  { key: 'idioma', icon: '🗣️', label: 'Aprender idioma', en: 'Learn a language', match: ['idioma','inglés','ingles','vocabulario','language','vocabulary'] },
+  { key: 'familia', icon: '👨‍👩‍👧', label: 'Tiempo en familia', en: 'Family time', match: ['familia','hijos','pareja','family','kids','partner'] },
 ];
 function pickIcon(text) { const l = text.toLowerCase(); for (const h of HABIT_PRESETS) if (h.match.some(m => l.includes(m))) return h.icon; return '🎯'; }
 function pickHabitKey(text) { const l = text.toLowerCase(); for (const h of HABIT_PRESETS) if (h.match.some(m => l.includes(m))) return h.key; return 'general'; }
 function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+// Muestra el nombre del hábito en el idioma actual si es un preset sin renombrar;
+// si la persona escribió su propio texto (personalizado o ya traducido a mano por
+// ella), se muestra tal cual — no se puede traducir texto libre automáticamente.
+function habitDisplayLabel(h) {
+  if (!h) return '';
+  const preset = HABIT_PRESETS.find(p => p.key === h.key);
+  if (preset && (h.label === preset.label || h.label === preset.en)) return t2(preset);
+  return h.label;
+}
+function itemDisplayLabel(item) {
+  const preset = HABIT_PRESETS.find(p => p.key === item.habitKey);
+  if (preset && (item.label === preset.label || item.label === preset.en)) return t2(preset);
+  return item.label;
+}
+function applyTheme(theme) {
+  const th = (theme === 'premium' && !isPremium) ? 'dark' : (theme || 'dark');
+  document.documentElement.setAttribute('data-theme', th === 'dark' ? '' : th);
+  state.settings = state.settings || {};
+  state.settings.theme = th;
+}
+let lastCelebratedPct = 0; // se reinicia cada día (con la agenda) — evita repetir la misma celebración
 // hora típica por tipo de hábito — usada tanto para sugerir horario en el onboarding
 // como para ubicar el historial simulado en la grilla semanal
 function typicalHourFor(key) {
@@ -442,8 +1057,12 @@ function typicalHourFor(key) {
   return map[key] ?? 18;
 }
 function defaultTimeFor(key) { return String(typicalHourFor(key)).padStart(2,'0') + ':00'; }
-const WEEKDAY_LABELS = ['D','L','M','M','J','V','S'];
-const WEEKDAY_NAMES = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+let WEEKDAY_LABELS = ['D','L','M','M','J','V','S'];
+let WEEKDAY_NAMES = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+const WEEKDAY_LABELS_ES = ['D','L','M','M','J','V','S'];
+const WEEKDAY_NAMES_ES = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+const WEEKDAY_LABELS_EN = ['S','M','T','W','T','F','S'];
+const WEEKDAY_NAMES_EN = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
 // Compatibilidad: hábitos guardados antes de que existiera repeatDays solo tenían
 // repeatWeekly (true = todos los días, false = solo el día en que se agregó).
 function habitRepeatDays(h) {
@@ -455,25 +1074,39 @@ function habitTimeForDay(h, dow) {
   return h.time || defaultTimeFor(h.key);
 }
 function habitActiveOnDate(h, dateStr) {
+  if (h.createdAt && dateStr < h.createdAt) return false; // no existía todavía ese día
+  if (h.skippedDates && h.skippedDates.includes(dateStr)) return false; // se saltó ese día puntual
   if (!h.durationWeeks || !h.createdAt) return true;
   const start = new Date(h.createdAt + 'T00:00:00');
   const end = addDays(start, h.durationWeeks * 7);
   return new Date(dateStr + 'T00:00:00') <= end;
 }
 function habitDurationLabel(h) {
-  return h.durationWeeks ? `por ${h.durationWeeks} semana${h.durationWeeks === 1 ? '' : 's'}` : 'indefinido';
+  return h.durationWeeks ? t('porNSemanas', h.durationWeeks) : t('indefinido');
 }
 function habitDaysLabel(h) {
   const days = habitRepeatDays(h);
-  if (days.length === 7) return 'toda la semana';
-  if (days.length === 0) return 'sin repetición';
+  if (days.length === 7) return t('todaLaSemana');
+  if (days.length === 0) return t('sinRepeticion');
   return days.slice().sort().map(d => WEEKDAY_NAMES[d]).join(', ');
 }
 function habitDaysCompact(h) {
   const days = habitRepeatDays(h);
-  if (days.length === 7) return 'todos los días';
-  if (days.length === 0) return 'sin repetir';
+  if (days.length === 7) return t('todosLosDias');
+  if (days.length === 0) return t('sinRepetir');
   return days.slice().sort().map(d => WEEKDAY_LABELS[d]).join('');
+}
+// Recalcula los arrays de días/meses según el idioma actual — se llama al
+// arrancar la app y cada vez que cambia el idioma, así el resto del código
+// puede seguir indexando WEEKDAY_NAMES[d] sin cambiar ni una línea más.
+function refreshLocaleArrays() {
+  if (currentLang() === 'en') {
+    WEEKDAY_LABELS = WEEKDAY_LABELS_EN; WEEKDAY_NAMES = WEEKDAY_NAMES_EN;
+    DAY_NAMES = DAY_NAMES_EN; DAY_NAMES_SHORT = DAY_NAMES_SHORT_EN;
+  } else {
+    WEEKDAY_LABELS = WEEKDAY_LABELS_ES; WEEKDAY_NAMES = WEEKDAY_NAMES_ES;
+    DAY_NAMES = DAY_NAMES_ES; DAY_NAMES_SHORT = DAY_NAMES_SHORT_ES;
+  }
 }
 
 const ob = document.getElementById('onboarding-scroll');
@@ -483,8 +1116,7 @@ const agendaList = document.getElementById('agenda-list');
 const progressFill = document.getElementById('onboarding-progress-fill');
 const avatarEl = document.getElementById('agent-avatar');
 const fabEl = document.getElementById('bless-fab');
-function badgeHtml() { return aiEnabled() ? '<div class="demo-badge live">IA real · OpenAI</div>' : '<div class="demo-badge">MODO DEMO · IA simulada</div>'; }
-document.getElementById('header-right').innerHTML = badgeHtml();
+function badgeHtml() { return ''; }
 
 const MOODS = { default: '🌱', thinking: '🤔', happy: '🎉', caring: '🤍', proud: '🌟' };
 function setAvatarMood(mood, revertMs) {
@@ -516,12 +1148,12 @@ async function agentSay(container, text, delay=420) {
 /* ============================================================
    ONBOARDING — evaluación completa
    ============================================================ */
-function renderTextInput(field, placeholder) {
+function renderTextInput(field, placeholderKey) {
   return () => {
     obControls.innerHTML = '';
     const row = document.createElement('div'); row.className = 'row-input';
-    const input = document.createElement('input'); input.type = 'text'; input.placeholder = placeholder;
-    const btn = document.createElement('button'); btn.className = 'send-btn'; btn.textContent = 'Enviar';
+    const input = document.createElement('input'); input.type = 'text'; input.placeholder = t(placeholderKey);
+    const btn = document.createElement('button'); btn.className = 'send-btn'; btn.textContent = t('sendBtn');
     row.appendChild(input); row.appendChild(btn); obControls.appendChild(row); input.focus();
     function submit() { const val = input.value.trim(); if (!val) return; addBubble(ob, val, 'user'); state.profile[field] = val; advanceOnboarding(); }
     btn.onclick = submit;
@@ -534,86 +1166,105 @@ function renderWorkHours() {
     const row = document.createElement('div'); row.className = 'row-input';
     const t1 = document.createElement('input'); t1.type = 'time'; t1.value = '09:00';
     const t2 = document.createElement('input'); t2.type = 'time'; t2.value = '18:00';
-    const btn = document.createElement('button'); btn.className = 'send-btn'; btn.textContent = 'Listo';
+    const btn = document.createElement('button'); btn.className = 'send-btn'; btn.textContent = t('listoBtn');
     row.appendChild(t1); row.appendChild(t2); row.appendChild(btn); obControls.appendChild(row);
-    btn.onclick = () => { state.profile.trabajoInicio = t1.value; state.profile.trabajoFin = t2.value; addBubble(ob, `De ${t1.value} a ${t2.value}`, 'user'); advanceOnboarding(); };
+    btn.onclick = () => { state.profile.trabajoInicio = t1.value; state.profile.trabajoFin = t2.value; addBubble(ob, t('deAaB', t1.value, t2.value), 'user'); advanceOnboarding(); };
   };
 }
 function renderRutina() {
   return () => {
     obControls.innerHTML = '';
-    const lbl1 = document.createElement('div'); lbl1.className = 'step-label'; lbl1.textContent = '¿A qué hora despiertas normalmente?';
+    const lbl1 = document.createElement('div'); lbl1.className = 'step-label'; lbl1.textContent = t('rutinaWakeQ');
     obControls.appendChild(lbl1);
     const row1 = document.createElement('div'); row1.className = 'row-input';
     const tDespertar = document.createElement('input'); tDespertar.type = 'time'; tDespertar.value = '07:00';
     row1.appendChild(tDespertar); obControls.appendChild(row1);
-    const lbl2 = document.createElement('div'); lbl2.className = 'step-label'; lbl2.textContent = '¿A qué hora sueles dormirte?';
+    const lbl2 = document.createElement('div'); lbl2.className = 'step-label'; lbl2.textContent = t('rutinaSleepQ');
     obControls.appendChild(lbl2);
     const row2 = document.createElement('div'); row2.className = 'row-input';
     const tDormir = document.createElement('input'); tDormir.type = 'time'; tDormir.value = '23:00';
-    const btn = document.createElement('button'); btn.className = 'send-btn'; btn.textContent = 'Listo';
+    const btn = document.createElement('button'); btn.className = 'send-btn'; btn.textContent = t('listoBtn');
     row2.appendChild(tDormir); row2.appendChild(btn); obControls.appendChild(row2);
     btn.onclick = () => {
       state.profile.despertar = tDespertar.value; state.profile.dormir = tDormir.value;
-      addBubble(ob, `Despierto ${tDespertar.value}, duermo ${tDormir.value}`, 'user');
+      addBubble(ob, t('deDespiertoADuermo', tDespertar.value, tDormir.value), 'user');
       advanceOnboarding();
     };
   };
 }
+// field/options-backed renderers: `options` es OPTIONS[field] — array de
+// {key, es, en}. Se guarda opt.key en el perfil (nunca el label traducido),
+// y se muestra el texto del idioma actual. Compatibilidad con perfiles
+// antiguos: optLabel() se encarga de leer valores viejos guardados como
+// texto en español.
 function renderQuickReplies(field, options) {
   return () => {
     obControls.innerHTML = '';
     const wrap = document.createElement('div'); wrap.className = 'quick-replies';
     options.forEach(opt => {
-      const b = document.createElement('button'); b.className = 'qr-btn'; b.textContent = opt;
-      b.onclick = () => { state.profile[field] = opt; addBubble(ob, opt, 'user'); advanceOnboarding(); };
+      const b = document.createElement('button'); b.className = 'qr-btn'; b.textContent = currentLang()==='en' ? opt.en : opt.es;
+      b.onclick = () => { state.profile[field] = opt.key; addBubble(ob, b.textContent, 'user'); advanceOnboarding(); };
       wrap.appendChild(b);
     });
     obControls.appendChild(wrap);
   };
 }
-function renderMultiSelect(field, options, customPlaceholder) {
+function renderMultiSelect(field, options, customPlaceholderKey) {
   return () => {
     obControls.innerHTML = '';
     const selected = new Set();
     const wrap = document.createElement('div'); wrap.className = 'quick-replies';
     options.forEach(opt => {
-      const b = document.createElement('button'); b.className = 'qr-btn'; b.textContent = opt;
-      b.onclick = () => { if (selected.has(opt)) { selected.delete(opt); b.classList.remove('selected'); } else { selected.add(opt); b.classList.add('selected'); } };
+      const b = document.createElement('button'); b.className = 'qr-btn'; b.textContent = currentLang()==='en' ? opt.en : opt.es;
+      b.onclick = () => { if (selected.has(opt.key)) { selected.delete(opt.key); b.classList.remove('selected'); } else { selected.add(opt.key); b.classList.add('selected'); } };
       wrap.appendChild(b);
     });
     obControls.appendChild(wrap);
     let customInput = null;
-    if (customPlaceholder) {
+    if (customPlaceholderKey) {
       const row = document.createElement('div'); row.className = 'row-input';
-      customInput = document.createElement('input'); customInput.type = 'text'; customInput.placeholder = customPlaceholder;
+      customInput = document.createElement('input'); customInput.type = 'text'; customInput.placeholder = t(customPlaceholderKey);
       row.appendChild(customInput); obControls.appendChild(row);
     }
-    const continueBtn = document.createElement('button'); continueBtn.className = 'send-btn'; continueBtn.style.width = '100%'; continueBtn.style.marginTop = '4px'; continueBtn.textContent = 'Continuar';
+    const continueBtn = document.createElement('button'); continueBtn.className = 'send-btn'; continueBtn.style.width = '100%'; continueBtn.style.marginTop = '4px'; continueBtn.textContent = t('continueBtn');
     obControls.appendChild(continueBtn);
     continueBtn.onclick = () => {
-      const chosen = [...selected];
+      const chosen = [...selected]; // keys
+      const chosenLabels = chosen.map(k => optLabel(field, k));
       const customVal = customInput ? customInput.value.trim() : '';
-      if (customVal) chosen.push(customVal);
-      if (chosen.length === 0) { addNote(ob, 'Elige al menos una opción o escribe la tuya ✍️'); return; }
+      if (customVal) { chosen.push(customVal); chosenLabels.push(customVal); }
+      if (chosen.length === 0) { addNote(ob, t('chooseOneOrCustom')); return; }
       state.profile[field] = chosen;
-      addBubble(ob, chosen.join(', '), 'user');
+      addBubble(ob, chosenLabels.join(', '), 'user');
       advanceOnboarding();
     };
+  };
+}
+function renderEdad() {
+  return () => {
+    obControls.innerHTML = '';
+    const row = document.createElement('div'); row.className = 'row-input';
+    const inp = document.createElement('input'); inp.type = 'number'; inp.placeholder = t('edadPh'); inp.min = 10; inp.max = 110;
+    const btn = document.createElement('button'); btn.className = 'send-btn'; btn.textContent = t('guardarBtn');
+    row.appendChild(inp); row.appendChild(btn); obControls.appendChild(row);
+    const skip = document.createElement('div'); skip.className = 'skip-link'; skip.textContent = t('skipShare');
+    obControls.appendChild(skip);
+    btn.onclick = () => { state.profile.edad = inp.value || null; addBubble(ob, inp.value ? t('tengoAnios', inp.value) : t('skipShared'), 'user'); advanceOnboarding(); };
+    skip.onclick = () => { addBubble(ob, t('skipShared'), 'user'); advanceOnboarding(); };
   };
 }
 function renderPesoTalla() {
   return () => {
     obControls.innerHTML = '';
     const row = document.createElement('div'); row.className = 'row-input';
-    const p = document.createElement('input'); p.type = 'number'; p.placeholder = 'Peso (kg)';
-    const t = document.createElement('input'); t.type = 'number'; t.placeholder = 'Talla (cm)';
-    const btn = document.createElement('button'); btn.className = 'send-btn'; btn.textContent = 'Guardar';
-    row.appendChild(p); row.appendChild(t); row.appendChild(btn); obControls.appendChild(row);
-    const skip = document.createElement('div'); skip.className = 'skip-link'; skip.textContent = 'Prefiero no compartir esto';
+    const p = document.createElement('input'); p.type = 'number'; p.placeholder = t('pesoPh');
+    const ta = document.createElement('input'); ta.type = 'number'; ta.placeholder = t('tallaPh');
+    const btn = document.createElement('button'); btn.className = 'send-btn'; btn.textContent = t('guardarBtn');
+    row.appendChild(p); row.appendChild(ta); row.appendChild(btn); obControls.appendChild(row);
+    const skip = document.createElement('div'); skip.className = 'skip-link'; skip.textContent = t('skipShare');
     obControls.appendChild(skip);
-    btn.onclick = () => { state.profile.peso = p.value || null; state.profile.talla = t.value || null; addBubble(ob, (p.value||t.value) ? `Peso: ${p.value||'—'}kg, Talla: ${t.value||'—'}cm` : 'Prefiero no compartirlo', 'user'); advanceOnboarding(); };
-    skip.onclick = () => { addBubble(ob, 'Prefiero no compartirlo', 'user'); advanceOnboarding(); };
+    btn.onclick = () => { state.profile.peso = p.value || null; state.profile.talla = ta.value || null; addBubble(ob, (p.value||ta.value) ? t('pesoTallaResumen', p.value, ta.value) : t('skipShared'), 'user'); advanceOnboarding(); };
+    skip.onclick = () => { addBubble(ob, t('skipShared'), 'user'); advanceOnboarding(); };
   };
 }
 function renderHabitPicker() {
@@ -622,13 +1273,13 @@ function renderHabitPicker() {
     const selected = new Set();
     const wrap = document.createElement('div'); wrap.className = 'quick-replies';
     HABIT_PRESETS.forEach(h => {
-      const b = document.createElement('button'); b.className = 'qr-btn'; b.textContent = `${h.icon} ${h.label}`;
+      const b = document.createElement('button'); b.className = 'qr-btn'; b.textContent = `${h.icon} ${t2(h)}`;
       b.onclick = () => { if (selected.has(h.key)) { selected.delete(h.key); b.classList.remove('selected'); } else { selected.add(h.key); b.classList.add('selected'); } };
       wrap.appendChild(b);
     });
     obControls.appendChild(wrap);
     const row = document.createElement('div'); row.className = 'row-input';
-    const custom = document.createElement('input'); custom.type = 'text'; custom.placeholder = 'Otro hábito (opcional)';
+    const custom = document.createElement('input'); custom.type = 'text'; custom.placeholder = t('otroHabitoPh');
     const addBtn = document.createElement('button'); addBtn.className = 'send-btn'; addBtn.textContent = '+';
     row.appendChild(custom); row.appendChild(addBtn); obControls.appendChild(row);
     const customList = [];
@@ -636,21 +1287,18 @@ function renderHabitPicker() {
       const val = custom.value.trim(); if (!val) return;
       const entry = { key: pickHabitKey(val), icon: pickIcon(val), label: val };
       customList.push(entry); custom.value = '';
-      await agentSay(ob, pick([
-        `¡Yo puedo ayudarte con eso! ✨ Agregué "${entry.icon} ${val}" a tu lista.`,
-        `Anotado — ${entry.icon} ${val}. Cuenta conmigo para acompañarte también con este.`,
-      ]), 350);
+      await agentSay(ob, tp('customHabitAdded', entry.icon, val), 350);
     };
     custom.addEventListener('keydown', e => { if (e.key === 'Enter') addBtn.onclick(); });
-    const continueBtn = document.createElement('button'); continueBtn.className = 'send-btn'; continueBtn.style.width = '100%'; continueBtn.style.marginTop = '4px'; continueBtn.textContent = 'Continuar';
+    const continueBtn = document.createElement('button'); continueBtn.className = 'send-btn'; continueBtn.style.width = '100%'; continueBtn.style.marginTop = '4px'; continueBtn.textContent = t('continueBtn');
     obControls.appendChild(continueBtn);
     continueBtn.onclick = () => {
       const chosen = HABIT_PRESETS.filter(h => selected.has(h.key)).map(h => ({ key: h.key, icon: h.icon, label: h.label }));
       const all = [...chosen, ...customList];
-      if (all.length === 0) { addNote(ob, 'Elige al menos un hábito o agrega el tuyo ✍️'); return; }
+      if (all.length === 0) { addNote(ob, t('chooseHabitOrCustom')); return; }
       state.profile.habitos = all;
       all.forEach(h => state.streaks[h.key] = state.streaks[h.key] || 0);
-      addBubble(ob, all.map(h => `${h.icon} ${h.label}`).join('   '), 'user');
+      addBubble(ob, all.map(h => `${h.icon} ${habitDisplayLabel(h)}`).join('   '), 'user');
       advanceOnboarding();
     };
   };
@@ -662,17 +1310,17 @@ function renderHabitSchedule() {
     const rows = [];
     state.profile.habitos.forEach(h => {
       const row = document.createElement('div'); row.className = 'habit-sched-row';
-      const lbl = document.createElement('span'); lbl.className = 'hs-label'; lbl.textContent = `${h.icon} ${h.label}`;
+      const lbl = document.createElement('span'); lbl.className = 'hs-label'; lbl.textContent = `${h.icon} ${habitDisplayLabel(h)}`;
       const time = document.createElement('input'); time.type = 'time'; time.value = defaultTimeFor(h.key);
       const repWrap = document.createElement('label'); repWrap.className = 'hs-repeat';
       const rep = document.createElement('input'); rep.type = 'checkbox'; rep.checked = true;
-      repWrap.appendChild(rep); repWrap.appendChild(document.createTextNode('Toda la semana'));
+      repWrap.appendChild(rep); repWrap.appendChild(document.createTextNode(t('todaSemana')));
       row.appendChild(lbl); row.appendChild(time); row.appendChild(repWrap);
       list.appendChild(row);
       rows.push({ h, time, rep });
     });
     obControls.appendChild(list);
-    const continueBtn = document.createElement('button'); continueBtn.className = 'send-btn'; continueBtn.style.width = '100%'; continueBtn.style.marginTop = '4px'; continueBtn.textContent = 'Guardar horarios';
+    const continueBtn = document.createElement('button'); continueBtn.className = 'send-btn'; continueBtn.style.width = '100%'; continueBtn.style.marginTop = '4px'; continueBtn.textContent = t('guardarHorarios');
     obControls.appendChild(continueBtn);
     continueBtn.onclick = () => {
       const todayStr = ymd(new Date());
@@ -685,27 +1333,28 @@ function renderHabitSchedule() {
         r.h.durationWeeks = null;
         r.h.createdAt = todayStr;
       });
-      addBubble(ob, rows.map(r => `${r.h.icon} ${r.h.time}${r.h.repeatWeekly ? ' · toda la semana' : ' · solo hoy'}`).join('   '), 'user');
+      addBubble(ob, rows.map(r => t('horarioResumen', r.h.icon, r.h.time, r.h.repeatWeekly)).join('   '), 'user');
       advanceOnboarding();
     };
   };
 }
 
 const steps = [
-  { ask: "¡Hola! 👋 Soy Bless, tu compañero de hábitos y agenda. Antes de empezar quiero conocerte de verdad — esto va a tomar un par de minutos, pero vale la pena. ¿Cómo te llamas?", render: renderTextInput('nombre', 'Tu nombre') },
-  { ask: (p) => `Un gusto, ${p.nombre} 🙌. ¿A qué hora empieza y a qué hora termina tu horario fijo de trabajo?`, render: renderWorkHours() },
-  { ask: "¿En qué momento del día sientes que tienes más energía y concentración? ⚡", render: renderQuickReplies('energia', ['Mañana', 'Tarde', 'Noche']) },
-  { ask: "¿Te consideras más madrugador/a o más nocturno/a? 🌅🌙", render: renderQuickReplies('tipo', ['Madrugador/a', 'Nocturno/a', 'Depende del día']) },
-  { ask: "Si quieres, puedo tomar en cuenta tu peso y talla para sugerirte hábitos de salud más ajustados. Es totalmente opcional.", render: renderPesoTalla() },
-  { ask: "Ahora quiero entender de verdad qué se te dificulta 💭. ¿Qué es lo que más te cuesta cuando intentas construir un hábito?", render: renderMultiSelect('dificultades', ['Procrastino', 'Se me olvida', 'Pierdo la motivación a medio camino', 'Me falta tiempo', 'Me falta consistencia'], 'Otro motivo (opcional)') },
-  { ask: "¿Qué has intentado antes que no te terminó funcionando?", render: renderMultiSelect('intentosPrevios', ['Apps de hábitos', 'Fuerza de voluntad', 'Retos con amigos', 'Calendarios/recordatorios', 'Nada de lo anterior'], 'Otro intento (opcional)') },
-  { ask: "¿Cuáles son tus \"detonantes\" — las situaciones donde sabes que sueles fallar?", render: renderMultiSelect('detonantes', ['Empezar muy grande', 'Hacerlo sola/o', 'No tener quién me recuerde', 'Sentirme forzada/o', 'Falta de recompensa inmediata'], 'Otro (opcional)') },
-  { ask: "Cuéntame tu rutina real, no solo el trabajo.", render: renderRutina() },
-  { ask: "¿Cuándo tienes tiempo libre de verdad en tu día?", render: renderQuickReplies('tiempoLibre', ['Mañana', 'Tarde', 'Noche', 'Varía mucho']) },
-  { ask: "¿Qué te mueve más para sostener algo en el tiempo?", render: renderQuickReplies('motivacion', ['Disciplina', 'Recompensa', 'Competencia', 'Acompañamiento']) },
-  { ask: "Última pregunta difícil, y es importante: ¿hay días donde sabes que te sientes particularmente mal o desmotivada/o? Así nunca te voy a presionar igual esos días.", render: renderMultiSelect('diasDificiles', ['Lunes', 'Fin de semana', 'Cuando estoy cansada/o', 'Cuando tengo mucho trabajo', 'No tengo un patrón claro'], null) },
-  { ask: (p) => `Ya casi, ${p.nombre} 🎯. Elige los hábitos que quieres empezar a construir (puedes elegir varios, o agregar el tuyo).`, render: renderHabitPicker() },
-  { ask: "Última cosa: dime a qué hora sueles hacer cada uno, y si quieres que te lo agende automáticamente toda la semana o solo por hoy.", render: renderHabitSchedule() },
+  { ask: () => t('obAsk1'), render: renderTextInput('nombre', 'nombrePh') },
+  { ask: (p) => t('obAsk2', p), render: renderWorkHours() },
+  { ask: () => t('obAsk3'), render: renderQuickReplies('energia', OPTIONS.energia) },
+  { ask: () => t('obAsk4'), render: renderQuickReplies('tipo', OPTIONS.tipo) },
+  { ask: () => t('obAsk5'), render: renderEdad() },
+  { ask: () => t('obAsk6'), render: renderPesoTalla() },
+  { ask: () => t('obAsk7'), render: renderMultiSelect('dificultades', OPTIONS.dificultades, 'otherReasonPh') },
+  { ask: () => t('obAsk8'), render: renderMultiSelect('intentosPrevios', OPTIONS.intentosPrevios, 'otherAttemptPh') },
+  { ask: () => t('obAsk9'), render: renderMultiSelect('detonantes', OPTIONS.detonantes, 'otherPh') },
+  { ask: () => t('obAsk10'), render: renderRutina() },
+  { ask: () => t('obAsk11'), render: renderQuickReplies('tiempoLibre', OPTIONS.tiempoLibre) },
+  { ask: () => t('obAsk12'), render: renderQuickReplies('motivacion', OPTIONS.motivacion) },
+  { ask: () => t('obAsk13'), render: renderMultiSelect('diasDificiles', OPTIONS.diasDificiles, null) },
+  { ask: (p) => t('obAsk14', p), render: renderHabitPicker() },
+  { ask: () => t('obAsk15'), render: renderHabitSchedule() },
 ];
 
 function updateProgress() { const pct = Math.round((state.onboardingStep / steps.length) * 100); progressFill.style.width = pct + '%'; }
@@ -720,12 +1369,23 @@ async function advanceOnboarding() {
 }
 
 function buildDiagnostic(p) {
-  const TIPO = { 'Madrugador/a': 'madrugadora/or', 'Nocturno/a': 'de energía nocturna', 'Depende del día': 'de energía variable' };
-  const MOTIV = { 'Disciplina': 'la disciplina', 'Recompensa': 'las recompensas', 'Competencia': 'la competencia', 'Acompañamiento': 'sentirte acompañada/o' };
+  if (currentLang() === 'en') {
+    const TIPO = { madrugador: 'an early riser', nocturno: 'a night-energy person', depende: 'someone with a variable rhythm' };
+    const MOTIV = { disciplina: 'discipline', recompensa: 'rewards', competencia: 'competition', acompanamiento: 'feeling accompanied' };
+    const tipoTxt = TIPO[p.tipo] || 'someone with your own rhythm';
+    const motivTxt = MOTIV[p.motivacion] || 'your own reasons';
+    const dificultad = (optLabel('dificultades', p.dificultades[0]) || 'staying consistent').toLowerCase();
+    const detonante = (optLabel('detonantes', p.detonantes[0]) || 'tough starts').toLowerCase();
+    const title = `${p.nombre ? p.nombre + ': ' : ''}${tipoTxt}, motivated by ${motivTxt}`;
+    const body = `What's hardest for you is "${dificultad}", and you tend to slip up when "${detonante}". That's why I'm going to suggest small steps, with reminders and no extra pressure on your hard days. It's not about willpower — it's about designing your day in your favor.`;
+    return { title, body };
+  }
+  const TIPO = { madrugador: 'madrugadora/or', nocturno: 'de energía nocturna', depende: 'de energía variable' };
+  const MOTIV = { disciplina: 'la disciplina', recompensa: 'las recompensas', competencia: 'la competencia', acompanamiento: 'sentirte acompañada/o' };
   const tipoTxt = TIPO[p.tipo] || 'con tu propio ritmo';
   const motivTxt = MOTIV[p.motivacion] || 'tus propias razones';
-  const dificultad = (p.dificultades[0] || 'mantener la constancia').toLowerCase();
-  const detonante = (p.detonantes[0] || 'los inicios difíciles').toLowerCase();
+  const dificultad = (optLabel('dificultades', p.dificultades[0]) || 'mantener la constancia').toLowerCase();
+  const detonante = (optLabel('detonantes', p.detonantes[0]) || 'los inicios difíciles').toLowerCase();
   const title = `${p.nombre ? p.nombre + ': ' : ''}${tipoTxt}, motivada por ${motivTxt}`;
   const body = `Lo que más se te dificulta es "${dificultad}", y sueles fallar cuando "${detonante}". Por eso voy a proponerte pasos pequeños, con recordatorios y sin presión extra en tus días difíciles. No se trata de fuerza de voluntad — se trata de diseñar tu día a tu favor.`;
   return { title, body };
@@ -734,16 +1394,18 @@ function buildDiagnostic(p) {
 async function finishOnboarding() {
   progressFill.style.width = '100%';
   setAvatarMood('thinking');
-  await agentSay(ob, `Perfecto, ${state.profile.nombre}. Con todo esto ya te entiendo mucho mejor 🧠. Dame un segundo para armar tu diagnóstico…`, 500);
+  await agentSay(ob, t('diagnosingMsg', state.profile.nombre), 500);
   await new Promise(r => setTimeout(r, 1100));
   state.diagnostic = buildDiagnostic(state.profile);
-  generateSimulatedHistory();
+  state.history = [];
+  state.lastActiveDate = ymd(new Date());
+  lastCelebratedPct = 0;
   seedTodayAgendaFromHabits();
   setAvatarMood('proud');
   addDiagCard(ob, state.diagnostic);
   await new Promise(r => setTimeout(r, 700));
-  await agentSay(ob, 'A partir de ahora, cada vez que abras la app te voy a preguntar qué quieres lograr y te ayudo a organizarlo, tomando en cuenta todo esto. ¡Vamos a tu primer día! 🚀', 700);
-  addNote(ob, 'Evaluación completa ✓');
+  await agentSay(ob, t('afterDiagMsg'), 700);
+  addNote(ob, t('evalCompleteNote'));
   setTimeout(startChat, 900);
 }
 
@@ -751,8 +1413,93 @@ function beginOnboarding() {
   document.getElementById('view-login').classList.remove('active');
   document.getElementById('view-onboarding').classList.add('active');
   updateProgress();
-  agentSay(ob, steps[0].ask, 300).then(() => steps[0].render());
+  agentSay(ob, steps[0].ask(state.profile), 300).then(() => steps[0].render());
 }
+
+/* ============================================================
+   IDIOMA Y PAÍS — primera pantalla al entrar por primera vez, antes del
+   onboarding. Se detecta automáticamente (navigator.language / Intl) pero
+   la persona puede corregirlo. Se puede volver a cambiar luego desde
+   Configuración (⚙️ en Perfil).
+   ============================================================ */
+function detectLanguageCode() {
+  const loc = (navigator.language || 'es').toLowerCase();
+  return loc.startsWith('en') ? 'en' : 'es';
+}
+function detectCountryName() {
+  try {
+    const loc = navigator.language || 'es-PE';
+    const parts = loc.split('-');
+    const region = parts.length > 1 ? parts[1] : null;
+    if (region && window.Intl && Intl.DisplayNames) {
+      const dn = new Intl.DisplayNames(['es'], { type: 'region' });
+      const name = dn.of(region.toUpperCase());
+      if (name) return name;
+    }
+  } catch (e) { /* navegador sin soporte para Intl.DisplayNames — se deja vacío y editable */ }
+  return '';
+}
+function beginLanguageSelection() {
+  document.getElementById('view-login').classList.remove('active');
+  document.getElementById('view-onboarding').classList.add('active');
+  ob.innerHTML = ''; obControls.innerHTML = '';
+  const detectedLang = detectLanguageCode();
+  const detectedCountry = detectCountryName();
+  // A esta altura todavía no se eligió idioma — t() cae de forma natural al
+  // español (default de currentLang()), así que este mensaje siempre sale en
+  // español; es intencional, ver nota en el plan de i18n.
+  agentSay(ob, t('langSelectIntro'), 250)
+    .then(() => renderLanguageCountryPicker(detectedLang, detectedCountry));
+}
+function renderLanguageCountryPicker(detectedLang, detectedCountry) {
+  obControls.innerHTML = '';
+  let chosenLang = detectedLang;
+  const langWrap = document.createElement('div'); langWrap.className = 'quick-replies';
+  [{code:'es',label:'Español'},{code:'en',label:'English'}].forEach(o => {
+    const b = document.createElement('button'); b.className = 'qr-btn' + (o.code===detectedLang?' selected':''); b.textContent = o.label;
+    b.onclick = () => { chosenLang = o.code; langWrap.querySelectorAll('.qr-btn').forEach(x=>x.classList.remove('selected')); b.classList.add('selected'); };
+    langWrap.appendChild(b);
+  });
+  obControls.appendChild(langWrap);
+  const countryRow = document.createElement('div'); countryRow.className = 'row-input'; countryRow.style.marginTop = '10px';
+  const countryInput = document.createElement('input'); countryInput.type = 'text'; countryInput.placeholder = detectedLang === 'en' ? 'Your country' : 'Tu país'; countryInput.value = detectedCountry;
+  countryRow.appendChild(countryInput); obControls.appendChild(countryRow);
+  const continueBtn = document.createElement('button'); continueBtn.className = 'send-btn'; continueBtn.style.width = '100%'; continueBtn.style.marginTop = '10px'; continueBtn.textContent = detectedLang === 'en' ? 'Continue' : 'Continuar';
+  obControls.appendChild(continueBtn);
+  continueBtn.onclick = () => {
+    state.settings.language = chosenLang;
+    state.settings.country = countryInput.value.trim() || detectedCountry || null;
+    addBubble(ob, `${chosenLang==='en'?'English':'Español'} · ${state.settings.country || '—'}`, 'user');
+    ob.innerHTML = ''; obControls.innerHTML = '';
+    refreshLocaleArrays();
+    applyStaticI18n();
+    beginOnboarding();
+  };
+}
+
+/* ============================================================
+   CONFIGURACIÓN — tema (claro/oscuro/dorado Premium), idioma y país,
+   editable en cualquier momento desde Perfil.
+   ============================================================ */
+function openSettings() {
+  const themeWrap = document.getElementById('settings-theme-options'); themeWrap.innerHTML = '';
+  const themes = [{code:'dark',label:t('themeDark')},{code:'light',label:t('themeLight')}];
+  if (isPremium) themes.push({code:'premium',label:t('themePremium')});
+  themes.forEach(th => {
+    const b = document.createElement('button'); b.className = 'qr-btn' + ((state.settings.theme||'dark')===th.code?' selected':''); b.textContent = th.label; b.dataset.code = th.code;
+    b.onclick = () => { themeWrap.querySelectorAll('.qr-btn').forEach(x=>x.classList.remove('selected')); b.classList.add('selected'); };
+    themeWrap.appendChild(b);
+  });
+  const langWrap = document.getElementById('settings-lang-options'); langWrap.innerHTML = '';
+  [{code:'es',label:'Español'},{code:'en',label:'English'}].forEach(o => {
+    const b = document.createElement('button'); b.className = 'qr-btn' + ((state.settings.language||'es')===o.code?' selected':''); b.textContent = o.label; b.dataset.code = o.code;
+    b.onclick = () => { langWrap.querySelectorAll('.qr-btn').forEach(x=>x.classList.remove('selected')); b.classList.add('selected'); };
+    langWrap.appendChild(b);
+  });
+  document.getElementById('settings-country-input').value = state.settings.country || '';
+  document.getElementById('settings-overlay').style.display = 'flex';
+}
+function closeSettings() { document.getElementById('settings-overlay').style.display = 'none'; }
 
 /* ============================================================
    PLAN PREMIUM (Paddle Billing) — declarado antes de bootstrapApp() a
@@ -814,7 +1561,7 @@ function hidePremiumButtonsIfNative() {
   if (!IS_NATIVE_APP) return;
   document.querySelectorAll('.premium-btn').forEach((btn) => {
     if (btn.id === 'push-toggle-btn') return; // no es un botón de compra
-    btn.outerHTML = '<div style="font-size:13px;color:var(--text-dim);">Para gestionar tu plan Premium, entra a blesshabit.app desde tu navegador.</div>';
+    btn.outerHTML = `<div style="font-size:13px;color:var(--text-dim);">${t('nativePremiumManageMsg')}</div>`;
   });
 }
 
@@ -844,10 +1591,23 @@ async function bootstrapApp() {
     const stateData = await stateRes.json();
     if (stateData.ok && stateData.state && stateData.state.profile && stateData.state.profile.nombre) {
       Object.assign(state, stateData.state);
+      state.settings = Object.assign({ language: null, country: null, theme: 'dark' }, state.settings || {});
+      state.profile.logros = state.profile.logros || [];
+      rolloverDayIfNeeded();
+      applyTheme(state.settings.theme);
+      refreshLocaleArrays();
+      applyStaticI18n();
       document.getElementById('view-login').classList.remove('active');
       startChat();
-    } else {
+    } else if (stateData.ok && stateData.state && stateData.state.settings && stateData.state.settings.language) {
+      Object.assign(state, stateData.state);
+      applyTheme(state.settings.theme);
+      refreshLocaleArrays();
+      applyStaticI18n();
       beginOnboarding();
+    } else {
+      applyStaticI18n();
+      beginLanguageSelection();
     }
   } catch (e) {
     loginLoading.style.display = 'none';
@@ -875,11 +1635,23 @@ function adBannerHtml() {
   if (ADSENSE_CLIENT_ID && ADSENSE_SLOT_ID) {
     return `<div class="ad-slot"><ins class="adsbygoogle" style="display:block;width:100%;" data-ad-client="${ADSENSE_CLIENT_ID}" data-ad-slot="${ADSENSE_SLOT_ID}" data-ad-format="auto" data-full-width-responsive="true"></ins></div>`;
   }
-  return `<div class="ad-slot"><span class="ad-fallback-label">Espacio de anuncios (AdSense) — configúralo en Secrets</span></div>`;
+  return `<div class="ad-slot"><span class="ad-fallback-label">${t('adFallbackLabel')}</span></div>`;
 }
 function pushAdsenseSlots() {
   if (isPremium || !ADSENSE_CLIENT_ID || !ADSENSE_SLOT_ID) return;
   try { (window.adsbygoogle = window.adsbygoogle || []).push({}); } catch (e) { /* AdSense aún no cargó o el sitio no está aprobado */ }
+}
+function renderChatAdSlot() {
+  const el = document.getElementById('chat-ad-slot');
+  if (!el) return;
+  el.innerHTML = adBannerHtml();
+  pushAdsenseSlots();
+}
+function renderCalAdSlot() {
+  const el = document.getElementById('cal-ad-slot');
+  if (!el) return;
+  el.innerHTML = adBannerHtml();
+  pushAdsenseSlots();
 }
 
 /* Después de que el checkout de Paddle se completa, el que activa el Premium de verdad
@@ -911,15 +1683,15 @@ async function openPaddleCheckout() {
   try {
     cfg = await (await fetch('/api/paddle-config')).json();
   } catch (e) {
-    alert('No se pudo conectar con el servidor para iniciar el pago. Intenta de nuevo.');
+    alert(t('paddleConnFail'));
     return;
   }
   if (!cfg.configured || !cfg.clientToken || !cfg.priceId) {
-    alert('El cobro con Paddle todavía no está configurado en el servidor (faltan las Secrets de Paddle). Avísale a quien administra la app.');
+    alert(t('paddleNotConfigured'));
     return;
   }
   if (typeof Paddle === 'undefined') {
-    alert('No se pudo cargar el widget de pago de Paddle. Revisa tu conexión e intenta de nuevo.');
+    alert(t('paddleWidgetFail'));
     return;
   }
   if (cfg.environment !== 'production') Paddle.Environment.set('sandbox');
@@ -930,7 +1702,7 @@ async function openPaddleCheckout() {
       // webhook del servidor. Ver pollPremiumStatus().
       if (event.name === 'checkout.completed') {
         Paddle.Checkout.close();
-        alert('¡Gracias! Estamos confirmando tu pago — Bless Habit Premium se activa en unos segundos…');
+        alert(t('paddleThanks'));
         pollPremiumStatus();
       }
     },
@@ -943,7 +1715,7 @@ async function openPaddleCheckout() {
 }
 
 async function cancelPremium() {
-  if (!confirm('¿Seguro que quieres cancelar tu suscripción Premium?')) return;
+  if (!confirm(t('cancelConfirm'))) return;
   try {
     await fetch('/api/cancel-subscription', { method: 'POST' });
   } catch (e) { /* igual la quitamos localmente */ }
@@ -987,18 +1759,18 @@ async function refreshPushUI() {
   const btnEl = document.getElementById('push-toggle-btn');
   if (!textEl || !btnEl) return;
   if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
-    textEl.textContent = 'Este navegador no soporta notificaciones.';
+    textEl.textContent = t('pushNotSupported');
     btnEl.style.display = 'none';
     return;
   }
   const sub = await getExistingPushSubscription();
   if (sub) {
-    textEl.textContent = 'Activadas — Bless te escribe si pasas varios días sin abrir la app.';
-    btnEl.textContent = '🔕 Desactivar recordatorios';
+    textEl.textContent = t('pushEnabledText');
+    btnEl.textContent = t('pushDisableBtn');
     btnEl.onclick = disablePush;
   } else {
-    textEl.textContent = 'Desactivadas. Actívalas para que Bless te escriba si pasas varios días sin abrir la app.';
-    btnEl.textContent = '🔔 Activar recordatorios';
+    textEl.textContent = t('pushDisabledText');
+    btnEl.textContent = t('pushEnableBtn');
     btnEl.onclick = enablePush;
   }
 }
@@ -1007,16 +1779,16 @@ async function enablePush() {
   try {
     const cfg = await (await fetch('/api/push/vapid-public-key')).json();
     if (!cfg.configured || !cfg.publicKey) {
-      alert('Las notificaciones todavía no están configuradas en el servidor (faltan las Secrets de VAPID). Avísale a quien administra la app.');
+      alert(t('pushNotConfigured'));
       return;
     }
     const permission = await Notification.requestPermission();
     if (permission !== 'granted') {
-      alert('No diste permiso de notificaciones — puedes activarlo luego desde los ajustes del navegador.');
+      alert(t('pushPermissionDenied'));
       return;
     }
     const reg = await registerServiceWorkerIfNeeded();
-    if (!reg) { alert('No se pudo registrar el service worker.'); return; }
+    if (!reg) { alert(t('pushSwFail')); return; }
     const sub = await reg.pushManager.subscribe({
       userVisibleOnly: true,
       applicationServerKey: urlBase64ToUint8Array(cfg.publicKey),
@@ -1028,7 +1800,7 @@ async function enablePush() {
     });
     refreshPushUI();
   } catch (e) {
-    alert('No se pudo activar las notificaciones. Intenta de nuevo.');
+    alert(t('pushEnableFail'));
   }
 }
 
@@ -1055,15 +1827,12 @@ function startChat() {
   document.getElementById('view-chat').classList.add('active');
   document.getElementById('tabbar').style.display = 'flex';
   document.getElementById('header-title').textContent = 'Bless Habit';
-  document.getElementById('header-sub').textContent = `Bless · hola, ${state.profile.nombre}`;
+  document.getElementById('header-sub').textContent = t('headerSubHello', state.profile.nombre);
   renderHeaderRing();
   renderAgenda();
-  say(chatScroll, `La persona acaba de terminar su evaluación inicial y entra al chat por primera vez hoy. Salúdala usando su nombre y pregúntale qué quiere lograr hoy.`, pick([
-    `Buenos días, ${state.profile.nombre}. ¿Qué quieres lograr hoy? ☀️`,
-    `¡Hola de nuevo, ${state.profile.nombre}! ¿Con qué empezamos el día? 🙂`,
-    `${state.profile.nombre}, cuéntame qué tienes en mente para hoy.`
-  ]), 300).then(() => {
-    if (state.agenda.length) addNote(chatScroll, 'Ya dejé tu día armado con los hábitos que elegiste — puedes marcarlos, moverlos o quitarlos cuando quieras. 🗓️');
+  renderChatAdSlot();
+  say(chatScroll, `La persona acaba de terminar su evaluación inicial y entra al chat por primera vez hoy. Salúdala usando su nombre y pregúntale qué quiere lograr hoy.`, tp('greetingFallback', state.profile.nombre), 300).then(() => {
+    if (state.agenda.length) addNote(chatScroll, t('dayArmedNote'));
   });
 }
 function renderHeaderRing() {
@@ -1072,7 +1841,6 @@ function renderHeaderRing() {
   const r = 16, c = 2*Math.PI*r, offset = c - (pct/100)*c;
   document.getElementById('header-right').innerHTML = `
     <div style="display:flex; align-items:center; gap:8px;">
-      ${badgeHtml()}
       <div class="progress-ring"><svg width="40" height="40"><circle class="bg" cx="20" cy="20" r="${r}"></circle><circle class="fg" cx="20" cy="20" r="${r}" stroke-dasharray="${c}" stroke-dashoffset="${offset}"></circle></svg><div class="label">${total ? done+'/'+total : '0'}</div></div>
     </div>`;
   saveStateToServer();
@@ -1086,6 +1854,9 @@ function extractTime(text) {
   if (m) { let h = parseInt(m[1]); if (m[2]==='pm' && h<12) h+=12; if (m[2]==='am' && h===12) h=0; return String(h).padStart(2,'0')+':00'; }
   m = text.match(/a las (\d{1,2})/);
   if (m) { let h = parseInt(m[1]); if (text.includes('tarde') || text.includes('noche')) { if (h<12) h+=12; } return String(h).padStart(2,'0')+':00'; }
+  // patrón en inglés: "at 5", "at 5 o'clock"
+  m = text.match(/\bat (\d{1,2})\b/);
+  if (m) { let h = parseInt(m[1]); if (text.includes('afternoon') || text.includes('evening') || text.includes('night')) { if (h<12) h+=12; } return String(h).padStart(2,'0')+':00'; }
   // formato 24h en texto plano: "19", "19 horas", "19h", "19hrs"
   m = text.match(/^(\d{1,2})\s*(horas?|hrs?|h)?$/);
   if (m) { const h = parseInt(m[1]); if (h >= 0 && h <= 23) return String(h).padStart(2,'0')+':00'; }
@@ -1120,35 +1891,65 @@ function seedTodayAgendaFromHabits() {
   });
   state.agenda.sort((a,b)=> timeToMinutes(a.time)-timeToMinutes(b.time));
 }
-const VALIDATION_PHRASES = [
-  (t) => `Está bien no hacer "${t}" hoy 🤍. ¿Prefieres dejar este hábito para después, o empezamos con algo más pequeño?`,
-  (t) => `Totalmente válido. A veces "${t}" no es lo de hoy — ¿probamos con algo más chiquito en su lugar?`,
-  (t) => `Sin problema, lo quito. Podemos retomar "${t}" cuando te sientas lista/o — eso también cuenta como avanzar.`,
-];
 async function offerValidation(taskLabel) {
   setAvatarMood('caring');
-  await say(chatScroll, `La persona acaba de quitar "${taskLabel}" de su agenda de hoy. Valida que está bien no hacerlo, sin culpa, y ofrécele dejarlo para después o empezar con algo más pequeño en su lugar.`, pick(VALIDATION_PHRASES)(taskLabel));
+  await say(chatScroll, `La persona acaba de quitar "${taskLabel}" de su agenda de hoy. Valida que está bien no hacerlo, sin culpa, y ofrécele dejarlo para después o empezar con algo más pequeño en su lugar.`, tp('validationFallback', taskLabel));
 }
+/* ============================================================
+   CELEBRACIONES POR PORCENTAJE — cada vez que se marca algo como hecho,
+   se revisa el % del día y, si se cruzó una nueva década (10%, 20%, …
+   100%) que no se había celebrado hoy, se muestra una animación +
+   frase distinta (alternando ánimo propio de Bless y citas conocidas
+   sobre hábitos).
+   ============================================================ */
+const CELEBRATION_TIERS = [
+  { min: 10,  emoji: '🙂✨',   anim: 'celebrate-sparkle',  kind: 'encouragement' },
+  { min: 20,  emoji: '🥰🎊',   anim: 'celebrate-confetti', kind: 'quote' },
+  { min: 30,  emoji: '💪',     anim: 'celebrate-pop',      kind: 'encouragement' },
+  { min: 40,  emoji: '🔥',     anim: 'celebrate-pop',      kind: 'quote' },
+  { min: 50,  emoji: '🌟',     anim: 'celebrate-sparkle',  kind: 'encouragement' },
+  { min: 60,  emoji: '🚀',     anim: 'celebrate-pop',      kind: 'quote' },
+  { min: 70,  emoji: '🏅',     anim: 'celebrate-confetti', kind: 'encouragement' },
+  { min: 80,  emoji: '🎉',     anim: 'celebrate-confetti', kind: 'quote' },
+  { min: 90,  emoji: '🌈✨',   anim: 'celebrate-sparkle',  kind: 'encouragement' },
+  { min: 100, emoji: '🏆🎊✨', anim: 'celebrate-trophy',   kind: 'quote' },
+];
+function maybeCelebrate(pct) {
+  const tier = [...CELEBRATION_TIERS].reverse().find(t => pct >= t.min && lastCelebratedPct < t.min);
+  if (!tier) return;
+  lastCelebratedPct = tier.min;
+  const phrase = tier.kind === 'quote' ? tp('habitQuotes') : tp('encouragementPhrases');
+  const extra = tier.min === 100 ? t('celebrateAllDone') : '';
+  const div = document.createElement('div');
+  div.className = 'celebrate-note ' + tier.anim;
+  div.textContent = `${tier.emoji} ${phrase}${extra}`;
+  chatScroll.appendChild(div);
+  chatScroll.scrollTop = chatScroll.scrollHeight;
+}
+
 function toggleDone(idx) {
   const item = state.agenda[idx]; item.done = !item.done;
   state.streaks[item.habitKey] = Math.max(0, (state.streaks[item.habitKey] || 0) + (item.done ? 1 : -1));
   renderAgenda(); renderHeaderRing();
   if (item.done) {
     setAvatarMood('happy', 1600);
-    if (state.agenda.length > 0 && state.agenda.every(a => a.done)) addNote(chatScroll, '🎉 ¡Completaste todo tu día! Bless está orgulloso de ti.', 'celebrate-note');
+    maybeAutoLogroFromStreak(item.habitKey);
+    const total = state.agenda.length, doneCt = state.agenda.filter(a=>a.done).length;
+    const pct = total ? Math.round((doneCt/total)*100) : 0;
+    maybeCelebrate(pct);
   }
 }
 function renderAgenda() {
   const total = state.agenda.length, done = state.agenda.filter(a=>a.done).length;
   document.getElementById('agenda-count').textContent = total ? `${done}/${total}` : '';
   agendaList.innerHTML = '';
-  if (state.agenda.length === 0) { agendaList.innerHTML = '<div style="font-size:12px;color:var(--text-dim);padding:4px 0;">Aún no hay nada agendado hoy.</div>'; return; }
+  if (state.agenda.length === 0) { agendaList.innerHTML = `<div style="font-size:12px;color:var(--text-dim);padding:4px 0;">${t('noAgendaYet')}</div>`; return; }
   state.agenda.forEach((item, idx) => {
     const div = document.createElement('div'); div.className = 'agenda-item' + (item.done ? ' done' : '');
     // solo las tareas que corresponden a un hábito seguido (no las de una sola vez
     // agregadas por chat libre) muestran el ⚙️ para configurar días/horario/duración
     const habitIdx = state.profile.habitos.findIndex(h => h.key === item.habitKey && h.label === item.task);
-    div.innerHTML = `<span class="check">${item.done ? '✓' : ''}</span><span class="icon">${item.icon}</span><span class="time">${item.time}</span><span class="task">${item.task}</span>${habitIdx !== -1 ? `<span class="edit" title="Configurar este hábito">⚙️</span>` : ''}<span class="rm">✕</span>`;
+    div.innerHTML = `<span class="check">${item.done ? '✓' : ''}</span><span class="icon">${item.icon}</span><span class="time">${item.time}</span><span class="task">${itemDisplayLabel({ label: item.task, habitKey: item.habitKey })}</span>${habitIdx !== -1 ? `<span class="edit" title="${t('configureHabitTitle')}">⚙️</span>` : ''}<span class="rm">✕</span>`;
     div.querySelector('.check').onclick = () => toggleDone(idx);
     const editBtn = div.querySelector('.edit');
     if (editBtn) editBtn.onclick = () => openHabitEditor(habitIdx);
@@ -1158,19 +1959,118 @@ function renderAgenda() {
 }
 renderAgenda();
 
-function energyHint() { const map = {'Mañana':'la mañana','Tarde':'la tarde','Noche':'la noche'}; return map[state.profile.energia] || 'tu horario de más energía'; }
-function isAffirmative(t) { return /\b(si|sí|dale|ok|va|bueno|claro|perfecto)\b/.test(t.toLowerCase()); }
-function isNegative(t) { const l = t.toLowerCase().trim(); return l === 'no' || (/^no\b/.test(l) && l.length < 12); }
+function energyHint() {
+  const map = { manana: 'energyHintManana', tarde: 'energyHintTarde', noche: 'energyHintNoche' };
+  return t(map[state.profile.energia] || 'energyHintDefault');
+}
+function isAffirmative(t) { return /\b(si|sí|dale|ok|va|bueno|claro|perfecto|yes|yeah|yep|sure|ok(ay)?|sounds good|go ahead)\b/.test(t.toLowerCase()); }
+function isNegative(t) { const l = t.toLowerCase().trim(); return l === 'no' || l === 'nope' || l === "no thanks" || (/^no\b/.test(l) && l.length < 12); }
 
 const PHRASES = {
-  confirmed: (task, time) => pick([`Listo, agregué "${task}" a las ${time}. ¿Algo más para hoy? 😊`, `¡Hecho! "${task}" queda a las ${time}. ¿Qué más te gustaría hacer?`, `Anotado ✅ "${task}" a las ${time}. ¿Seguimos con algo más?`]),
-  conflict: (alt) => pick([`Esa hora choca con tu horario fijo de trabajo. Tienes un espacio libre a las ${alt}, ¿lo agrego ahí?`, `Justo ahí estás trabajando 💼. Veo un huequito libre a las ${alt}, ¿te sirve?`, `Ups, eso cae dentro de tu horario laboral. ¿Qué tal a las ${alt}?`]),
-  askTime: (task) => pick([`Anotado: "${task}". ¿A qué hora te gustaría hacerlo hoy?`, `Me gusta. ¿A qué hora lo hacemos: "${task}"?`, `Perfecto, "${task}" — ¿a qué hora te queda mejor?`]),
+  confirmed: (task, time) => tp('confirmedFallback', task, time),
+  conflict: (alt) => tp('conflictFallback', alt),
+  askTime: (task) => tp('askTimeFallback', task),
 };
+
+/* ============================================================
+   LOGROS — Bless detecta cuando la persona cuenta algo importante en el
+   chat (bajó de peso, logró algo, cumplió una meta) y ofrece guardarlo en
+   su perfil, con estilo dorado. También se agregan solos al llegar a
+   rachas importantes (7 / 30 / 100 días) en un hábito.
+   ============================================================ */
+function detectAchievementMention(text) {
+  const l = text.toLowerCase();
+  return /(logr[eé]|conseguí|consegui|baj[eé] de peso|sub[ií] de peso|complet[eé]|alcanc[eé]|cumpl[ií]|por fin (pude|logré)|lo logré)/.test(l)
+    || /(i (achieved|managed to|finally|completed|accomplished|hit my goal)|i lost weight|i gained weight|i did it)/.test(l);
+}
+function addLogro(text) {
+  state.profile.logros = state.profile.logros || [];
+  state.profile.logros.push({ text, date: ymd(new Date()) });
+  saveStateToServer();
+  setAvatarMood('proud');
+  renderProfile();
+}
+function maybeAutoLogroFromStreak(habitKey) {
+  const streak = state.streaks[habitKey] || 0;
+  if (![7, 30, 100].includes(streak)) return;
+  const h = state.profile.habitos.find(x => x.key === habitKey);
+  if (!h) return;
+  const text = currentLang() === 'en'
+    ? `🔥 ${streak} days in a row with ${h.icon} ${habitDisplayLabel(h)}`
+    : `🔥 ${streak} días seguidos con ${h.icon} ${habitDisplayLabel(h)}`;
+  state.profile.logros = state.profile.logros || [];
+  if (state.profile.logros.some(l => l.text === text)) return;
+  state.profile.logros.push({ text, date: ymd(new Date()) });
+  saveStateToServer();
+}
+
+function detectAddHabitIntent(text) {
+  const l = text.toLowerCase();
+  return /(agregar|añadir|anadir|sumar|crear|arma(r|me)?)\s+.*h[aá]bito/.test(l)
+    || /h[aá]bito\s+(nuevo|personalizado)/.test(l)
+    || /^(agregar|añadir|crear)\s+h[aá]bito/.test(l)
+    || /quiero (un |otro )?h[aá]bito/.test(l)
+    || /(add|create|make|set up|build)\s+.*habit/.test(l)
+    || /new habit/.test(l)
+    || /i want (a |another )?habit/.test(l);
+}
 
 async function handleUserMessage(text) {
   addBubble(chatScroll, text, 'user');
   const pending = state.pending;
+
+  if (!pending && detectAddHabitIntent(text)) {
+    await agentSay(chatScroll, tp('addHabitFallback'), 300);
+    openHabitEditor(null);
+    return;
+  }
+
+  if (!pending && detectAchievementMention(text)) {
+    state.pending = { type: 'confirmAchievement', text };
+    await say(chatScroll, `La persona acaba de contarte un logro: "${text}". Como su mejor amigo/a, alégrate de verdad por ella y pregúntale si quiere que lo guardes en su perfil como un logro.`, t('achievementFallback'));
+    return;
+  }
+
+  if (pending && pending.type === 'confirmAchievement') {
+    state.pending = null;
+    if (isAffirmative(text)) {
+      addLogro(pending.text);
+      await say(chatScroll, `Se guardó el logro "${pending.text}" en el perfil de la persona, con estilo dorado. Celebra con ella brevemente.`, t('achievementSavedFallback'));
+      return;
+    }
+    if (isNegative(text)) {
+      await agentSay(chatScroll, t('achievementDeclinedFallback'), 300);
+      return;
+    }
+  }
+
+  if (pending && pending.type === 'offerRecurring') {
+    if (isAffirmative(text)) {
+      state.pending = null;
+      const label = pending.task;
+      if (!state.profile.habitos.some(h => h.label.toLowerCase() === label.toLowerCase())) {
+        const entry = {
+          key: pickHabitKey(label), icon: pickIcon(label), label,
+          repeatDays: [0,1,2,3,4,5,6], sameTimeEveryday: true, time: pending.time,
+          timesByDay: {}, durationWeeks: null, createdAt: ymd(new Date()),
+          repeatWeekly: true, suggestedByBless: true,
+        };
+        state.profile.habitos.push(entry);
+        state.streaks[entry.key] = state.streaks[entry.key] || 0;
+        syncTodayAgendaForHabit(entry);
+        saveStateToServer();
+        renderProfile(); renderAgenda(); renderHeaderRing();
+      }
+      await say(chatScroll, `Se confirmó que "${label}" ahora es un hábito recurrente, sugerido por Bless. Celebra brevemente y anímala a seguir construyéndolo.`, t('recurringConfirmedFallback'));
+      return;
+    }
+    if (isNegative(text)) {
+      state.pending = null;
+      await say(chatScroll, `La persona prefirió que "${pending.task}" quedara solo por hoy, sin repetirse. Respeta su decisión con calidez, sin insistir.`, t('recurringDeclinedFallback'));
+      return;
+    }
+    state.pending = null; // respuesta ambigua — seguimos con el mensaje como si fuera nuevo
+  }
 
   if (pending && pending.type === 'confirmAlt') {
     if (isAffirmative(text)) {
@@ -1180,7 +2080,7 @@ async function handleUserMessage(text) {
     }
     if (isNegative(text)) {
       state.pending = { type: 'needsTime', task: pending.task };
-      await say(chatScroll, `La persona rechazó el horario alternativo para "${pending.task}". Pregúntale a qué otra hora le gustaría, o si prefiere dejarlo pendiente para después.`, pick(['¿A qué otra hora te gustaría hacerlo?', 'Sin problema. ¿A qué otra hora te queda mejor, o prefieres dejarlo para después?']));
+      await say(chatScroll, `La persona rechazó el horario alternativo para "${pending.task}". Pregúntale a qué otra hora le gustaría, o si prefiere dejarlo pendiente para después.`, tp('otherTimeQuestion'));
       return;
     }
     const t = extractTime(text);
@@ -1200,7 +2100,7 @@ async function handleUserMessage(text) {
       if (overlapsWork(t)) { const alt = minutesToTime(findFreeSlotNear(timeToMinutes(t))); state.pending = { type: 'confirmAlt', task, altTime: alt }; await say(chatScroll, `Quiere agendar "${task}" a las ${t}, pero eso choca con su horario fijo de trabajo. Sugiérele amablemente las ${alt} como alternativa cercana.`, PHRASES.conflict(alt)); return; }
       addAgendaItem(t, task); await say(chatScroll, `Se confirmó "${task}" a las ${t}. Celebra brevemente y pregunta si quiere algo más para hoy.`, PHRASES.confirmed(task, t)); return;
     }
-    await agentSay(chatScroll, `Dejo pendiente la hora de "${state.pending.task}" para después.`, 250);
+    await agentSay(chatScroll, t('needsTimeDropFallback', state.pending.task), 250);
     state.pending = null;
   }
 
@@ -1212,7 +2112,13 @@ async function handleUserMessage(text) {
       await say(chatScroll, `Quiere agendar "${text}" a las ${time}, pero eso choca con su horario fijo de trabajo. Sugiérele amablemente las ${alt} como alternativa cercana.`, PHRASES.conflict(alt));
     } else {
       addAgendaItem(time, text);
-      await say(chatScroll, `Se agendó "${text}" a las ${time}, sin conflicto de horario. Confírmaselo brevemente, y como su momento de más energía es ${energyHint()}, ofrécele mover la actividad ahí si tiene sentido para ese tipo de actividad — pregúntale si lo deja así o lo cambia.`, `Agregado a las ${time} ${pickIcon(text)}. Como tienes más energía en ${energyHint()}, si quieres puedo moverlo ahí para que te rinda más. ¿Lo dejamos así o lo cambio?`);
+      const alreadyHabit = state.profile.habitos.some(h => h.label.toLowerCase() === text.toLowerCase());
+      if (alreadyHabit) {
+        await say(chatScroll, `Se agendó "${text}" a las ${time}, sin conflicto de horario. Confírmaselo brevemente, y como su momento de más energía es ${energyHint()}, ofrécele mover la actividad ahí si tiene sentido para ese tipo de actividad — pregúntale si lo deja así o lo cambia.`, t('scheduledEnergyFallback', time, pickIcon(text), energyHint()));
+      } else {
+        state.pending = { type: 'offerRecurring', task: text, time };
+        await say(chatScroll, `Se agendó "${text}" a las ${time} para hoy, sin conflicto de horario. Como su mejor amigo/a, pregúntale con calidez si quiere que esto se repita como un hábito para ayudarla a construirlo de verdad, o si fue solo por hoy.`, t('offerRecurringFallback', time, pickIcon(text)));
+      }
     }
     return;
   }
@@ -1222,17 +2128,6 @@ async function handleUserMessage(text) {
 
 document.getElementById('chat-send').onclick = () => { const input = document.getElementById('chat-text'); const val = input.value.trim(); if (!val) return; input.value = ''; handleUserMessage(val); };
 document.getElementById('chat-text').addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('chat-send').click(); });
-
-/* Simular reenganche compasivo (en producción esto sería una notificación push desde un servidor) */
-document.getElementById('simulate-reengage').onclick = async () => {
-  setAvatarMood('caring');
-  addNote(chatScroll, 'Simulando: pasaron unos días sin abrir la app…', 'agenda-note');
-  await new Promise(r => setTimeout(r, 500));
-  addNote(chatScroll, pick([
-    `Hola de nuevo, ${state.profile.nombre} 🤍. No te sientas culpable — siempre se puede comenzar de nuevo. ¿Retomamos hoy, aunque sea con algo pequeño?`,
-    `Te extrañé, ${state.profile.nombre} 🤍. Esto no se trata de ser perfecta, se trata de volver. ¿Empezamos de nuevo, sin presión?`
-  ]), 'reengage-note');
-};
 
 /* ============================================================
    TABS
@@ -1253,64 +2148,71 @@ document.querySelectorAll('.tab').forEach(tab => {
 });
 fabEl.onclick = () => {
   document.querySelector('.tab[data-tab="chat"]').click();
-  addNote(chatScroll, pick(['¿Quieres agregar algo a tu día? Yo puedo ayudarte 💬','Cuéntame qué tienes en mente, yo puedo ayudarte a organizarlo 🙂']));
+  addNote(chatScroll, tp('fabPrompt'));
 };
 function chipList(arr) { return (arr && arr.length) ? arr.map(x => `<span class="tag-chip">${x}</span>`).join('') : '<span style="color:var(--text-dim);font-size:13px;">—</span>'; }
 function renderProfile() {
   const p = state.profile;
   const el = document.getElementById('view-profile');
   const total = state.agenda.length, done = state.agenda.filter(a=>a.done).length;
-  const habitsHtml = p.habitos.map((h, i) => `<span class="habit-chip">${h.icon} ${h.label}<span class="streak">🔥 ${state.streaks[h.key]||0}</span><span style="font-size:11px;color:var(--text-dim);margin-left:6px;">${habitDaysCompact(h)}${h.durationWeeks ? ' · ' + h.durationWeeks + 'sem' : ''}</span><span class="chip-edit-btn" data-idx="${i}" title="Editar">✏️</span></span>`).join('');
+  const weekSuffix = t('weekSuffix');
+  const habitsHtml = p.habitos.map((h, i) => `<span class="habit-chip">${h.icon} ${habitDisplayLabel(h)}<span class="streak">🔥 ${state.streaks[h.key]||0}</span><span style="font-size:11px;color:var(--text-dim);margin-left:6px;">${habitDaysCompact(h)}${h.durationWeeks ? ' · ' + h.durationWeeks + weekSuffix : ''}</span>${h.suggestedByBless ? `<span style="font-size:10px;font-weight:800;color:#10131a;background:linear-gradient(135deg, var(--accent-2), var(--accent-3));padding:2px 7px;border-radius:999px;margin-left:6px;">${t('sugerenciaBless')}</span>` : ''}<span class="chip-edit-btn" data-idx="${i}" title="${t('editIconTitle')}">✏️</span></span>`).join('');
   el.innerHTML = `
-    ${state.diagnostic ? `<div class="diag-card" style="margin-bottom:14px;"><div class="diag-label">Diagnóstico de Bless</div><div class="diag-title">${state.diagnostic.title}</div><div class="diag-body">${state.diagnostic.body}</div></div>` : ''}
+    ${state.diagnostic ? `<div class="diag-card" style="margin-bottom:14px;"><div class="diag-label">${t('diagLabel')}</div><div class="diag-title">${state.diagnostic.title}</div><div class="diag-body">${state.diagnostic.body}</div></div>` : ''}
     <div class="stats-row" style="margin-bottom:14px;">
-      <div class="stat-box"><div class="num">${done}/${total||0}</div><div class="lbl">Tareas hoy</div></div>
-      <div class="stat-box"><div class="num">${p.habitos.length}</div><div class="lbl">Hábitos activos</div></div>
-      <div class="stat-box"><div class="num">${Object.values(state.streaks).reduce((a,b)=>a+b,0)}</div><div class="lbl">Racha total 🔥</div></div>
+      <div class="stat-box"><div class="num">${done}/${total||0}</div><div class="lbl">${t('tareasHoy')}</div></div>
+      <div class="stat-box"><div class="num">${p.habitos.length}</div><div class="lbl">${t('habitosActivos')}</div></div>
+      <div class="stat-box"><div class="num">${Object.values(state.streaks).reduce((a,b)=>a+b,0)}</div><div class="lbl">${t('rachaTotal')}</div></div>
     </div>
-    <div class="profile-card"><h4>Datos básicos</h4>
-      <div class="profile-row"><span>Nombre</span><span>${p.nombre || '—'}</span></div>
-      <div class="profile-row"><span>Horario fijo</span><span>${p.trabajoInicio || '—'} – ${p.trabajoFin || '—'}</span></div>
-      <div class="profile-row"><span>Despierta / duerme</span><span>${p.despertar || '—'} / ${p.dormir || '—'}</span></div>
-      <div class="profile-row"><span>Más energía en</span><span>${p.energia || '—'}</span></div>
-      <div class="profile-row"><span>Tipo</span><span>${p.tipo || '—'}</span></div>
-      <div class="profile-row"><span>Tiempo libre real</span><span>${p.tiempoLibre || '—'}</span></div>
-      <div class="profile-row"><span>Motivación</span><span>${p.motivacion || '—'}</span></div>
+    <div class="profile-card"><h4>${t('basicDataTitle')}</h4>
+      <div class="profile-row"><span>${t('nombreLabel')}</span><span>${p.nombre || '—'} <span class="chip-edit-btn" data-field="nombre" data-label-key="nombreLabel" title="${t('editIconTitle')}">✏️</span></span></div>
+      <div class="profile-row"><span>${t('edadLabel')}</span><span>${p.edad ? t('aniosSuffix', p.edad) : t('noCompartida')} <span class="chip-edit-btn" data-field="edad" data-label-key="edadLabel" data-numeric="1" title="${t('editIconTitle')}">✏️</span></span></div>
+      <div class="profile-row"><span>${t('horarioFijoLabel')}</span><span>${p.trabajoInicio || '—'} – ${p.trabajoFin || '—'}</span></div>
+      <div class="profile-row"><span>${t('despiertaDuermeLabel')}</span><span>${p.despertar || '—'} / ${p.dormir || '—'}</span></div>
+      <div class="profile-row"><span>${t('masEnergiaLabel')}</span><span>${optLabel('energia', p.energia) || '—'}</span></div>
+      <div class="profile-row"><span>${t('tipoLabel')}</span><span>${optLabel('tipo', p.tipo) || '—'}</span></div>
+      <div class="profile-row"><span>${t('tiempoLibreLabel')}</span><span>${optLabel('tiempoLibre', p.tiempoLibre) || '—'}</span></div>
+      <div class="profile-row"><span>${t('motivacionLabel')}</span><span>${optLabel('motivacion', p.motivacion) || '—'}</span></div>
     </div>
-    <div class="profile-card"><h4>Salud (opcional)</h4>
-      <div class="profile-row"><span>Peso</span><span>${p.peso ? p.peso+' kg' : 'No compartido'}</span></div>
-      <div class="profile-row"><span>Talla</span><span>${p.talla ? p.talla+' cm' : 'No compartido'}</span></div>
+    <div class="profile-card"><h4>${t('saludTitle')}</h4>
+      <div class="profile-row"><span>${t('pesoLabel')}</span><span>${p.peso ? t('kgSuffix', p.peso) : t('noCompartido')} <span class="chip-edit-btn" data-field="peso" data-label-key="pesoPh" data-numeric="1" title="${t('editIconTitle')}">✏️</span></span></div>
+      <div class="profile-row"><span>${t('tallaLabel')}</span><span>${p.talla ? t('cmSuffix', p.talla) : t('noCompartido')} <span class="chip-edit-btn" data-field="talla" data-label-key="tallaPh" data-numeric="1" title="${t('editIconTitle')}">✏️</span></span></div>
     </div>
-    <div class="profile-card"><h4>Lo que se te dificulta</h4>${chipList(p.dificultades)}</div>
-    <div class="profile-card"><h4>Ya intentaste</h4>${chipList(p.intentosPrevios)}</div>
-    <div class="profile-card"><h4>Tus detonantes</h4>${chipList(p.detonantes)}</div>
-    <div class="profile-card"><h4>Días difíciles para ti</h4>${chipList(p.diasDificiles)}</div>
-    <div class="profile-card"><h4>Hábitos que quiere construir</h4><div>${habitsHtml || '—'}</div></div>
+    <div class="profile-card"><h4>${t('dificultadTitle')}</h4>${chipList(optLabelList('dificultades', p.dificultades))}</div>
+    <div class="profile-card"><h4>${t('intentosTitle')}</h4>${chipList(optLabelList('intentosPrevios', p.intentosPrevios))}</div>
+    <div class="profile-card"><h4>${t('detonantesTitle')}</h4>${chipList(optLabelList('detonantes', p.detonantes))}</div>
+    <div class="profile-card"><h4>${t('diasDificilesTitle')}</h4>${chipList(optLabelList('diasDificiles', p.diasDificiles))}</div>
+    <div class="profile-card"><h4>${t('habitosTitle')}</h4><div>${habitsHtml || '—'}</div></div>
+    <div class="profile-card logros-card"><h4>${t('logrosTitle')}</h4>
+      ${(p.logros && p.logros.length) ? p.logros.slice().reverse().map(l => `<div class="logro-chip">🏆 ${l.text}<span class="logro-date">${l.date}</span></div>`).join('') : `<div style="font-size:13px;color:var(--text-dim);">${t('noLogros')}</div>`}
+    </div>
     <div class="profile-card">
-      <h4>Agregar un hábito nuevo</h4>
-      <div style="font-size:13px;color:var(--text-dim);margin-bottom:10px;">No hace falta esperar a otro onboarding — puedes sumar hábitos nuevos cuando quieras, y configurar cada uno a tu manera (qué días, a qué hora, por cuánto tiempo).</div>
+      <h4>${t('addHabitTitle')}</h4>
+      <div style="font-size:13px;color:var(--text-dim);margin-bottom:10px;">${t('addHabitDesc')}</div>
       <div class="quick-replies" id="add-habit-presets"></div>
-      <button class="send-btn" id="add-habit-custom-btn" style="width:100%;margin-top:8px;background:linear-gradient(135deg, var(--panel-3), var(--panel-2)); color:var(--text);">✏️ Configurar uno personalizado</button>
+      <button class="send-btn" id="add-habit-custom-btn" style="width:100%;margin-top:8px;background:linear-gradient(135deg, var(--panel-3), var(--panel-2)); color:var(--text);">${t('configureCustomBtn')}</button>
       <div id="add-habit-status" style="font-size:12px;color:var(--text-dim);margin-top:8px;"></div>
     </div>
-    <div class="profile-card" style="border-color:#5a4a24;"><h4 style="color:var(--warn-text);">Nota del prototipo</h4>
-      <div style="font-size:13px;color:var(--text-dim);line-height:1.5;">${aiEnabled() ? 'Bless está conectado a OpenAI de verdad, a través del servidor: sus respuestas del chat diario las genera la IA (con respaldo automático a frases simuladas si la llamada falla). La detección de horas y conflictos con tu horario sigue siendo lógica local, no IA.' : 'Bless simula sus respuestas con reglas (detecta horas, compara con tu horario y varía sus frases) porque el servidor todavía no tiene configurada la OPENAI_API_KEY en sus variables de entorno (Secrets).'}</div>
+    <div class="profile-card">
+      <h4>${t('configTitle')}</h4>
+      <div style="font-size:13px;color:var(--text-dim);margin-bottom:10px;">${t('configDesc', isPremium ? t('configDescPremiumExtra') : '')}</div>
+      <button class="send-btn" id="open-settings-btn" style="width:100%;background:linear-gradient(135deg, var(--panel-3), var(--panel-2)); color:var(--text);">${t('openConfigBtn')}</button>
     </div>
     <div class="profile-card">
-      <h4>Plan</h4>
+      <h4>${t('planTitle')}</h4>
       ${isPremium
-        ? `<div class="premium-badge">✨ Bless Habit Premium</div>${IS_NATIVE_APP ? '' : '<div style="margin-top:10px;"><span class="logout-link" id="cancel-premium-link">Cancelar suscripción</span></div>'}`
+        ? `<div class="premium-badge">${t('premiumBadge')}</div>${IS_NATIVE_APP ? '' : `<div style="margin-top:10px;"><span class="logout-link" id="cancel-premium-link">${t('cancelSubLink')}</span></div>`}`
         : IS_NATIVE_APP
-          ? `<div style="font-size:13px;color:var(--text-dim);">Para hacerte Premium, entra a blesshabit.app desde tu navegador.</div>`
-          : `<div style="font-size:13px;color:var(--text-dim);margin-bottom:10px;">Estás en el plan gratuito (con publicidad y métricas limitadas).</div><button class="premium-btn" id="profile-unlock-premium-btn">Hazte Premium — ${PADDLE_PRICE_LABEL}</button>`}
+          ? `<div style="font-size:13px;color:var(--text-dim);">${t('nativePremiumEntryMsg')}</div>`
+          : `<div style="font-size:13px;color:var(--text-dim);margin-bottom:10px;">${t('freePlanDesc')}</div><button class="premium-btn" id="profile-unlock-premium-btn">${t('becomePremiumBtn', PADDLE_PRICE_LABEL)}</button>`}
     </div>
     <div class="profile-card">
-      <h4>Notificaciones</h4>
-      <div style="font-size:13px;color:var(--text-dim);margin-bottom:10px;" id="push-status-text">Consultando…</div>
-      <button class="premium-btn" id="push-toggle-btn" style="background:linear-gradient(135deg, var(--panel-3), var(--panel-2)); color:var(--text);">🔔 Activar recordatorios</button>
+      <h4>${t('notifTitle')}</h4>
+      <div style="font-size:13px;color:var(--text-dim);margin-bottom:10px;" id="push-status-text">${t('consultando')}</div>
+      <button class="premium-btn" id="push-toggle-btn" style="background:linear-gradient(135deg, var(--panel-3), var(--panel-2)); color:var(--text);">${t('pushEnableBtn')}</button>
     </div>
     ${adBannerHtml()}
-    <div style="text-align:center; margin-top: 14px;"><a href="/auth/logout" class="logout-link">Cerrar sesión</a></div>
+    <div style="text-align:center; margin-top: 14px;"><a href="/auth/logout" class="logout-link">${t('logoutLink')}</a></div>
   `;
   if (isPremium) {
     const cancelLink = document.getElementById('cancel-premium-link');
@@ -1325,9 +2227,23 @@ function renderProfile() {
   if (pendingAddHabitStatus) { setAddHabitStatus(pendingAddHabitStatus); pendingAddHabitStatus = ''; }
   const addCustomBtn = document.getElementById('add-habit-custom-btn');
   if (addCustomBtn) addCustomBtn.onclick = () => openHabitEditor(null);
-  el.querySelectorAll('.chip-edit-btn').forEach(btn => {
+  const openSettingsBtn = document.getElementById('open-settings-btn');
+  if (openSettingsBtn) openSettingsBtn.onclick = openSettings;
+  el.querySelectorAll('.chip-edit-btn[data-idx]').forEach(btn => {
     btn.onclick = () => openHabitEditor(parseInt(btn.dataset.idx, 10));
   });
+  el.querySelectorAll('.chip-edit-btn[data-field]').forEach(btn => {
+    btn.onclick = () => editProfileField(btn.dataset.field, btn.dataset.labelKey, !!btn.dataset.numeric);
+  });
+}
+function editProfileField(field, labelKey, numeric) {
+  const current = state.profile[field] || '';
+  const val = prompt(t('editFieldPrompt', t(labelKey)), current);
+  if (val === null) return; // canceló
+  const trimmed = val.trim();
+  state.profile[field] = trimmed ? (numeric ? (Number(trimmed) || trimmed) : trimmed) : null;
+  saveStateToServer();
+  renderProfile();
 }
 
 /* ============================================================
@@ -1349,12 +2265,12 @@ function renderAddHabitPresets() {
   HABIT_PRESETS.filter(h => !already.has(h.key)).forEach(h => {
     const b = document.createElement('button');
     b.className = 'qr-btn';
-    b.textContent = `${h.icon} ${h.label}`;
+    b.textContent = `${h.icon} ${t2(h)}`;
     b.onclick = () => addManualHabit({ key: h.key, icon: h.icon, label: h.label, repeatDays: [0,1,2,3,4,5,6], sameTimeEveryday: true, time: defaultTimeFor(h.key), durationWeeks: null });
     wrap.appendChild(b);
   });
   if (!wrap.children.length) {
-    wrap.innerHTML = '<div style="font-size:12px;color:var(--text-dim);">Ya agregaste todos los hábitos sugeridos — puedes configurar el tuyo abajo.</div>';
+    wrap.innerHTML = `<div style="font-size:12px;color:var(--text-dim);">${t('allAddedMsg')}</div>`;
   }
 }
 // Mantiene sincronizada la entrada de HOY en la agenda con la configuración
@@ -1378,7 +2294,7 @@ function syncTodayAgendaForHabit(h) {
 }
 function addManualHabit({ key, icon, label, repeatDays, sameTimeEveryday, time, timesByDay, durationWeeks }) {
   if (state.profile.habitos.some(h => h.label.toLowerCase() === label.toLowerCase())) {
-    setAddHabitStatus('Ese hábito ya lo tienes agregado 🌱');
+    setAddHabitStatus(t('alreadyHaveMsg'));
     return;
   }
   const entry = {
@@ -1396,7 +2312,7 @@ function addManualHabit({ key, icon, label, repeatDays, sameTimeEveryday, time, 
   syncTodayAgendaForHabit(entry);
   saveStateToServer();
   setAvatarMood('happy');
-  pendingAddHabitStatus = `¡Listo! Agregué "${icon} ${label}" (${habitDaysLabel(entry)}) 🌱`;
+  pendingAddHabitStatus = t('addedHabitMsg', icon, habitDisplayLabel(entry), habitDaysLabel(entry));
   renderProfile();
   renderAgenda();
   renderHeaderRing();
@@ -1427,8 +2343,8 @@ function renderPerDayTimeInputs(selectedDays, existingHabit) {
 function openHabitEditor(index) {
   editingHabitIndex = (index === null || index === undefined || index < 0) ? null : index;
   const h = editingHabitIndex !== null ? state.profile.habitos[editingHabitIndex] : null;
-  document.getElementById('habit-editor-title').textContent = h ? 'Editar hábito' : 'Nuevo hábito personalizado';
-  document.getElementById('he-label').value = h ? h.label : '';
+  document.getElementById('habit-editor-title').textContent = h ? t('editHabitTitle') : t('newCustomHabitTitle');
+  document.getElementById('he-label').value = h ? habitDisplayLabel(h) : '';
   document.getElementById('habit-editor-status').textContent = '';
 
   const days = h ? habitRepeatDays(h) : [0,1,2,3,4,5,6];
@@ -1474,13 +2390,42 @@ function closeHabitEditor() {
 document.getElementById('habit-editor-overlay').addEventListener('click', (e) => {
   if (e.target.id === 'habit-editor-overlay') closeHabitEditor();
 });
+document.getElementById('settings-overlay').addEventListener('click', (e) => {
+  if (e.target.id === 'settings-overlay') closeSettings();
+});
+document.getElementById('settings-cancel-btn').onclick = closeSettings;
+document.getElementById('settings-save-btn').onclick = () => {
+  const theme = document.querySelector('#settings-theme-options .qr-btn.selected')?.dataset.code || 'dark';
+  const language = document.querySelector('#settings-lang-options .qr-btn.selected')?.dataset.code || 'es';
+  const country = document.getElementById('settings-country-input').value.trim() || null;
+  const langChanged = state.settings.language !== language;
+  state.settings.language = language;
+  state.settings.country = country;
+  applyTheme(theme);
+  saveStateToServer();
+  closeSettings();
+  if (langChanged) {
+    refreshLocaleArrays();
+    applyStaticI18n();
+    // El chat puede estar mostrando un saludo con el nombre de la persona —
+    // applyStaticI18n() lo resetea al texto por defecto del header, así que
+    // lo volvemos a poner con el idioma nuevo si el chat está activo.
+    if (state.profile.nombre) {
+      document.getElementById('header-sub').textContent = t('headerSubHello', state.profile.nombre);
+    }
+    renderAgenda();
+    if (document.getElementById('view-calendar').classList.contains('active')) renderCalendar();
+    if (document.getElementById('view-metrics').classList.contains('active')) renderMetrics();
+  }
+  renderProfile();
+};
 function saveHabitEditor() {
   const label = document.getElementById('he-label').value.trim();
-  if (!label) { document.getElementById('habit-editor-status').textContent = 'Escribe un nombre para el hábito ✍️'; return; }
+  if (!label) { document.getElementById('habit-editor-status').textContent = t('habitNameEmptyMsg'); return; }
   const days = getSelectedEditorDays();
   const isNew = editingHabitIndex === null;
   const dup = state.profile.habitos.some((hh, i) => i !== editingHabitIndex && hh.label.toLowerCase() === label.toLowerCase());
-  if (dup) { document.getElementById('habit-editor-status').textContent = 'Ya tienes un hábito con ese nombre 🌱'; return; }
+  if (dup) { document.getElementById('habit-editor-status').textContent = t('dupHabitMsg'); return; }
 
   const sameTimeEveryday = document.getElementById('he-same-time').checked;
   let time, timesByDay = {};
@@ -1510,10 +2455,10 @@ function saveHabitEditor() {
   if (isNew) {
     state.profile.habitos.push(entry);
     state.streaks[key] = state.streaks[key] || 0;
-    pendingAddHabitStatus = `¡Listo! Agregué "${icon} ${label}" (${habitDaysLabel(entry)}) 🌱`;
+    pendingAddHabitStatus = t('addedHabitMsg', icon, label, habitDaysLabel(entry));
   } else {
     state.profile.habitos[editingHabitIndex] = entry;
-    pendingAddHabitStatus = `Actualicé "${icon} ${label}" (${habitDaysLabel(entry)}) 🌱`;
+    pendingAddHabitStatus = t('updatedHabitMsg', icon, label, habitDaysLabel(entry));
   }
   syncTodayAgendaForHabit(entry);
   saveStateToServer();
@@ -1530,7 +2475,7 @@ function deleteHabitFromEditor() {
   const idx = state.agenda.findIndex(a => a.habitKey === h.key && a.task === h.label && !a.done);
   if (idx !== -1) state.agenda.splice(idx, 1);
   saveStateToServer();
-  pendingAddHabitStatus = `Eliminé "${h.icon} ${h.label}" de tus hábitos.`;
+  pendingAddHabitStatus = t('deletedHabitMsg', h.icon, habitDisplayLabel(h));
   closeHabitEditor();
   renderProfile();
   renderAgenda();
@@ -1538,53 +2483,47 @@ function deleteHabitFromEditor() {
 }
 
 /* ============================================================
-   HISTORIAL SIMULADO (para poblar calendario y métricas)
+   HISTORIAL REAL — se construye día a día con lo que la persona
+   realmente marcó, nunca con datos inventados.
    ============================================================ */
-const DAY_NAMES = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
-const DAY_NAMES_SHORT = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
-const HISTORY_DAYS = 34; // ~5 semanas hacia atrás, sin contar hoy
+let DAY_NAMES = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+let DAY_NAMES_SHORT = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+const DAY_NAMES_ES = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+const DAY_NAMES_SHORT_ES = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+const DAY_NAMES_EN = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+const DAY_NAMES_SHORT_EN = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 
 function ymd(d) { return d.toISOString().slice(0,10); }
 function addDays(d, n) { const r = new Date(d); r.setDate(r.getDate()+n); return r; }
 
-function generateSimulatedHistory() {
-  const habitos = state.profile.habitos;
-  if (!habitos.length) { state.history = []; return; }
-  const dificiles = new Set((state.profile.diasDificiles || []).map(d => d.toLowerCase()));
-  const esDiaDificil = (dow) => {
-    const name = DAY_NAMES[dow].toLowerCase();
-    if (dificiles.has('fin de semana') && (dow === 0 || dow === 6)) return true;
-    if (dificiles.has('lunes') && dow === 1) return true;
-    return [...dificiles].some(d => d.includes(name));
-  };
-  // a cada hábito le asignamos una "propensión" fija para que uno sea claramente
-  // el más cumplido y otro el más abandonado (para el ranking de hábitos)
-  const propensity = {};
-  habitos.forEach((h, i) => { propensity[h.key] = 0.85 - i * 0.16; }); // primero elegido = mejor cumplido
+// Guarda la agenda de un día ya cerrado como un día real de historial (se
+// llama al pasar de un día al siguiente). Si ese día no tuvo nada agendado,
+// no se guarda — mejor "sin datos" que un día vacío falso.
+function archiveAgendaAsHistory(dateStr, agendaSnapshot) {
+  if (!agendaSnapshot || !agendaSnapshot.length) return;
+  const dow = new Date(dateStr + 'T00:00:00').getDay();
+  const items = agendaSnapshot.map(a => ({ habitKey: a.habitKey, icon: a.icon, label: a.task, done: a.done, time: a.time }));
+  const total = items.length, doneCt = items.filter(x=>x.done).length;
+  const entry = { date: dateStr, dow, items, pct: total ? Math.round((doneCt/total)*100) : null };
+  state.history = state.history || [];
+  const idx = state.history.findIndex(d => d.date === dateStr);
+  if (idx !== -1) state.history[idx] = entry; else state.history.push(entry);
+  state.history.sort((a,b) => a.date < b.date ? -1 : (a.date > b.date ? 1 : 0));
+}
 
-  // hora típica por tipo de hábito, para que el cuadro semanal tenga sentido
-  const habitHour = {};
-  habitos.forEach(h => { habitHour[h.key] = typicalHourFor(h.key); });
-
-  const today = new Date();
-  const days = [];
-  for (let i = HISTORY_DAYS; i >= 1; i--) {
-    const date = addDays(today, -i);
-    const dow = date.getDay();
-    const baseChance = esDiaDificil(dow) ? 0.35 : 0.78;
-    const items = habitos.map(h => {
-      const p = Math.max(0.05, Math.min(0.97, (propensity[h.key] ?? 0.6) * (baseChance / 0.78)));
-      const scheduled = Math.random() < 0.9; // casi siempre programado ese día
-      const done = scheduled && Math.random() < p;
-      const jitter = Math.floor(Math.random()*3) - 1; // -1, 0, +1 hora
-      const hour = Math.max(5, Math.min(23, (habitHour[h.key] ?? 18) + jitter));
-      const time = String(hour).padStart(2,'0') + ':00';
-      return scheduled ? { habitKey: h.key, icon: h.icon, label: h.label, done, time } : null;
-    }).filter(Boolean);
-    const total = items.length, doneCt = items.filter(x=>x.done).length;
-    days.push({ date: ymd(date), dow, items, pct: total ? Math.round((doneCt/total)*100) : null });
-  }
-  state.history = days;
+// Se llama al arrancar la app: si la última vez que se guardó estado fue un
+// día distinto a hoy, archiva ese último día como historial real y arma la
+// agenda de hoy de cero a partir de los hábitos vigentes.
+function rolloverDayIfNeeded() {
+  const todayStr = ymd(new Date());
+  if (!state.lastActiveDate) { state.lastActiveDate = todayStr; return; }
+  if (state.lastActiveDate === todayStr) return;
+  archiveAgendaAsHistory(state.lastActiveDate, state.agenda);
+  state.agenda = [];
+  state.pending = null;
+  lastCelebratedPct = 0;
+  seedTodayAgendaFromHabits();
+  state.lastActiveDate = todayStr;
 }
 
 function todayDayEntry() {
@@ -1610,13 +2549,11 @@ function findDay(dateStr) {
 }
 
 function heatColor(pct) {
-  if (pct === null || pct === undefined) return 'var(--seq-0)';
-  if (pct === 0) return 'var(--seq-0)';
-  if (pct < 25) return 'var(--seq-1)';
-  if (pct < 50) return 'var(--seq-2)';
-  if (pct < 75) return 'var(--seq-3)';
-  if (pct < 100) return 'var(--seq-4)';
-  return 'var(--seq-5)';
+  // gradiente continuo rojo (0%) -> amarillo (50%) -> verde (100%)
+  if (pct === null || pct === undefined) return 'var(--panel-3)';
+  const p = Math.max(0, Math.min(100, pct));
+  const hue = (p / 100) * 120; // 0=rojo, 60=amarillo, 120=verde
+  return `hsl(${hue.toFixed(0)}, 72%, 42%)`;
 }
 
 /* ============================================================
@@ -1641,6 +2578,34 @@ function renderCalendar() {
   if (calSubTab === 'day') renderCalDay();
   else if (calSubTab === 'week') renderCalWeek();
   else renderCalMonth();
+  renderCalAdSlot();
+}
+
+function promptDeleteDayItem(dateStr, item) {
+  const habitIdx = state.profile.habitos.findIndex(h => h.key === item.habitKey && h.label === item.label);
+  const isToday = dateStr === ymd(new Date());
+  if (habitIdx === -1) {
+    // no corresponde a un hábito con serie (fue agregado suelto por chat) — solo se puede quitar si es hoy
+    if (isToday) {
+      const aidx = state.agenda.findIndex(a => a.task === item.label && a.time === item.time);
+      if (aidx !== -1) { state.agenda.splice(aidx, 1); renderCalDay(); renderAgenda(); renderHeaderRing(); }
+    }
+    return;
+  }
+  const onlyToday = confirm(t('deleteConfirmText', itemDisplayLabel(item)));
+  if (onlyToday) {
+    const h = state.profile.habitos[habitIdx];
+    h.skippedDates = h.skippedDates || [];
+    if (!h.skippedDates.includes(dateStr)) h.skippedDates.push(dateStr);
+    if (isToday) {
+      const aidx = state.agenda.findIndex(a => a.habitKey === h.key && a.task === h.label);
+      if (aidx !== -1) state.agenda.splice(aidx, 1);
+    }
+    saveStateToServer();
+    renderCalDay(); renderAgenda(); renderHeaderRing();
+  } else {
+    openHabitEditor(habitIdx);
+  }
 }
 
 function renderCalDay() {
@@ -1648,25 +2613,31 @@ function renderCalDay() {
   const dateStr = ymd(date);
   const day = calDayOffset === 0 ? todayDayEntry() : findDay(dateStr);
   const isToday = calDayOffset === 0;
-  const label = isToday ? 'Hoy' : `${DAY_NAMES[day.dow]} ${date.getDate()}/${date.getMonth()+1}`;
+  const label = isToday ? t('hoy') : `${DAY_NAMES[day.dow]} ${date.getDate()}/${date.getMonth()+1}`;
   const itemsHtml = day.items.length ? day.items.map((it, idx) => `
     <div class="agenda-item ${it.done ? 'done' : ''}">
       <span class="check" ${isToday ? `onclick="toggleDoneFromCal(${idx})" style="cursor:pointer;"` : ''}>${it.done ? '✓' : ''}</span>
       <span class="icon">${it.icon}</span>
       ${it.time ? `<span class="time">${it.time}</span>` : ''}
-      <span class="task">${it.label}</span>
-    </div>`).join('') : '<div style="font-size:12px;color:var(--text-dim);">Sin actividades registradas.</div>';
-  const pctLabel = day.pct !== null ? day.pct + '% cumplido' : (day.items.length ? 'Programado con Bless' : 'sin datos');
+      <span class="task">${itemDisplayLabel(it)}</span>
+      <span class="edit" data-cal-edit="${idx}" title="${t('editRemoveTitle')}">✏️</span>
+    </div>`).join('') : `<div style="font-size:12px;color:var(--text-dim);">${t('sinActividades')}</div>`;
+  const pctLabel = day.pct !== null ? t('pctCumplido', day.pct) : (day.items.length ? t('programadoConBless') : t('sinDatos'));
   calBody.innerHTML = `
     <div class="day-nav">
       <button id="day-prev">‹</button>
       <div><div class="day-title">${label}</div><div class="day-pct">${pctLabel}</div></div>
+      <button id="day-add" title="${t('addHabitTitleAttr')}">＋</button>
       <button id="day-next" ${calDayOffset >= 6 ? 'disabled' : ''}>›</button>
     </div>
     <div id="day-items">${itemsHtml}</div>
   `;
   document.getElementById('day-prev').onclick = () => { calDayOffset--; renderCalDay(); };
   document.getElementById('day-next').onclick = () => { if (calDayOffset < 6) { calDayOffset++; renderCalDay(); } };
+  document.getElementById('day-add').onclick = () => openHabitEditor(null);
+  calBody.querySelectorAll('[data-cal-edit]').forEach(btn => {
+    btn.onclick = () => promptDeleteDayItem(dateStr, day.items[parseInt(btn.dataset.calEdit, 10)]);
+  });
 }
 
 function startOfWeek(d) { const r = new Date(d); const dow = r.getDay(); const diff = dow === 0 ? -6 : 1 - dow; return addDays(r, diff); } // lunes
@@ -1686,9 +2657,7 @@ function renderCalWeek() {
   let grid = `<div class="week-grid">`;
   grid += `<div class="cell hour-lbl"></div>`;
   weekDays.forEach((d,i) => {
-    const isToday = ymd(d) === todayStr;
-    const pctTxt = dayEntries[i].pct !== null ? dayEntries[i].pct + '%' : (dayEntries[i].items.length ? 'prog.' : '—');
-    grid += `<div class="cell day-head"><span>${DAY_NAMES_SHORT[d.getDay()]} ${d.getDate()}</span><span class="pct" style="color:${dayEntries[i].pct!==null?heatColor(dayEntries[i].pct):'var(--text-dim)'}">${pctTxt}</span></div>`;
+    grid += `<div class="cell day-head"><span>${DAY_NAMES_SHORT[d.getDay()]} ${d.getDate()}</span></div>`;
   });
   hours.forEach(h => {
     grid += `<div class="cell hour-lbl">${String(h).padStart(2,'0')}:00</div>`;
@@ -1696,16 +2665,21 @@ function renderCalWeek() {
       const isToday = ymd(d) === todayStr;
       const isFuture = ymd(d) > todayStr;
       const items = dayEntries[i].items.filter(it => it.time && parseInt(it.time.split(':')[0]) === h);
-      grid += `<div class="cell slot ${items.length?'has-item':''} ${isToday?'today-col':''}" style="${isFuture?'opacity:.55;':''}" title="${items.map(x=>x.label).join(', ')}${isFuture&&items.length?' (programado)':''}">${items.map(x=>x.icon).join('')}</div>`;
+      grid += `<div class="cell slot ${items.length?'has-item':''} ${isToday?'today-col':''}" style="${isFuture?'opacity:.55;':''}" title="${items.map(x=>itemDisplayLabel(x)).join(', ')}${isFuture&&items.length?t('programadoParen'):''}">${items.map(x=>x.icon).join('')}</div>`;
     });
   });
   grid += `</div>`;
 
-  const totalItems = dayEntries.reduce((a,d)=>a+d.items.length,0);
-  const doneItems = dayEntries.reduce((a,d)=>a+d.items.filter(x=>x.done).length,0);
-  const weekPct = totalItems ? Math.round((doneItems/totalItems)*100) : 0;
+  // leyenda: qué ícono corresponde a qué hábito, para poder comparar hora a hora
+  // entre días sin depender de un % de cumplimiento
+  const legendMap = new Map();
+  state.profile.habitos.forEach(h => legendMap.set(h.icon, habitDisplayLabel(h)));
+  dayEntries.forEach(d => d.items.forEach(it => { if (!legendMap.has(it.icon)) legendMap.set(it.icon, itemDisplayLabel(it)); }));
+  const legendHtml = Array.from(legendMap.entries()).map(([icon,label]) =>
+    `<span style="display:inline-flex;align-items:center;gap:4px;margin:3px 10px 3px 0;font-size:11.5px;color:var(--text-dim);"><span style="font-size:14px;">${icon}</span>${label}</span>`
+  ).join('') || `<span style="font-size:12px;color:var(--text-dim);">${t('sinHabitosComparar')}</span>`;
 
-  const weekLabel = weekOffset === 0 ? 'Semana actual' : `${weekDays[0].getDate()}/${weekDays[0].getMonth()+1} – ${weekDays[6].getDate()}/${weekDays[6].getMonth()+1}`;
+  const weekLabel = weekOffset === 0 ? t('semanaActual') : `${weekDays[0].getDate()}/${weekDays[0].getMonth()+1} – ${weekDays[6].getDate()}/${weekDays[6].getMonth()+1}`;
   calBody.innerHTML = `
     <div class="month-nav">
       <button id="week-prev">‹</button>
@@ -1713,7 +2687,10 @@ function renderCalWeek() {
       <button id="week-next" ${weekOffset>=0?'disabled':''}>›</button>
     </div>
     <div class="week-scroll">${grid}</div>
-    <div class="week-summary"><span>Cumplimiento de la semana</span><span style="color:${heatColor(weekPct)};font-weight:800;">${weekPct}%</span></div>
+    <div style="margin-top:12px;padding-top:10px;border-top:1px solid var(--border);">
+      <div style="font-size:10.5px;color:var(--text-dim);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;">${t('tusHabitosSemana')}</div>
+      <div style="display:flex;flex-wrap:wrap;">${legendHtml}</div>
+    </div>
   `;
   document.getElementById('week-prev').onclick = () => { weekOffset--; renderCalWeek(); };
   document.getElementById('week-next').onclick = () => { if (weekOffset < 0) { weekOffset++; renderCalWeek(); } };
@@ -1725,11 +2702,11 @@ function renderCalMonth() {
   const year = base.getFullYear(), month = base.getMonth();
   const firstDow = (new Date(year, month, 1).getDay() + 6) % 7; // lunes=0
   const daysInMonth = new Date(year, month+1, 0).getDate();
-  const monthName = base.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' });
+  const monthName = base.toLocaleDateString(currentLang() === 'en' ? 'en-US' : 'es-ES', { month: 'long', year: 'numeric' });
   const todayStr = ymd(new Date());
 
   let cells = '';
-  ['L','M','X','J','V','S','D'].forEach(w => cells += `<div class="wd">${w}</div>`);
+  (currentLang() === 'en' ? ['M','T','W','T','F','S','S'] : ['L','M','X','J','V','S','D']).forEach(w => cells += `<div class="wd">${w}</div>`);
   for (let i=0;i<firstDow;i++) cells += `<div class="month-cell empty"></div>`;
   for (let d=1; d<=daysInMonth; d++) {
     const dateStr = ymd(new Date(year, month, d));
@@ -1738,9 +2715,10 @@ function renderCalMonth() {
     const isFuture = dateStr > todayStr;
     const bg = isFuture ? 'transparent' : heatColor(entry.pct);
     const mainIcon = entry.items.length ? (entry.items.reduce((best,it) => (!best || it.done) ? it : best, null)?.icon) : '';
-    const titleTxt = entry.pct !== null ? entry.pct + '%' : (entry.items.length ? 'Programado' : '');
-    cells += `<div class="month-cell ${isToday?'today':''}" style="background:${bg}; ${isFuture&&mainIcon?'border:1px dashed var(--border);':''}" title="${titleTxt}">
-      <span class="dnum">${d}</span>${mainIcon ? `<span class="dicon" style="${isFuture?'opacity:.5;':''}">${mainIcon}</span>` : ''}
+    const titleTxt = entry.pct !== null ? entry.pct + '%' : (entry.items.length ? t('programado') : '');
+    const hasPct = !isFuture && entry.pct !== null;
+    cells += `<div class="month-cell ${isToday?'today':''} ${hasPct?'has-pct':''}" style="background:${bg}; ${isFuture&&mainIcon?'border:1px dashed var(--border);':''}" title="${titleTxt}">
+      <span class="dnum">${d}</span>${mainIcon ? `<span class="dicon" style="${isFuture?'opacity:.5;':''}">${mainIcon}</span>` : ''}${hasPct ? `<span class="dpct">${entry.pct}%</span>` : ''}
     </div>`;
   }
 
@@ -1752,11 +2730,9 @@ function renderCalMonth() {
     </div>
     <div class="month-grid">${cells}</div>
     <div class="month-legend">
-      <span>Menos</span>
-      <span class="sw" style="background:var(--seq-0);"></span><span class="sw" style="background:var(--seq-1);"></span>
-      <span class="sw" style="background:var(--seq-2);"></span><span class="sw" style="background:var(--seq-3);"></span>
-      <span class="sw" style="background:var(--seq-4);"></span><span class="sw" style="background:var(--seq-5);"></span>
-      <span>Más</span>
+      <span>0%</span>
+      <span class="grad-bar"></span>
+      <span>100%</span>
     </div>
   `;
   document.getElementById('month-prev').onclick = () => { monthOffset--; renderCalMonth(); };
@@ -1794,7 +2770,7 @@ function computeMetrics() {
 
   // ranking de hábitos
   const habitStats = {};
-  state.profile.habitos.forEach(h => habitStats[h.key] = { label: h.label, icon: h.icon, done:0, total:0 });
+  state.profile.habitos.forEach(h => habitStats[h.key] = { label: habitDisplayLabel(h), icon: h.icon, done:0, total:0 });
   all.forEach(d => d.items.forEach(it => { if (habitStats[it.habitKey]) { habitStats[it.habitKey].total++; if (it.done) habitStats[it.habitKey].done++; } }));
   const ranking = Object.values(habitStats).map(h => ({...h, pct: h.total ? Math.round((h.done/h.total)*100) : 0})).sort((a,b)=>b.pct-a.pct);
 
@@ -1810,12 +2786,13 @@ function computeMetrics() {
     habitStreak[h.key] = s;
   });
 
-  return { pctToday, pctWeek, pctMonth, rachaActual, rachaMax, dowPct, bestDow, worstDow, ranking, habitStreak };
+  const hasHistory = (state.history||[]).length > 0;
+  return { pctToday, pctWeek, pctMonth, rachaActual, rachaMax, dowPct, bestDow, worstDow, ranking, habitStreak, hasHistory };
 }
 
 function renderMetrics() {
   const el = document.getElementById('view-metrics');
-  if (!state.profile.habitos.length) { el.innerHTML = '<div style="padding:20px;color:var(--text-dim);">Aún no hay hábitos configurados.</div>'; return; }
+  if (!state.profile.habitos.length) { el.innerHTML = `<div style="padding:20px;color:var(--text-dim);">${t('noHabitsYet')}</div>`; return; }
   const m = computeMetrics();
   const tileColor = (p) => p===null ? 'var(--text-dim)' : p>=70 ? 'var(--status-good)' : p>=40 ? 'var(--status-warning)' : 'var(--status-critical)';
 
@@ -1837,50 +2814,51 @@ function renderMetrics() {
   // solo para Premium — el plan gratis se queda con el resumen del día/semana/mes.
   const fullSectionsHtml = `
       <div class="metrics-section">
-        <h4>Patrones por día de la semana</h4>
+        <h4>${t('patronesTitle')}</h4>
         <div class="weekday-row">${weekdayBars}</div>
         <div style="display:flex; gap:8px; flex-wrap:wrap;">
-          ${m.bestDow!==null ? `<span class="status-tag" style="background:rgba(12,163,12,.15); color:var(--status-good);">✓ Mejor: ${DAY_NAMES[m.bestDow]}</span>` : ''}
-          ${m.worstDow!==null ? `<span class="status-tag" style="background:rgba(208,59,59,.15); color:var(--status-critical);">⚠ Más difícil: ${DAY_NAMES[m.worstDow]}</span>` : ''}
+          ${m.bestDow!==null ? `<span class="status-tag" style="background:rgba(12,163,12,.15); color:var(--status-good);">${t('mejorLabel', DAY_NAMES[m.bestDow])}</span>` : ''}
+          ${m.worstDow!==null ? `<span class="status-tag" style="background:rgba(208,59,59,.15); color:var(--status-critical);">${t('masDificilLabel', DAY_NAMES[m.worstDow])}</span>` : ''}
         </div>
       </div>
 
       <div class="metrics-section">
-        <h4>Ranking de hábitos</h4>
+        <h4>${t('rankingTitle')}</h4>
         ${rankingBars}
-        <div style="font-size:11px; color:var(--text-dim); margin-top:4px;">Bless usa esto para enfocar sus sugerencias en lo que más te cuesta.</div>
+        <div style="font-size:11px; color:var(--text-dim); margin-top:4px;">${t('rankingDesc')}</div>
       </div>
 
       <div class="metrics-section">
-        <h4>Racha por hábito</h4>
-        ${state.profile.habitos.map(h => `<div class="profile-row"><span>${h.icon} ${h.label}</span><span>🔥 ${m.habitStreak[h.key]||0} días</span></div>`).join('')}
+        <h4>${t('rachaPorHabitoTitle')}</h4>
+        ${state.profile.habitos.map(h => `<div class="profile-row"><span>${h.icon} ${habitDisplayLabel(h)}</span><span>${t('diasSuffix', m.habitStreak[h.key]||0)}</span></div>`).join('')}
       </div>`;
 
   const lockedSectionHtml = `
       <div class="metrics-section premium-lock">
-        <h4>🔒 Métricas completas</h4>
-        <div style="font-size:13px;color:var(--text-dim);line-height:1.5;">Racha actual, patrones por día de la semana, ranking de hábitos y racha por hábito son parte de Bless Habit Premium.</div>
+        <h4>${t('lockedTitle')}</h4>
+        <div style="font-size:13px;color:var(--text-dim);line-height:1.5;">${t('lockedDesc')}</div>
         ${IS_NATIVE_APP
-          ? `<div style="font-size:13px;color:var(--text-dim);">Para hacerte Premium, entra a blesshabit.app desde tu navegador.</div>`
-          : `<button class="premium-btn" id="unlock-premium-btn">Hazte Premium — ${PADDLE_PRICE_LABEL}</button>
-        <div class="premium-note">Sin publicidad + métricas completas. Cobro automático vía Paddle, cancelas cuando quieras.</div>`}
+          ? `<div style="font-size:13px;color:var(--text-dim);">${t('nativePremiumEntryMsg')}</div>`
+          : `<button class="premium-btn" id="unlock-premium-btn">${t('becomePremiumBtn', PADDLE_PRICE_LABEL)}</button>
+        <div class="premium-note">${t('premiumNote')}</div>`}
+      </div>`;
+
+  const emptyHistoryHtml = `
+      <div class="metrics-section">
+        <h4>${t('noDataTitle')}</h4>
+        <div style="font-size:13px;color:var(--text-dim);line-height:1.5;">${t('noDataDesc')}</div>
       </div>`;
 
   el.innerHTML = `
     <div style="padding:18px 16px 24px;">
       <div class="kpi-grid">
-        <div class="kpi-tile"><div class="kpi-num" style="color:${tileColor(m.pctToday)}">${m.pctToday!==null?m.pctToday+'%':'—'}</div><div class="kpi-lbl">Cumplimiento hoy</div></div>
-        <div class="kpi-tile"><div class="kpi-num" style="color:${tileColor(m.pctWeek)}">${m.pctWeek!==null?m.pctWeek+'%':'—'}</div><div class="kpi-lbl">Cumplimiento semana</div></div>
-        <div class="kpi-tile"><div class="kpi-num" style="color:${tileColor(m.pctMonth)}">${m.pctMonth!==null?m.pctMonth+'%':'—'}</div><div class="kpi-lbl">Cumplimiento mes</div></div>
-        <div class="kpi-tile"><div class="kpi-num">${isPremium ? m.rachaActual+' 🔥' : '🔒'}</div><div class="kpi-lbl">Racha actual (días)</div><div class="kpi-sub" style="color:var(--text-dim);">${isPremium ? 'Máxima: '+m.rachaMax+' días' : 'Solo Premium'}</div></div>
+        <div class="kpi-tile"><div class="kpi-num" style="color:${tileColor(m.pctToday)}">${m.pctToday!==null?m.pctToday+'%':'—'}</div><div class="kpi-lbl">${t('cumplimientoHoy')}</div></div>
+        <div class="kpi-tile"><div class="kpi-num" style="color:${tileColor(m.pctWeek)}">${m.pctWeek!==null?m.pctWeek+'%':(m.hasHistory?'—':t('sinDatosCap'))}</div><div class="kpi-lbl">${t('cumplimientoSemana')}</div></div>
+        <div class="kpi-tile"><div class="kpi-num" style="color:${tileColor(m.pctMonth)}">${m.pctMonth!==null?m.pctMonth+'%':(m.hasHistory?'—':t('sinDatosCap'))}</div><div class="kpi-lbl">${t('cumplimientoMes')}</div></div>
+        <div class="kpi-tile"><div class="kpi-num">${isPremium ? m.rachaActual+' 🔥' : '🔒'}</div><div class="kpi-lbl">${t('rachaActualLbl')}</div><div class="kpi-sub" style="color:var(--text-dim);">${isPremium ? t('maximaLbl', m.rachaMax) : t('soloPremium')}</div></div>
       </div>
 
-      ${isPremium ? fullSectionsHtml : lockedSectionHtml}
-
-      <div class="metrics-section" style="border-color:#5a4a24;">
-        <h4 style="color:var(--warn-text);">Nota del prototipo</h4>
-        <div style="font-size:13px;color:var(--text-dim);line-height:1.5;">Los últimos ${HISTORY_DAYS} días son datos de ejemplo generados para que veas el dashboard "vivido". Hoy es el único día 100% real, tomado de tu agenda actual.</div>
-      </div>
+      ${!m.hasHistory ? emptyHistoryHtml : (isPremium ? fullSectionsHtml : lockedSectionHtml)}
 
       ${adBannerHtml()}
     </div>
