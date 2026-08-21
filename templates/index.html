@@ -378,6 +378,17 @@
     </div>
   </div>
 
+  <!-- Modal claro para el lápiz de cada ítem del Calendario Día — reemplaza el confirm()
+       nativo del navegador (Aceptar = quitar hoy / Cancelar = editar), que era confuso
+       porque mezclaba dos acciones muy distintas en un solo diálogo genérico. -->
+  <div id="day-item-action-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:84;align-items:center;justify-content:center;padding:16px;">
+    <div class="profile-card" style="max-width:380px;width:100%;max-height:85vh;overflow-y:auto;margin:0;">
+      <h4 id="day-item-action-title"></h4>
+      <div class="quick-replies" id="day-item-action-buttons" style="margin-top:10px;"></div>
+      <div style="text-align:center;margin-top:14px;"><span class="logout-link" id="day-item-action-cancel-btn"></span></div>
+    </div>
+  </div>
+
   <div id="habit-editor-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:80;align-items:center;justify-content:center;padding:16px;">
     <div class="profile-card" style="max-width:380px;width:100%;max-height:85vh;overflow-y:auto;margin:0;">
       <h4 id="habit-editor-title" data-i18n="heTitleNew">Nuevo hábito</h4>
@@ -447,19 +458,33 @@ function aiEnabled() { return aiReady; }
   if (hr) hr.innerHTML = badgeHtml();
 })();
 
-async function callBlessAI(situationPrompt) {
+// Memoria liviana SOLO en memoria del navegador (no viaja a state, no se guarda en el
+// servidor, se pierde al recargar) — le da a Bless el hilo real de la conversación para
+// que reaccione a lo que la persona ya contó, en vez de responder cada mensaje aislado
+// como si empezara de cero cada vez.
+let chatMemory = [];
+function pushChatMemory(role, content) {
+  if (!content) return;
+  chatMemory.push({ role, content });
+  if (chatMemory.length > 16) chatMemory = chatMemory.slice(-16);
+}
+async function callBlessAI(systemPrompt, situationPrompt) {
   if (!aiEnabled()) return null;
   try {
-    const res = await fetch('/api/bless-reply', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ prompt: situationPrompt }) });
+    const res = await fetch('/api/bless-reply', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ system: systemPrompt, history: chatMemory.slice(-12), prompt: situationPrompt }),
+    });
     if (!res.ok) return null;
     const data = await res.json();
     return (data && data.ok && data.reply) ? data.reply.trim() : null;
   } catch (e) { return null; }
 }
-function blessPersonaPrompt(situationDescription) {
+function blessSystemPrompt() {
   const p = state.profile;
   const lang = (state.settings && state.settings.language === 'en') ? 'inglés' : 'español';
-  return `Eres Bless, la o el mejor amigo/a de ${p.nombre || 'la persona'} dentro de la app "Bless Habit" — no un asistente formal ni un bot de soporte, sino alguien cercano que de verdad se alegra por sus logros y la acompaña en sus días difíciles, que la ayuda a construir hábitos y organizar su día con calidez real, sin sermonear. Hablas en ${lang}, tono cálido, directo y natural, como lo haría una amiga o amigo de confianza — nunca como un formulario ni una lista. Responde en 1 a 3 líneas, sin markdown, sin viñetas, sin emojis excesivos (máximo 1 o 2).
+  return `Eres Bless, la o el mejor amigo/a de ${p.nombre || 'la persona'} dentro de la app "Bless Habit" — no un asistente formal ni un bot de soporte, sino alguien cercano que de verdad se alegra por sus logros y la acompaña en sus días difíciles, que la ayuda a construir hábitos y organizar su día con calidez real, sin sermonear. Hablas en ${lang}, tono cálido, directo y natural, como lo haría una amiga o amigo de confianza — nunca como un formulario ni una lista.
 
 Perfil de la persona:
 - Le cuesta: ${(p.dificultades||[]).join(', ') || 'sostener la constancia'}
@@ -467,13 +492,18 @@ Perfil de la persona:
 - Estilo de motivación: ${p.motivacion || '—'}
 - Más energía en: ${p.energia || '—'}
 
-Situación actual: ${situationDescription}
+Reglas de estilo, muy importantes:
+- Tenés memoria de esta conversación (te paso el historial de mensajes reales antes de cada turno). Usala: si la persona ya contó un detalle, no se lo vuelvas a preguntar ni actúes como si no lo supieras.
+- Reaccioná a los detalles concretos que la persona dijo, con tus propias palabras — nunca repitas ni parafrasees mecánicamente la "situación" que te describan entre instrucciones, eso es solo contexto interno para vos, no algo que la persona haya escrito.
+- No todas tus respuestas tienen que cerrar con una pregunta de sí/no tipo formulario. Cuando tenga sentido, mostrá curiosidad genuina — por ejemplo preguntá cómo lo logró, cómo se sintió, o algo específico de lo que contó — antes o en vez de saltar directo al siguiente paso práctico.
+- Variá tus frases y expresiones; evitá sonar repetitiva o a guion ("qué buena noticia", "listo, guardado") si ya las usaste antes en la conversación.
+- Respuestas cortas, de 1 a 3 líneas, sin markdown, sin viñetas, sin emojis excesivos (máximo 1 o 2).
 
-Responde solo con el mensaje que Bless le diría ahora a la persona, nada más (sin comillas, sin explicar lo que vas a decir).`;
+Responde solo con el mensaje que Bless le diría ahora a la persona, nada más (sin comillas, sin explicar lo que vas a decir, sin repetir instrucciones).`;
 }
-/* Intenta responder con Gemini; si no hay key o falla, usa el texto simulado como respaldo */
+/* Intenta responder con OpenAI; si no hay key o falla, usa el texto simulado como respaldo */
 async function say(container, situationDesc, fallbackText, delay) {
-  const aiReply = await callBlessAI(blessPersonaPrompt(situationDesc));
+  const aiReply = await callBlessAI(blessSystemPrompt(), situationDesc);
   await agentSay(container, aiReply || fallbackText, delay);
 }
 
@@ -643,6 +673,7 @@ const I18N = {
     achievementFallback: '¡Qué buena noticia! 🎉 ¿Quieres que lo guarde en tu perfil como un logro?',
     achievementSavedFallback: '¡Guardado! 🏆 Ya lo vas a ver en tu perfil, en tu sección de logros.',
     achievementDeclinedFallback: 'Va, no lo guardo — pero igual me alegra mucho por ti 🤍',
+    achievementAskDetailFallback: ['¡Qué bueno que tengas un logro! 🎉 Cuéntame, ¿cuál fue?', '¡Me encanta! 🎉 ¿Qué fue exactamente lo que lograste?'],
     recurringConfirmedFallback: '¡Genial! 🌱 Ya lo agregué como hábito — lo vas a ver marcado como "Sugerencia de Bless" en tu perfil. Vamos a construir esto juntas/os.',
     recurringDeclinedFallback: 'Sin problema, lo dejamos solo por hoy 🙂. Si cambias de opinión, dímelo cuando quieras.',
     otherTimeQuestion: ['¿A qué otra hora te gustaría hacerlo?', 'Sin problema. ¿A qué otra hora te queda mejor, o prefieres dejarlo para después?'],
@@ -710,7 +741,7 @@ const I18N = {
 
     editHabitTitle: 'Editar hábito', newCustomHabitTitle: 'Nuevo hábito personalizado',
 
-    deleteConfirmText: (label) => `"${label}"\n\nAceptar = quitarlo solo este día.\nCancelar = editar o eliminar toda la serie del hábito.`,
+    editFullHabitBtn: '✏️ Editar hábito completo', removeTodayOnlyBtn: '🚫 Quitar solo hoy',
 
     hoy: 'Hoy', sinActividades: 'Sin actividades registradas.', editRemoveTitle: 'Editar / quitar',
     addHabitTitleAttr: 'Agregar hábito nuevo', pctCumplido: (n) => `${n}% cumplido`,
@@ -867,6 +898,7 @@ const I18N = {
     achievementFallback: 'That is great news! 🎉 Want me to save it to your profile as an achievement?',
     achievementSavedFallback: 'Saved! 🏆 You will see it in your profile, in your achievements section.',
     achievementDeclinedFallback: "Okay, I won't save it — but I'm still really happy for you 🤍",
+    achievementAskDetailFallback: ["That's great, you have an achievement! 🎉 Tell me, what was it?", "Love that! 🎉 What exactly did you achieve?"],
     recurringConfirmedFallback: 'Great! 🌱 I added it as a habit — you\'ll see it marked as "Bless suggestion" in your profile. Let\'s build this together.',
     recurringDeclinedFallback: "No problem, we'll leave it just for today 🙂. If you change your mind, just tell me.",
     otherTimeQuestion: ['What other time would you like to do it?', 'No problem. What other time works better, or would you rather leave it for later?'],
@@ -934,7 +966,7 @@ const I18N = {
 
     editHabitTitle: 'Edit habit', newCustomHabitTitle: 'New custom habit',
 
-    deleteConfirmText: (label) => `"${label}"\n\nOK = remove only for this day.\nCancel = edit or delete the whole habit series.`,
+    editFullHabitBtn: '✏️ Edit full habit', removeTodayOnlyBtn: '🚫 Remove for today only',
 
     hoy: 'Today', sinActividades: 'No activities recorded.', editRemoveTitle: 'Edit / remove',
     addHabitTitleAttr: 'Add new habit', pctCumplido: (n) => `${n}% done`,
@@ -1186,7 +1218,11 @@ function showTyping(container) {
 function hideTyping() { const d = document.getElementById('typing-indicator'); if (d) d.remove(); }
 async function agentSay(container, text, delay=420) {
   showTyping(container);
-  return new Promise(resolve => { setTimeout(() => { hideTyping(); setAvatarMood('default'); addBubble(container, text, 'agent'); resolve(); }, delay); });
+  return new Promise(resolve => { setTimeout(() => {
+    hideTyping(); setAvatarMood('default'); addBubble(container, text, 'agent');
+    if (container === chatScroll) pushChatMemory('assistant', text);
+    resolve();
+  }, delay); });
 }
 
 /* ============================================================
@@ -1997,12 +2033,18 @@ function toggleDone(idx) {
   const item = state.agenda[idx]; item.done = !item.done;
   state.streaks[item.habitKey] = Math.max(0, (state.streaks[item.habitKey] || 0) + (item.done ? 1 : -1));
   renderAgenda(); renderHeaderRing();
+  const total = state.agenda.length, doneCt = state.agenda.filter(a=>a.done).length;
+  const pct = total ? Math.round((doneCt/total)*100) : 0;
   if (item.done) {
     setAvatarMood('happy', 1600);
     maybeAutoLogroFromStreak(item.habitKey);
-    const total = state.agenda.length, doneCt = state.agenda.filter(a=>a.done).length;
-    const pct = total ? Math.round((doneCt/total)*100) : 0;
     maybeCelebrate(pct);
+  } else {
+    // Al desmarcar (ej. lo tildó por error), bajamos la marca de "ya celebrado" al
+    // % actual — así, si vuelve a marcarlo y sube de nuevo a un tramo que ya había
+    // celebrado antes, la animación vuelve a salir en vez de quedarse callada para
+    // siempre después de la primera vez.
+    lastCelebratedPct = Math.min(lastCelebratedPct, pct);
   }
 }
 function renderAgenda() {
@@ -2052,6 +2094,16 @@ function detectAchievementMention(text) {
   return /(logr[eé]|\blogros?\b|conseguí|consegui|baj[eé] de peso|sub[ií] de peso|complet[eé]|alcanc[eé]|cumpl[ií]|por fin (pude|logré)|lo logré|meta cumplida)/.test(l)
     || /(i (achieved|managed to|finally|completed|accomplished|hit my goal)|i lost weight|i gained weight|i did it|\bachievements?\b)/.test(l);
 }
+// Detecta cuando la persona solo menciona la PALABRA "logro" sin contar en qué
+// consistió (ej. "un logro", "tengo un logro", "logro") — antes esto se guardaba
+// tal cual como el texto del logro ("un logro" literal en el perfil), lo cual no
+// tenía ningún contenido real. Ahora, si el mensaje no trae detalle, Bless
+// pregunta primero de qué se trata antes de ofrecer guardarlo.
+function isGenericAchievementMention(text) {
+  const l = text.toLowerCase().trim().replace(/[.!¡¿?]+$/, '');
+  return /^(tengo\s+|ten[ií]a\s+)?(un\s+|una\s+|mi\s+|el\s+)?logros?$/.test(l)
+    || /^(i\s+(have|got|had)\s+)?(an\s+)?achievements?$/.test(l);
+}
 function addLogro(text) {
   state.profile.logros = state.profile.logros || [];
   state.profile.logros.push({ text, date: ymd(new Date()) });
@@ -2086,6 +2138,7 @@ function detectAddHabitIntent(text) {
 
 async function handleUserMessage(text) {
   addBubble(chatScroll, text, 'user');
+  pushChatMemory('user', text);
   const pending = state.pending;
 
   if (!pending && detectAddHabitIntent(text)) {
@@ -2095,8 +2148,19 @@ async function handleUserMessage(text) {
   }
 
   if (!pending && detectAchievementMention(text)) {
+    if (isGenericAchievementMention(text)) {
+      state.pending = { type: 'needsAchievementDetail' };
+      await say(chatScroll, `La persona mencionó que tiene un logro pero todavía no contó cuál fue. Como su mejor amigo/a, muéstrate genuinamente emocionada/o y pregúntale qué fue exactamente lo que logró, para poder guardarlo bien en su perfil.`, t('achievementAskDetailFallback'));
+      return;
+    }
     state.pending = { type: 'confirmAchievement', text };
     await say(chatScroll, `La persona acaba de contarte un logro: "${text}". Como su mejor amigo/a, alégrate de verdad por ella y pregúntale si quiere que lo guardes en su perfil como un logro.`, t('achievementFallback'));
+    return;
+  }
+
+  if (pending && pending.type === 'needsAchievementDetail') {
+    state.pending = { type: 'confirmAchievement', text };
+    await say(chatScroll, `La persona ya contó cuál fue su logro: "${text}". Como su mejor amigo/a, alégrate de verdad por ella y pregúntale si quiere que lo guardes en su perfil como un logro.`, t('achievementFallback'));
     return;
   }
 
@@ -2338,6 +2402,14 @@ function editProfileField(field, labelKey, numeric) {
   state.profile[field] = trimmed ? (numeric ? (Number(trimmed) || trimmed) : trimmed) : null;
   saveStateToServer();
   renderProfile();
+  // El banner superior ("Bless · hola, Nombre") se pinta una sola vez al entrar al
+  // chat — si el nombre cambia después desde Perfil, hay que refrescarlo a mano o
+  // se queda mostrando el nombre viejo el resto de la sesión.
+  if (field === 'nombre') refreshHeaderSub();
+}
+function refreshHeaderSub() {
+  const sub = document.getElementById('header-sub');
+  if (sub) sub.textContent = t('headerSubHello', state.profile.nombre);
 }
 
 /* ============================================================
@@ -2750,32 +2822,66 @@ function renderCalendar() {
   renderCalAdSlot();
 }
 
+// Antes esto usaba confirm() del navegador, con "Aceptar = quitar solo hoy" y
+// "Cancelar = editar la serie" mezclados en un solo diálogo genérico — confuso,
+// porque tocar el lápiz para EDITAR terminaba mostrando un popup del sistema que
+// parecía de borrado. Ahora es un modal propio con botones claros: editar el
+// hábito completo, o quitarlo solo por hoy, o cancelar sin hacer nada.
 function promptDeleteDayItem(dateStr, item) {
   const habitIdx = state.profile.habitos.findIndex(h => h.key === item.habitKey && h.label === item.label);
   const isToday = dateStr === ymd(new Date());
+  const wrap = document.getElementById('day-item-action-buttons');
+  wrap.innerHTML = '';
+  document.getElementById('day-item-action-title').textContent = itemDisplayLabel(item);
+
   if (habitIdx === -1) {
-    // no corresponde a un hábito con serie (fue agregado suelto por chat) — solo se puede quitar si es hoy
-    if (isToday) {
+    // No corresponde a un hábito con serie (se agregó suelto por chat) — no hay
+    // "hábito completo" que editar, solo se puede quitar si es hoy.
+    if (!isToday) return;
+    const removeBtn = document.createElement('button');
+    removeBtn.className = 'qr-btn';
+    removeBtn.textContent = t('removeTodayOnlyBtn');
+    removeBtn.onclick = () => {
       const aidx = state.agenda.findIndex(a => a.task === item.label && a.time === item.time);
       if (aidx !== -1) { state.agenda.splice(aidx, 1); renderCalDay(); renderAgenda(); renderHeaderRing(); }
-    }
-    return;
-  }
-  const onlyToday = confirm(t('deleteConfirmText', itemDisplayLabel(item)));
-  if (onlyToday) {
-    const h = state.profile.habitos[habitIdx];
-    h.skippedDates = h.skippedDates || [];
-    if (!h.skippedDates.includes(dateStr)) h.skippedDates.push(dateStr);
-    if (isToday) {
-      const aidx = state.agenda.findIndex(a => a.habitKey === h.key && a.task === h.label);
-      if (aidx !== -1) state.agenda.splice(aidx, 1);
-    }
-    saveStateToServer();
-    renderCalDay(); renderAgenda(); renderHeaderRing();
+      closeDayItemAction();
+    };
+    wrap.appendChild(removeBtn);
   } else {
-    openHabitEditor(habitIdx);
+    const editBtn = document.createElement('button');
+    editBtn.className = 'qr-btn';
+    editBtn.textContent = t('editFullHabitBtn');
+    editBtn.onclick = () => { closeDayItemAction(); openHabitEditor(habitIdx); };
+    wrap.appendChild(editBtn);
+
+    const skipBtn = document.createElement('button');
+    skipBtn.className = 'qr-btn';
+    skipBtn.textContent = t('removeTodayOnlyBtn');
+    skipBtn.onclick = () => {
+      const h = state.profile.habitos[habitIdx];
+      h.skippedDates = h.skippedDates || [];
+      if (!h.skippedDates.includes(dateStr)) h.skippedDates.push(dateStr);
+      if (isToday) {
+        const aidx = state.agenda.findIndex(a => a.habitKey === h.key && a.task === h.label);
+        if (aidx !== -1) state.agenda.splice(aidx, 1);
+      }
+      saveStateToServer();
+      renderCalDay(); renderAgenda(); renderHeaderRing();
+      closeDayItemAction();
+    };
+    wrap.appendChild(skipBtn);
   }
+
+  document.getElementById('day-item-action-cancel-btn').textContent = t('cancelBtn');
+  document.getElementById('day-item-action-overlay').style.display = 'flex';
 }
+function closeDayItemAction() {
+  document.getElementById('day-item-action-overlay').style.display = 'none';
+}
+document.getElementById('day-item-action-overlay').addEventListener('click', (e) => {
+  if (e.target.id === 'day-item-action-overlay') closeDayItemAction();
+});
+document.getElementById('day-item-action-cancel-btn').onclick = closeDayItemAction;
 
 function renderCalDay() {
   const date = addDays(new Date(), calDayOffset);
