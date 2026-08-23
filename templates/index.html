@@ -76,7 +76,10 @@
   /* Celebración flotante — "explosión" que aparece encima de CUALQUIER pestaña al
      marcar una actividad (ya no se inserta como mensaje dentro del chat de Bless). */
   .celebrate-float { position: absolute; inset: 0; pointer-events: none; z-index: 90; display: flex; align-items: center; justify-content: center; }
-  .celebrate-float .celebrate-note { box-shadow: 0 10px 34px rgba(0,0,0,.4); }
+  .celebrate-float .celebrate-note { box-shadow: 0 10px 34px rgba(0,0,0,.4); pointer-events: auto; position: relative; padding-right: 34px; }
+  .celebrate-close-btn { position: absolute; top: 3px; right: 3px; width: 22px; height: 22px; border-radius: 50%; border: none; background: rgba(16,19,26,.22); color: #10131a; font-size: 14px; line-height: 1; cursor: pointer; display: flex; align-items: center; justify-content: center; font-weight: 800; transition: background .15s, transform .1s; }
+  .celebrate-close-btn:hover { background: rgba(16,19,26,.38); }
+  .celebrate-close-btn:active { transform: scale(.9); }
   .celebrate-particle { position: absolute; left: 50%; top: 50%; font-size: 20px; pointer-events: none; animation: particleBurst .9s cubic-bezier(.15,.8,.3,1) forwards; }
   @keyframes particleBurst { 0% { transform: translate(-50%,-50%) scale(.4); opacity: 1; } 100% { transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(1); opacity: 0; } }
   .diag-card { align-self: stretch; background: var(--diag-bg); border: 1px solid #3d4a8a; border-radius: 18px; padding: 18px; animation: popIn .5s cubic-bezier(.34,1.56,.64,1); }
@@ -613,6 +616,7 @@ const I18N = {
       (n) => `Buenos días, ${n}. ¿Qué quieres lograr hoy? ☀️`,
       (n) => `¡Hola de nuevo, ${n}! ¿Con qué empezamos el día? 🙂`,
       (n) => `${n}, cuéntame qué tienes en mente para hoy.`,
+      (n) => `¡Hola, ${n}! ¿Ya sabes qué quieres hacer hoy, o quieres que te sugiera algo? 🌱`,
     ],
     dayArmedNote: 'Ya dejé tu día armado con los hábitos que elegiste — puedes marcarlos, moverlos o quitarlos cuando quieras. 🗓️',
     fabPrompt: ['¿Quieres agregar algo a tu día? Yo puedo ayudarte 💬', 'Cuéntame qué tienes en mente, yo puedo ayudarte a organizarlo 🙂'],
@@ -674,11 +678,14 @@ const I18N = {
     achievementSavedFallback: '¡Guardado! 🏆 Ya lo vas a ver en tu perfil, en tu sección de logros.',
     achievementDeclinedFallback: 'Va, no lo guardo — pero igual me alegra mucho por ti 🤍',
     achievementAskDetailFallback: ['¡Qué bueno que tengas un logro! 🎉 Cuéntame, ¿cuál fue?', '¡Me encanta! 🎉 ¿Qué fue exactamente lo que lograste?'],
+    habitRecommendationFallback: (names) => `¡Con gusto! 🌱 Podrías probar con ${names}. ¿Alguna te llama la atención, o prefieres agregar otra cosa?`,
+    allPresetsAlreadyAddedFallback: '¡Ya tienes armados todos los hábitos que tengo predefinidos! 🌟 Puedes seguir agregando los que quieras con el botón "+" del calendario.',
     recurringConfirmedFallback: '¡Genial! 🌱 Ya lo agregué como hábito — lo vas a ver marcado como "Sugerencia de Bless" en tu perfil. Vamos a construir esto juntas/os.',
     recurringDeclinedFallback: 'Sin problema, lo dejamos solo por hoy 🙂. Si cambias de opinión, dímelo cuando quieras.',
     otherTimeQuestion: ['¿A qué otra hora te gustaría hacerlo?', 'Sin problema. ¿A qué otra hora te queda mejor, o prefieres dejarlo para después?'],
     needsTimeDropFallback: (task) => `Dejo pendiente la hora de "${task}" para después.`,
-    genericQuestionFallback: ['Mmm, cuéntame un poco más para poder ayudarte 🙂. Si quieres, revisa tu agenda de hoy y dime qué te gustaría hacer.', '¡Buena pregunta! Dime qué tienes en mente y lo vemos juntas/os, o revisa tu agenda de hoy para una idea rápida.'],
+    genericQuestionFallback: ['Mmm, cuéntame un poco más para poder ayudarte 🙂. ¿Quieres que te sugiera algo?', '¡Buena pregunta! Dime qué tienes en mente, o si quieres, te sugiero algo yo — ¿te gustaría?'],
+    suggestionDeclinedFallback: 'Va, sin problema 🤍. Cuando quieras una idea, aquí estoy.',
     scheduledEnergyFallback: (time, icon, hint) => `Agregado a las ${time} ${icon}. Como tienes más energía en ${hint}, si quieres puedo moverlo ahí para que te rinda más. ¿Lo dejamos así o lo cambio?`,
     offerRecurringFallback: (time, icon) => `Agregado a las ${time} ${icon} ✅. Oye, ¿quieres que te ayude a convertir esto en un hábito que repitamos? Así te acompaño a construirlo de verdad, no solo por hoy.`,
 
@@ -838,6 +845,7 @@ const I18N = {
       (n) => `Good morning, ${n}. What do you want to accomplish today? ☀️`,
       (n) => `Hey again, ${n}! What should we start the day with? 🙂`,
       (n) => `${n}, tell me what you have in mind for today.`,
+      (n) => `Hey, ${n}! Do you already know what you want to do today, or want me to suggest something? 🌱`,
     ],
     dayArmedNote: "I already set up your day with the habits you chose — you can check them off, move them, or remove them whenever you want. 🗓️",
     fabPrompt: ['Want to add something to your day? I can help 💬', 'Tell me what you have in mind, I can help you organize it 🙂'],
@@ -899,11 +907,14 @@ const I18N = {
     achievementSavedFallback: 'Saved! 🏆 You will see it in your profile, in your achievements section.',
     achievementDeclinedFallback: "Okay, I won't save it — but I'm still really happy for you 🤍",
     achievementAskDetailFallback: ["That's great, you have an achievement! 🎉 Tell me, what was it?", "Love that! 🎉 What exactly did you achieve?"],
+    habitRecommendationFallback: (names) => `Happy to! 🌱 You could try ${names}. Does any of these catch your eye, or would you rather add something else?`,
+    allPresetsAlreadyAddedFallback: 'You already have every preset habit I offer added! 🌟 You can keep adding your own with the "+" button on the calendar.',
     recurringConfirmedFallback: 'Great! 🌱 I added it as a habit — you\'ll see it marked as "Bless suggestion" in your profile. Let\'s build this together.',
     recurringDeclinedFallback: "No problem, we'll leave it just for today 🙂. If you change your mind, just tell me.",
     otherTimeQuestion: ['What other time would you like to do it?', 'No problem. What other time works better, or would you rather leave it for later?'],
     needsTimeDropFallback: (task) => `I'll leave the time for "${task}" pending for later.`,
-    genericQuestionFallback: ["Hmm, tell me a bit more so I can help 🙂. You could also check today's agenda for a quick idea.", "Good question! Tell me what's on your mind and we'll figure it out together, or check today's agenda for a quick idea."],
+    genericQuestionFallback: ["Hmm, tell me a bit more so I can help 🙂. Want me to suggest something?", "Good question! Tell me what's on your mind, or I can suggest something for you — want me to?"],
+    suggestionDeclinedFallback: "No worries 🤍. Whenever you want an idea, I'm here.",
     scheduledEnergyFallback: (time, icon, hint) => `Added at ${time} ${icon}. Since you have more energy in ${hint}, I can move it there if you want it to be more effective. Should we leave it as is or change it?`,
     offerRecurringFallback: (time, icon) => `Added at ${time} ${icon} ✅. Hey, want me to help turn this into a habit we repeat? That way I can really help you build it, not just for today.`,
 
@@ -1913,6 +1924,11 @@ function startChat() {
   renderChatAdSlot();
   say(chatScroll, `La persona acaba de terminar su evaluación inicial y entra al chat por primera vez hoy. Salúdala usando su nombre y pregúntale qué quiere lograr hoy.`, tp('greetingFallback', state.profile.nombre), 300).then(() => {
     if (state.agenda.length) addNote(chatScroll, t('dayArmedNote'));
+    // Deja la puerta abierta a una sugerencia proactiva: si la persona responde con
+    // un simple "sí"/"dale" al saludo, Bless le propone algo concreto en vez de
+    // quedarse sin saber qué contestar — esto es lo que la mantiene conversando
+    // dentro de la app en vez de cerrarla sin hacer nada.
+    state.pending = { type: 'offerSuggestion' };
   });
 }
 function renderHeaderRing() {
@@ -2002,7 +2018,19 @@ function celebrateExplosion(emoji, phrase, animClass) {
   overlay.innerHTML = '';
   const pill = document.createElement('div');
   pill.className = 'celebrate-note ' + animClass;
-  pill.textContent = `${emoji} ${phrase}`;
+  const text = document.createElement('span');
+  text.textContent = `${emoji} ${phrase}`;
+  pill.appendChild(text);
+  // La persona pidió que el mensaje se quede visible hasta que ella misma lo cierre
+  // (antes desaparecía solo a los 1.9s, muy rápido para alcanzar a leerlo). Se agrega
+  // un botón de cerrar en vez de un auto-ocultado por tiempo.
+  const closeBtn = document.createElement('button');
+  closeBtn.className = 'celebrate-close-btn';
+  closeBtn.type = 'button';
+  closeBtn.setAttribute('aria-label', 'Cerrar');
+  closeBtn.textContent = '✕';
+  closeBtn.addEventListener('click', () => { overlay.innerHTML = ''; });
+  pill.appendChild(closeBtn);
   overlay.appendChild(pill);
   const particles = ['✨', '🎉', '⭐', '💥', '🌟'];
   const count = 10;
@@ -2018,7 +2046,6 @@ function celebrateExplosion(emoji, phrase, animClass) {
     overlay.appendChild(p);
   }
   clearTimeout(celebrateExplosion._t);
-  celebrateExplosion._t = setTimeout(() => { overlay.innerHTML = ''; }, 1900);
 }
 function maybeCelebrate(pct) {
   const tier = [...CELEBRATION_TIERS].reverse().find(t => pct >= t.min && lastCelebratedPct < t.min);
@@ -2135,16 +2162,75 @@ function detectAddHabitIntent(text) {
     || /new habit/.test(l)
     || /i want (a |another )?habit/.test(l);
 }
+// Detecta cuando la persona le pide a Bless que le recomiende/sugiera algo — ya sea
+// "qué hábitos me recomiendas" de entrada, o un seguimiento corto en la misma charla
+// ("pero que me recomiendas") que antes caía en el fallback genérico de "cuéntame más"
+// sin llegar nunca a sugerir nada concreto.
+function detectHabitRecommendationRequest(text) {
+  const l = text.toLowerCase();
+  return /recom(e|ie)nd|suger|sugier/.test(l) || /\brecommend\b|\bsuggest/.test(l);
+}
+// Hasta 'count' hábitos predefinidos que la persona todavía no tiene agregados.
+function suggestUnusedHabits(count) {
+  const already = new Set(state.profile.habitos.map(h => h.key));
+  const pool = HABIT_PRESETS.filter(h => !already.has(h.key));
+  const picks = [];
+  while (picks.length < count && pool.length) {
+    picks.push(pool.splice(Math.floor(Math.random() * pool.length), 1)[0]);
+  }
+  return picks;
+}
+// Respuesta compartida de "te sugiero esto" — la usan tanto quien pide una
+// recomendación directamente ("qué me recomiendas") como quien acepta la oferta
+// proactiva de Bless ("¿quieres que te sugiera algo?" → "sí").
+async function respondWithHabitSuggestions() {
+  const picks = suggestUnusedHabits(3);
+  if (!picks.length) {
+    await say(chatScroll, `La persona quiere una recomendación de hábito nuevo, pero ya tiene agregados todos los hábitos predefinidos disponibles en la app. Felicítala por eso con calidez y dile que puede seguir agregando hábitos personalizados con el botón "+" del calendario.`, t('allPresetsAlreadyAddedFallback'));
+    return;
+  }
+  const names = picks.map(h => `${h.icon} ${t2(h)}`).join(', ');
+  await say(chatScroll, `La persona quiere que le recomiendes/sugieras un hábito nuevo para construir. Sugiérele estas opciones concretas con calidez, mencionando sus nombres tal cual: ${names}. Pregúntale si alguna le llama la atención, o si prefiere agregar otra cosa distinta (puede tocar el botón "+" del calendario para elegir).`, t('habitRecommendationFallback', names));
+}
 
 async function handleUserMessage(text) {
   addBubble(chatScroll, text, 'user');
   pushChatMemory('user', text);
+
+  // Bless pudo haber ofrecido proactivamente sugerir algo (al saludar, o tras una
+  // respuesta genérica). Es una oferta "suave": no debe bloquear los detectores de
+  // intención de abajo (agregar hábito, pedir recomendación, contar un logro) si la
+  // persona simplemente sigue la conversación en vez de responder sí/no. Por eso NO
+  // la tratamos como un pending "duro" para efectos de los chequeos `!pending`.
+  const wasOfferingSuggestion = !!(state.pending && state.pending.type === 'offerSuggestion');
+  if (wasOfferingSuggestion) state.pending = null;
   const pending = state.pending;
 
   if (!pending && detectAddHabitIntent(text)) {
     await agentSay(chatScroll, tp('addHabitFallback'), 300);
     openHabitEditor(null);
     return;
+  }
+
+  if (!pending && detectHabitRecommendationRequest(text)) {
+    await respondWithHabitSuggestions();
+    return;
+  }
+
+  // Si nada de lo anterior matcheó y sí veníamos de una oferta de sugerencia,
+  // interpretamos la respuesta como sí/no a esa oferta. Esto es lo que mantiene a
+  // la persona conversando en vez de quedarse sin saber qué escribir.
+  if (wasOfferingSuggestion) {
+    if (isAffirmative(text)) {
+      await respondWithHabitSuggestions();
+      return;
+    }
+    if (isNegative(text)) {
+      await agentSay(chatScroll, t('suggestionDeclinedFallback'), 300);
+      return;
+    }
+    // respuesta ambigua (ej. ya escribió una tarea nueva) — seguimos procesando
+    // el mensaje normalmente en vez de insistir con la oferta.
   }
 
   if (!pending && detectAchievementMention(text)) {
@@ -2216,22 +2302,28 @@ async function handleUserMessage(text) {
       await say(chatScroll, `La persona rechazó el horario alternativo para "${pending.task}". Pregúntale a qué otra hora le gustaría, o si prefiere dejarlo pendiente para después.`, tp('otherTimeQuestion'));
       return;
     }
-    const t = extractTime(text);
-    if (t) {
-      if (overlapsWork(t)) { const alt = minutesToTime(findFreeSlotNear(timeToMinutes(t))); state.pending = { type: 'confirmAlt', task: pending.task, altTime: alt }; await say(chatScroll, `La nueva hora que pidió para "${pending.task}" también choca con su horario fijo de trabajo. Sugiérele amablemente las ${alt} como alternativa cercana.`, PHRASES.conflict(alt)); return; }
-      addAgendaItem(t, pending.task); state.pending = null;
-      await say(chatScroll, `Se confirmó "${pending.task}" a las ${t}. Celebra brevemente y pregunta si quiere algo más para hoy.`, PHRASES.confirmed(pending.task, t));
+    // OJO: la variable local se llama "foundTime", nunca "t" — un nombre "t" acá
+    // tapaba la función global t() de traducción durante el resto de este bloque, y
+    // cuando no se reconocía una hora, la llamada a t('needsTimeDropFallback', ...)
+    // de más abajo intentaba invocar esa variable en vez de la función, y el chat se
+    // rompía en seco con "t is not a function" (bug real encontrado y corregido).
+    const foundTime = extractTime(text);
+    if (foundTime) {
+      if (overlapsWork(foundTime)) { const alt = minutesToTime(findFreeSlotNear(timeToMinutes(foundTime))); state.pending = { type: 'confirmAlt', task: pending.task, altTime: alt }; await say(chatScroll, `La nueva hora que pidió para "${pending.task}" también choca con su horario fijo de trabajo. Sugiérele amablemente las ${alt} como alternativa cercana.`, PHRASES.conflict(alt)); return; }
+      addAgendaItem(foundTime, pending.task); state.pending = null;
+      await say(chatScroll, `Se confirmó "${pending.task}" a las ${foundTime}. Celebra brevemente y pregunta si quiere algo más para hoy.`, PHRASES.confirmed(pending.task, foundTime));
       return;
     }
     state.pending = null;
   }
 
   if (state.pending && state.pending.type === 'needsTime') {
-    const t = extractTime(text);
-    if (t) {
+    // Mismo cuidado acá: "foundTime", no "t" (ver comentario de arriba).
+    const foundTime = extractTime(text);
+    if (foundTime) {
       const task = state.pending.task; state.pending = null;
-      if (overlapsWork(t)) { const alt = minutesToTime(findFreeSlotNear(timeToMinutes(t))); state.pending = { type: 'confirmAlt', task, altTime: alt }; await say(chatScroll, `Quiere agendar "${task}" a las ${t}, pero eso choca con su horario fijo de trabajo. Sugiérele amablemente las ${alt} como alternativa cercana.`, PHRASES.conflict(alt)); return; }
-      addAgendaItem(t, task); await say(chatScroll, `Se confirmó "${task}" a las ${t}. Celebra brevemente y pregunta si quiere algo más para hoy.`, PHRASES.confirmed(task, t)); return;
+      if (overlapsWork(foundTime)) { const alt = minutesToTime(findFreeSlotNear(timeToMinutes(foundTime))); state.pending = { type: 'confirmAlt', task, altTime: alt }; await say(chatScroll, `Quiere agendar "${task}" a las ${foundTime}, pero eso choca con su horario fijo de trabajo. Sugiérele amablemente las ${alt} como alternativa cercana.`, PHRASES.conflict(alt)); return; }
+      addAgendaItem(foundTime, task); await say(chatScroll, `Se confirmó "${task}" a las ${foundTime}. Celebra brevemente y pregunta si quiere algo más para hoy.`, PHRASES.confirmed(task, foundTime)); return;
     }
     await agentSay(chatScroll, t('needsTimeDropFallback', state.pending.task), 250);
     state.pending = null;
@@ -2261,19 +2353,28 @@ async function handleUserMessage(text) {
   // si el mensaje suena a pregunta genérica, respondemos de forma conversacional en
   // vez de arrancar el flujo de agendar.
   if (looksLikeGenericQuestion(text)) {
-    await say(chatScroll, `La persona te hizo una pregunta general ("${text}"), no te está pidiendo agendar nada todavía. Respóndele de forma natural y cercana, como su mejor amigo/a — si tiene sentido, puedes mencionar brevemente lo que le queda pendiente hoy en su agenda para ayudarla a decidir. No le preguntes a qué hora quiere hacer "${text}", porque eso no es el nombre de una tarea.`, t('genericQuestionFallback'));
+    // Termina la respuesta ofreciendo proactivamente una sugerencia concreta — así la
+    // persona no se queda sin saber qué escribir después, y es más probable que se
+    // quede conversando con Bless en vez de cerrar la app sin hacer nada.
+    state.pending = { type: 'offerSuggestion' };
+    await say(chatScroll, `La persona te hizo una pregunta general ("${text}"), no te está pidiendo agendar nada todavía. Respóndele de forma natural y cercana, como su mejor amigo/a — si tiene sentido, puedes mencionar brevemente lo que le queda pendiente hoy en su agenda para ayudarla a decidir. No le preguntes a qué hora quiere hacer "${text}", porque eso no es el nombre de una tarea. Termina preguntándole con calidez si quiere que le sugieras algo.`, t('genericQuestionFallback'));
     return;
   }
   await say(chatScroll, `La persona escribió "${text}" sin especificar hora. Pregúntale a qué hora quiere hacerlo hoy.`, PHRASES.askTime(text));
   state.pending = { type: 'needsTime', task: text };
 }
 // Detecta si el mensaje es una pregunta genérica ("¿qué hago?", "how does this work?")
-// en vez de el nombre de una tarea/hábito que la persona quiere agendar.
+// en vez de el nombre de una tarea/hábito que la persona quiere agendar. Antes solo
+// miraba la primera palabra, así que una respuesta de seguimiento en la misma charla
+// ("pero qué me recomiendas", "y cuál sería mejor") no calzaba porque empieza con un
+// conector, no con la palabra de pregunta — se le quita ese conector antes de revisar.
+const QUESTION_FILLER_PREFIX = /^(pero|y|o|entonces|bueno|oye|osea|o sea|este|mmm+|eh|and|but|so|well|hey|um+)\s+/;
 function looksLikeGenericQuestion(text) {
-  const l = text.trim().toLowerCase();
+  let l = text.trim().toLowerCase();
   if (!l) return false;
   if (/\?\s*$/.test(l)) return true;
-  return /^(qu[eé]|c[oó]mo|cu[aá]ndo|por qu[eé]|d[oó]nde|qui[eé]n|para qu[eé]|what|how|when|why|where|who|which)\b/.test(l);
+  l = l.replace(QUESTION_FILLER_PREFIX, '').replace(QUESTION_FILLER_PREFIX, '');
+  return /^(qu[eé]|cu[aá]l(es)?|c[oó]mo|cu[aá]ndo|por qu[eé]|d[oó]nde|qui[eé]n|para qu[eé]|what|how|when|why|where|who|which)\b/.test(l);
 }
 
 document.getElementById('chat-send').onclick = () => { const input = document.getElementById('chat-text'); const val = input.value.trim(); if (!val) return; input.value = ''; handleUserMessage(val); };
