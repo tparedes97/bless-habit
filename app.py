@@ -6,6 +6,10 @@ import hashlib
 import time
 import secrets
 import requests
+try:
+    import libsql  # pip install libsql — cliente de Turso, compatible con la API de sqlite3
+except ImportError:
+    libsql = None
 from flask import Flask, request, jsonify, render_template, session, redirect, url_for, Response
 from openai import OpenAI
 from authlib.integrations.flask_client import OAuth
@@ -13,6 +17,10 @@ from pywebpush import webpush, WebPushException
 from werkzeug.middleware.proxy_fix import ProxyFix
 
 app = Flask(__name__)
+# Render (y la mayoría de hosts en la nube) reciben las peticiones por HTTPS en su
+# proxy, pero se las reenvían a la app por HTTP simple. Sin este ProxyFix, Flask
+# cree que todo llega por HTTP y genera URLs de redirect_uri con "http://" en vez
+# de "https://", lo que rompe el login de Google (error redirect_uri_mismatch).
 app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
 app.secret_key = os.environ.get("FLASK_SECRET_KEY", "dev-secret-cambia-esto-en-produccion")
 
@@ -115,15 +123,63 @@ REENGAGE_PUSH_MESSAGES = [
 
 
 # ============================================================
-# BASE DE DATOS (SQLite) — perfil, hábitos, agenda e historial por usuario
+# BASE DE DATOS — Turso (libSQL en la nube) en producción, SQLite local como
+# respaldo para desarrollo.
+#
+# HISTORIA: originalmente esto era SQLite guardado dentro de la propia carpeta
+# de código de la app. En Render (tier gratuito), esa carpeta se recrea desde
+# cero cada vez que el servidor "duerme" (tras 15 min sin uso) y despierta —
+# no hace falta ni un despliegue nuevo — así que la base se perdía todo el
+# tiempo. Investigamos agregar un "Persistent Disk" de Render, pero ese
+# tier gratuito NO permite discos persistentes (son solo para planes pagados,
+# desde $7/mes). Por eso se migró a **Turso** (https://turso.tech), que ofrece
+# una base de datos compatible con SQLite alojada en la nube, con un plan
+# gratis generoso — los datos viven ahí, no en el disco del servidor, así que
+# sobreviven los reinicios/despliegues de Render sin pagar nada extra.
+#
+# CONFIGURACIÓN QUE TANIA DEBE HACER (una sola vez):
+#   1) Crear una cuenta gratis en https://turso.tech y una base de datos nueva
+#      (por consola web o con su CLI: `turso db create bless-habit`).
+#   2) Conseguir la URL de conexión (algo como
+#      libsql://bless-habit-<usuario>.turso.io) y un token de acceso
+#      (`turso db tokens create bless-habit` o el botón "Create Token" en el
+#      dashboard).
+#   3) Agregar dos variables en Render Secrets:
+#        TURSO_DATABASE_URL = libsql://... (la URL del paso 2)
+#        TURSO_AUTH_TOKEN   = el token del paso 2
+#   4) Volver a desplegar. Cuando ambas variables están configuradas, la app
+#      usa Turso automáticamente; si faltan, sigue funcionando con SQLite
+#      local (útil para probar en la propia computadora), pero SIN
+#      persistencia real en Render.
 # ============================================================
-DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "bless_habit.db")
+TURSO_DATABASE_URL = os.environ.get("TURSO_DATABASE_URL", "")
+TURSO_AUTH_TOKEN = os.environ.get("TURSO_AUTH_TOKEN", "")
+USE_TURSO = bool(TURSO_DATABASE_URL and TURSO_AUTH_TOKEN and libsql is not None)
+
+# Respaldo local (desarrollo, o producción si Turso no está configurado — en
+# ese caso vuelve a tener el mismo problema de persistencia de siempre).
+DB_PATH = os.environ.get("DATABASE_PATH") or os.path.join(os.path.dirname(os.path.abspath(__file__)), "bless_habit.db")
 
 
 def get_db():
-    conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row
-    return conn
+    if USE_TURSO:
+        return libsql.connect(database=TURSO_DATABASE_URL, auth_token=TURSO_AUTH_TOKEN)
+    return sqlite3.connect(DB_PATH)
+
+
+# El cliente de Turso (libsql) NO tiene el `row_factory` de sqlite3 (no existe
+# `conn.row_factory = sqlite3.Row`), así que en vez de depender de eso,
+# convertimos las filas a diccionarios a mano usando `cursor.description` —
+# funciona igual con SQLite local y con Turso, sin depender de esa función.
+def _row_to_dict(cur, row):
+    if row is None:
+        return None
+    return dict(zip([c[0] for c in cur.description], row))
+
+
+def _rows_to_dicts(cur, rows):
+    cols = [c[0] for c in cur.description]
+    return [dict(zip(cols, r)) for r in rows]
 
 
 def init_db():
@@ -164,7 +220,8 @@ def init_db():
     # Migración suave: agrega columnas nuevas si la base ya existía sin ellas
     # (por ejemplo una base creada antes de Premium, o todavía con las
     # columnas viejas de Culqi de una versión anterior de este archivo).
-    existing_cols = {row["name"] for row in conn.execute("PRAGMA table_info(users)")}
+    cur = conn.execute("PRAGMA table_info(users)")
+    existing_cols = {r["name"] for r in _rows_to_dicts(cur, cur.fetchall())}
     for col, ddl in [
         ("is_premium", "ALTER TABLE users ADD COLUMN is_premium INTEGER DEFAULT 0"),
         ("paddle_customer_id", "ALTER TABLE users ADD COLUMN paddle_customer_id TEXT"),
@@ -182,16 +239,17 @@ init_db()
 
 def get_or_create_user(google_id, email, name, picture):
     conn = get_db()
-    row = conn.execute("SELECT id FROM users WHERE google_id = ?", (google_id,)).fetchone()
+    cur = conn.execute("SELECT id FROM users WHERE google_id = ?", (google_id,))
+    row = _row_to_dict(cur, cur.fetchone())
     if row:
         user_id = row["id"]
         conn.execute("UPDATE users SET email = ?, name = ?, picture = ? WHERE id = ?", (email, name, picture, user_id))
     else:
-        cur = conn.execute(
+        cur2 = conn.execute(
             "INSERT INTO users (google_id, email, name, picture) VALUES (?, ?, ?, ?)",
             (google_id, email, name, picture),
         )
-        user_id = cur.lastrowid
+        user_id = cur2.lastrowid
     conn.commit()
     conn.close()
     return user_id
@@ -199,23 +257,26 @@ def get_or_create_user(google_id, email, name, picture):
 
 def get_user(user_id):
     conn = get_db()
-    row = conn.execute("SELECT * FROM users WHERE id = ?", (user_id,)).fetchone()
+    cur = conn.execute("SELECT * FROM users WHERE id = ?", (user_id,))
+    row = _row_to_dict(cur, cur.fetchone())
     conn.close()
-    return dict(row) if row else None
+    return row
 
 
 def find_user_by_email(email):
     if not email:
         return None
     conn = get_db()
-    row = conn.execute("SELECT * FROM users WHERE email = ?", (email,)).fetchone()
+    cur = conn.execute("SELECT * FROM users WHERE email = ?", (email,))
+    row = _row_to_dict(cur, cur.fetchone())
     conn.close()
-    return dict(row) if row else None
+    return row
 
 
 def load_user_state(user_id):
     conn = get_db()
-    row = conn.execute("SELECT state_json FROM user_state WHERE user_id = ?", (user_id,)).fetchone()
+    cur = conn.execute("SELECT state_json FROM user_state WHERE user_id = ?", (user_id,))
+    row = _row_to_dict(cur, cur.fetchone())
     conn.close()
     return json.loads(row["state_json"]) if row else None
 
@@ -246,16 +307,18 @@ def set_user_premium(user_id, is_premium, customer_id=None, subscription_id=None
 
 def find_user_by_paddle_customer(customer_id):
     conn = get_db()
-    row = conn.execute("SELECT * FROM users WHERE paddle_customer_id = ?", (customer_id,)).fetchone()
+    cur = conn.execute("SELECT * FROM users WHERE paddle_customer_id = ?", (customer_id,))
+    row = _row_to_dict(cur, cur.fetchone())
     conn.close()
-    return dict(row) if row else None
+    return row
 
 
 def find_user_by_paddle_subscription(subscription_id):
     conn = get_db()
-    row = conn.execute("SELECT * FROM users WHERE paddle_subscription_id = ?", (subscription_id,)).fetchone()
+    cur = conn.execute("SELECT * FROM users WHERE paddle_subscription_id = ?", (subscription_id,))
+    row = _row_to_dict(cur, cur.fetchone())
     conn.close()
-    return dict(row) if row else None
+    return row
 
 
 def save_push_subscription(user_id, endpoint, p256dh, auth):
@@ -277,24 +340,26 @@ def remove_push_subscription(endpoint):
 
 def get_push_subscriptions_for_user(user_id):
     conn = get_db()
-    rows = conn.execute("SELECT * FROM push_subscriptions WHERE user_id = ?", (user_id,)).fetchall()
+    cur = conn.execute("SELECT * FROM push_subscriptions WHERE user_id = ?", (user_id,))
+    rows = _rows_to_dicts(cur, cur.fetchall())
     conn.close()
-    return [dict(r) for r in rows]
+    return rows
 
 
 def get_inactive_users_with_push(days_inactive):
     """Usuarios con al menos una suscripción push, cuyo estado no se actualiza hace
     `days_inactive` días o más (candidatos al mensaje de reenganche compasivo)."""
     conn = get_db()
-    rows = conn.execute("""
+    cur = conn.execute("""
         SELECT DISTINCT u.id as user_id, u.name
         FROM users u
         JOIN push_subscriptions ps ON ps.user_id = u.id
         JOIN user_state us ON us.user_id = u.id
         WHERE datetime(us.updated_at) <= datetime('now', ?)
-    """, (f"-{int(days_inactive)} days",)).fetchall()
+    """, (f"-{int(days_inactive)} days",))
+    rows = _rows_to_dicts(cur, cur.fetchall())
     conn.close()
-    return [dict(r) for r in rows]
+    return rows
 
 
 def send_push_to_user(user_id, title, body, url="/"):
@@ -671,13 +736,24 @@ def index():
 
 @app.route("/api/status")
 def status():
-    return jsonify({"aiReady": bool(os.environ.get("OPENAI_API_KEY"))})
+    return jsonify({
+        "aiReady": bool(os.environ.get("OPENAI_API_KEY")),
+        # Si esto sale en False en producción, los datos NO sobreviven a que el
+        # servidor se duerma/reinicie — faltan TURSO_DATABASE_URL/TURSO_AUTH_TOKEN.
+        "dbPersistent": USE_TURSO,
+    })
 
 
 @app.route("/api/bless-reply", methods=["POST"])
 def bless_reply():
     data = request.get_json(force=True) or {}
-    prompt = data.get("prompt", "")
+    # Compatibilidad con el formato viejo (solo "prompt") y el nuevo, que separa
+    # el prompt de sistema (persona de Bless) del historial real de la conversación,
+    # para que el modelo tenga memoria de lo que ya se dijo y no responda cada
+    # mensaje como si fuera aislado.
+    system_prompt = (data.get("system") or "").strip()
+    history = data.get("history") or []
+    prompt = (data.get("prompt") or "").strip()
 
     client = get_client()
     if client is None:
@@ -687,14 +763,31 @@ def bless_reply():
             "error": "No hay OPENAI_API_KEY configurada en el servidor (agrégala en Secrets)."
         }), 400
 
-    if not prompt:
+    if not prompt and not system_prompt:
+        return jsonify({"ok": False, "reply": None, "error": "Falta el prompt."}), 400
+
+    messages = []
+    if system_prompt:
+        messages.append({"role": "system", "content": system_prompt})
+    if isinstance(history, list):
+        for turn in history[-12:]:
+            if not isinstance(turn, dict):
+                continue
+            role = turn.get("role")
+            content = turn.get("content")
+            if role in ("user", "assistant") and content:
+                messages.append({"role": role, "content": str(content)})
+    if prompt:
+        messages.append({"role": "user", "content": prompt})
+
+    if not messages:
         return jsonify({"ok": False, "reply": None, "error": "Falta el prompt."}), 400
 
     try:
         resp = client.chat.completions.create(
             model=OPENAI_MODEL,
-            messages=[{"role": "user", "content": prompt}],
-            temperature=0.85,
+            messages=messages,
+            temperature=0.9,
             max_tokens=150,
         )
         reply = resp.choices[0].message.content
