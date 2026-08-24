@@ -773,7 +773,7 @@ const state = {
     dificultades: [], intentosPrevios: [], detonantes: [], despertar: "", dormir: "", tiempoLibre: "",
     motivacion: "", diasDificiles: [], habitos: [], logros: []
   },
-  settings: { language: null, country: null, theme: 'dark' },
+  settings: { language: null, country: null, theme: 'light' },
   diagnostic: null,
   agenda: [], streaks: {}, history: [], lastActiveDate: null, onboardingStep: 0, pending: null,
   // Diario personal — una entrada por fecha ('YYYY-MM-DD'), con estado de ánimo,
@@ -1500,7 +1500,7 @@ function itemDisplayLabel(item) {
   return item.label;
 }
 function applyTheme(theme) {
-  const th = (theme === 'premium' && !isPremium) ? 'dark' : (theme || 'dark');
+  const th = (theme === 'premium' && !isPremium) ? 'light' : (theme || 'light');
   document.documentElement.setAttribute('data-theme', th === 'dark' ? '' : th);
   state.settings = state.settings || {};
   state.settings.theme = th;
@@ -2023,7 +2023,7 @@ function openSettings() {
   const themes = [{code:'dark',label:t('themeDark')},{code:'light',label:t('themeLight')}];
   if (isPremium) themes.push({code:'premium',label:t('themePremium')});
   themes.forEach(th => {
-    const b = document.createElement('button'); b.className = 'qr-btn' + ((state.settings.theme||'dark')===th.code?' selected':''); b.textContent = th.label; b.dataset.code = th.code;
+    const b = document.createElement('button'); b.className = 'qr-btn' + ((state.settings.theme||'light')===th.code?' selected':''); b.textContent = th.label; b.dataset.code = th.code;
     b.onclick = () => { themeWrap.querySelectorAll('.qr-btn').forEach(x=>x.classList.remove('selected')); b.classList.add('selected'); };
     themeWrap.appendChild(b);
   });
@@ -2128,7 +2128,7 @@ async function bootstrapApp() {
     const stateData = await stateRes.json();
     if (stateData.ok && stateData.state && stateData.state.profile && stateData.state.profile.nombre) {
       Object.assign(state, stateData.state);
-      state.settings = Object.assign({ language: null, country: null, theme: 'dark' }, state.settings || {});
+      state.settings = Object.assign({ language: null, country: null, theme: 'light' }, state.settings || {});
       state.profile.logros = state.profile.logros || [];
       rolloverDayIfNeeded();
       applyTheme(state.settings.theme);
@@ -2143,6 +2143,12 @@ async function bootstrapApp() {
       applyStaticI18n();
       beginOnboarding();
     } else {
+      // Cuenta nueva de verdad, sin ningún estado guardado todavía — hasta
+      // ahora nunca se llamaba a applyTheme() en este caso, así que el
+      // onboarding completo se veía con el tema oscuro "de fábrica" del CSS
+      // (el que no necesita atributo) en vez del claro, que es el
+      // predeterminado real de la app (24 ago 2026).
+      applyTheme('light');
       applyStaticI18n();
       beginLanguageSelection();
     }
@@ -3059,7 +3065,7 @@ function switchTab(which) {
   if (which === 'chat') { document.getElementById('view-chat').classList.add('active'); dayAddFabEl.classList.remove('show'); }
   else if (which === 'calendar') { document.getElementById('view-calendar').classList.add('active'); renderCalendar(); }
   else if (which === 'metrics') { renderMetrics(); document.getElementById('view-metrics').classList.add('active'); dayAddFabEl.classList.remove('show'); }
-  else if (which === 'diary') { renderDiary(); document.getElementById('view-diary').classList.add('active'); dayAddFabEl.classList.remove('show'); }
+  else if (which === 'diary') { document.getElementById('view-diary').classList.add('active'); renderDiary(); dayAddFabEl.classList.remove('show'); }
   else { renderProfile(); document.getElementById('view-profile').classList.add('active'); dayAddFabEl.classList.remove('show'); }
   fabEl.classList.toggle('show', which !== 'chat');
 }
@@ -3675,6 +3681,12 @@ function renderDiary() {
     ${bodyHtml}
     ${adBannerHtml()}
   `;
+  // El navegador conserva el scroll interno de #view-diary aunque se reemplace
+  // su contenido (y aunque la vista quede oculta con display:none al cambiar
+  // de pestaña) — sin este reset, volver al diario o guardar/filtrar/cambiar
+  // de vista podía dejar la pantalla a mitad de scroll, mostrando las
+  // tarjetas de estadísticas cortadas por arriba en vez de la vista completa.
+  el.scrollTop = 0;
   el.querySelectorAll('.diary-view-toggle-btn').forEach(btn => {
     btn.onclick = () => { diaryViewMode = btn.dataset.mode; renderDiary(); };
   });
@@ -3741,6 +3753,14 @@ function openDiaryComposer(dateStr) {
   refreshDiaryPromptCard();
   refreshDiaryBlessNote();
   document.getElementById('diary-composer-overlay').style.display = 'flex';
+  // Igual que #view-diary, esta tarjeta conserva su scroll interno de una
+  // apertura a la siguiente — sin este reset, reabrir el compositor sobre
+  // otra entrada podía arrancar a mitad de scroll en vez de mostrar el
+  // título desde arriba. Tiene que ir DESPUÉS de mostrar el overlay: asignar
+  // scrollTop mientras el elemento todavía tiene display:none no tiene efecto
+  // (no existe una caja de scroll que ajustar hasta que esté visible).
+  const composerCard = document.querySelector('#diary-composer-overlay .profile-card');
+  if (composerCard) composerCard.scrollTop = 0;
 }
 // Cada picker de estilo (tema/textura/marco/fuente/separador) es una función
 // aparte — no solo código inline en openDiaryComposer() — para poder
@@ -4461,7 +4481,7 @@ document.getElementById('settings-overlay').addEventListener('click', (e) => {
 });
 document.getElementById('settings-cancel-btn').onclick = closeSettings;
 document.getElementById('settings-save-btn').onclick = () => {
-  const theme = document.querySelector('#settings-theme-options .qr-btn.selected')?.dataset.code || 'dark';
+  const theme = document.querySelector('#settings-theme-options .qr-btn.selected')?.dataset.code || 'light';
   const language = document.querySelector('#settings-lang-options .qr-btn.selected')?.dataset.code || 'es';
   const country = document.getElementById('settings-country-input').value.trim() || null;
   const langChanged = state.settings.language !== language;
