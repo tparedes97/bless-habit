@@ -200,7 +200,8 @@
   .diary-separator-glyph { font-size: 13px; letter-spacing: 2px; }
   .diary-separator-line { height: 1px; background: linear-gradient(90deg, transparent, var(--border), transparent); }
   .diary-entry-card.themed .diary-separator-line { background: linear-gradient(90deg, transparent, currentColor, transparent); opacity: .35; }
-  .diary-entry-photo-wrap { margin-top: 10px; }
+  .diary-entry-photo-wrap { margin-top: 10px; position: relative; }
+  .diary-entry-photo-wrap.no-photo { min-height: 150px; border-radius: 10px; overflow: hidden; }
   .diary-frame-polaroid { background: #fff; padding: 10px 10px 26px; border-radius: 4px; box-shadow: 0 3px 10px rgba(0,0,0,.28); }
   .diary-frame-polaroid .diary-entry-photo { border-radius: 2px; }
   .diary-frame-washi { position: relative; padding: 4px; }
@@ -285,13 +286,14 @@
   .diary-sticker-btn { width: 34px; height: 34px; border-radius: 10px; background: var(--panel-3); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: 17px; cursor: pointer; transition: .15s; }
   .diary-sticker-btn:hover { border-color: var(--accent); }
   .diary-sticker-btn.selected { background: var(--accent); border-color: var(--accent); }
-  /* Tablero de posición libre de stickers (Fase 2, 24 ago 2026) — mismo tamaño
-     en el compositor (editable, con manijas) y en la tarjeta ya guardada
-     (solo lectura, sin manijas), para que la vista previa en vivo coincida
-     exactamente con el resultado final. */
-  #diary-sticker-stage, .diary-sticker-stage-view { position: relative; width: 100%; height: 168px; border-radius: 14px; overflow: hidden; background: var(--panel-3); margin-bottom: 4px; }
-  #diary-sticker-stage { border: 1.5px dashed var(--border); touch-action: none; }
-  .diary-sticker-stage-view { margin-top: 10px; margin-bottom: 0; }
+  /* Corrección 24 ago 2026: los stickers ya no viven en un cuadro aparte y
+     vacío debajo de la foto — se superponen directo sobre la foto (o sobre
+     el fondo de página si la entrada no tiene foto), tanto en el compositor
+     como en la tarjeta ya guardada, para que sea un solo "lienzo" sin
+     separación visual entre la foto y los stickers. */
+  .diary-preview-canvas { position: relative; width: 100%; border-radius: 14px; overflow: hidden; margin-top: 4px; }
+  .diary-preview-canvas.empty-page { min-height: 160px; }
+  #diary-sticker-stage { position: absolute; inset: 0; touch-action: none; }
   .diary-sticker-stage-empty-hint { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 12px; color: var(--text-dim); text-align: center; padding: 20px; pointer-events: none; }
   .stage-sticker { position: absolute; line-height: 1; user-select: none; -webkit-user-select: none; }
   #diary-sticker-stage .stage-sticker { cursor: grab; touch-action: none; }
@@ -626,13 +628,6 @@
       <div style="font-size:12px;color:var(--text-dim);margin:12px 0 6px;" data-i18n="diaryTagsLabel">Etiquetas</div>
       <div class="diary-tags-row" id="diary-tags-row"></div>
       <input type="text" id="diary-tag-input" class="diary-tag-input" data-i18n-ph="diaryTagInputPh" placeholder="Agregar etiqueta y presiona Enter…">
-      <div id="diary-photo-preview" style="margin-top:10px;display:none;position:relative;">
-        <img id="diary-photo-img" style="width:100%;border-radius:10px;max-height:220px;object-fit:cover;display:block;" />
-        <span id="diary-photo-edit" data-i18n-title="diaryPhotoEditIconTitle" title="Editar foto" style="position:absolute;top:6px;right:38px;background:rgba(0,0,0,.6);color:#fff;border-radius:999px;width:26px;height:26px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;">✏️</span>
-        <span id="diary-photo-remove" style="position:absolute;top:6px;right:6px;background:rgba(0,0,0,.6);color:#fff;border-radius:999px;width:26px;height:26px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;">✕</span>
-      </div>
-      <input type="file" id="diary-photo-input" accept="image/*" style="display:none;">
-      <button class="send-btn" id="diary-photo-btn" style="width:100%;margin-top:10px;background:linear-gradient(135deg, var(--panel-3), var(--panel-2)); color:var(--text);" data-i18n="diaryAddPhotoBtn">📷 Agregar foto</button>
       <div style="font-size:12px;color:var(--text-dim);margin:14px 0 6px;" data-i18n="diaryFrameLabel">Marco de la foto</div>
       <div class="diary-theme-picker" id="diary-frame-picker"></div>
       <div style="font-size:12px;color:var(--text-dim);margin:14px 0 6px;" data-i18n="diaryThemeLabel">Color de la página</div>
@@ -645,9 +640,21 @@
       <div class="diary-theme-picker" id="diary-separator-picker"></div>
       <div style="font-size:12px;color:var(--text-dim);margin:14px 0 6px;" data-i18n="diaryLooksLabel">Mis estilos</div>
       <div class="diary-looks-row" id="diary-looks-row"></div>
+      <!-- Corrección 24 ago 2026: la foto y los stickers ahora comparten un solo
+           "lienzo" (#diary-preview-canvas) — ya no hay una foto arriba y un
+           cuadro de stickers vacío y separado más abajo. Si no hay foto, el
+           lienzo muestra el fondo de página (tema/textura) elegido, para que
+           siempre haya algo sobre lo que pegar los stickers. -->
       <div style="font-size:12px;color:var(--text-dim);margin:14px 0 6px;" data-i18n="diaryStickersLabel">Stickers</div>
-      <div id="diary-sticker-stage"></div>
-      <div style="font-size:11px;color:var(--text-dim);margin:2px 0 8px;text-align:center;" data-i18n="diaryStickerStageHint">Arrastra un sticker para moverlo · toca la esquina para agrandarlo y rotarlo</div>
+      <div class="diary-preview-canvas" id="diary-preview-canvas">
+        <img id="diary-photo-img" style="width:100%;max-height:240px;object-fit:cover;display:none;" />
+        <span id="diary-photo-edit" data-i18n-title="diaryPhotoEditIconTitle" title="Editar foto" style="position:absolute;top:6px;right:38px;background:rgba(0,0,0,.6);color:#fff;border-radius:999px;width:26px;height:26px;display:none;align-items:center;justify-content:center;cursor:pointer;font-size:13px;z-index:5;">✏️</span>
+        <span id="diary-photo-remove" style="position:absolute;top:6px;right:6px;background:rgba(0,0,0,.6);color:#fff;border-radius:999px;width:26px;height:26px;display:none;align-items:center;justify-content:center;cursor:pointer;font-size:14px;z-index:5;">✕</span>
+        <div id="diary-sticker-stage"></div>
+      </div>
+      <div style="font-size:11px;color:var(--text-dim);margin:4px 0 8px;text-align:center;" data-i18n="diaryStickerStageHint">Arrastra un sticker para moverlo · toca la esquina para agrandarlo y rotarlo</div>
+      <input type="file" id="diary-photo-input" accept="image/*" style="display:none;">
+      <button class="send-btn" id="diary-photo-btn" style="width:100%;margin-bottom:12px;background:linear-gradient(135deg, var(--panel-3), var(--panel-2)); color:var(--text);" data-i18n="diaryAddPhotoBtn">📷 Agregar foto</button>
       <div class="diary-sticker-cat-tabs" id="diary-sticker-cat-tabs"></div>
       <div class="diary-sticker-picker" id="diary-sticker-picker"></div>
       <div id="diary-sticker-note" style="font-size:11px;color:var(--text-dim);margin-top:4px;"></div>
@@ -2561,8 +2568,20 @@ function energyHint() {
   const map = { manana: 'energyHintManana', tarde: 'energyHintTarde', noche: 'energyHintNoche' };
   return t(map[state.profile.energia] || 'energyHintDefault');
 }
-function isAffirmative(t) { return /\b(si|sí|dale|ok|va|bueno|claro|perfecto|yes|yeah|yep|sure|ok(ay)?|sounds good|go ahead)\b/.test(t.toLowerCase()); }
-function isNegative(t) { const l = t.toLowerCase().trim(); return l === 'no' || l === 'nope' || l === "no thanks" || (/^no\b/.test(l) && l.length < 12); }
+// Bug real encontrado el 25 ago 2026: al confirmar un logro, la persona
+// escribió "siii" (alargado, muy común al escribir informal por chat) y no
+// se reconoció como un "sí" — el patrón \b(si|...)\b nunca encontraba el
+// límite de palabra después de "si" porque seguía habiendo más letras "i"
+// pegadas, así que la respuesta se perdía en silencio y el mensaje caía
+// (con state.pending ya limpiado) en el flujo genérico de "esto es una tarea
+// nueva", preguntando una hora sin sentido para el texto "siii". Se agregó
+// esta normalización (colapsa cualquier letra repetida 2+ veces seguidas a
+// una sola) antes de comparar contra los patrones de sí/no, para que
+// alargamientos informales ("siii", "nooo", "okkk") se reconozcan igual que
+// la forma corta.
+function collapseRepeatedLetters(str) { return str.replace(/([a-zñáéíóúü])\1+/gi, '$1'); }
+function isAffirmative(t) { return /\b(si|sí|dale|ok|va|bueno|claro|perfecto|yes|yeah|yep|sure|ok(ay)?|sounds good|go ahead)\b/.test(collapseRepeatedLetters(t.toLowerCase())); }
+function isNegative(t) { const l = collapseRepeatedLetters(t.toLowerCase().trim()); return l === 'no' || l === 'nope' || l === "no thanks" || (/^no\b/.test(l) && l.length < 12); }
 
 const PHRASES = {
   confirmed: (task, time) => tp('confirmedFallback', task, time),
@@ -3438,14 +3457,19 @@ function normalizeSticker(item, index) {
 function nextStickerId() { return 's' + (++diaryStickerIdCounter); }
 // HTML de solo-lectura de los stickers de una entrada ya guardada — detecta el
 // formato (viejo: array plano de emojis en fila; nuevo: array de objetos con
-// posición libre sobre un "tablero") sin migrar nada automáticamente.
+// posición libre) sin migrar nada automáticamente. El formato viejo (sin
+// posición) se sigue mostrando como una simple fila debajo del texto, tal
+// como siempre — diaryStickersDisplayHtml(). El formato nuevo (con posición)
+// se superpone directo sobre la foto o el fondo de página en vez de un
+// cuadro aparte — diaryStickersOverlayHtml(), corrección 24 ago 2026, ver
+// dónde se usa en renderDiary().
 function diaryStickersDisplayHtml(stickers) {
-  if (!stickers || !stickers.length) return '';
-  if (typeof stickers[0] === 'string') {
-    return `<div class="diary-stickers">${stickers.map(s => `<span class="diary-sticker">${s}</span>`).join('')}</div>`;
-  }
-  const spans = stickers.map(s => `<span class="stage-sticker" style="left:${s.x}%;top:${s.y}%;font-size:${s.size}px;transform:translate(-50%,-50%) rotate(${s.rotation}deg);z-index:${s.z};">${s.emoji}</span>`).join('');
-  return `<div class="diary-sticker-stage-view">${spans}</div>`;
+  if (!stickers || !stickers.length || typeof stickers[0] !== 'string') return '';
+  return `<div class="diary-stickers">${stickers.map(s => `<span class="diary-sticker">${s}</span>`).join('')}</div>`;
+}
+function diaryStickersOverlayHtml(stickers) {
+  if (!stickers || !stickers.length || typeof stickers[0] === 'string') return '';
+  return stickers.map(s => `<span class="stage-sticker" style="left:${s.x}%;top:${s.y}%;font-size:${s.size}px;transform:translate(-50%,-50%) rotate(${s.rotation}deg);z-index:${s.z};">${s.emoji}</span>`).join('');
 }
 
 function todayStr() { return new Date().toISOString().slice(0, 10); }
@@ -3604,6 +3628,13 @@ function renderDiary() {
     const { theme } = diaryPageBackground(en.theme, en.texture);
     const bgCss = diaryPageBackgroundCss(en.theme, en.texture);
     const cardStyle = bgCss ? ` style="${bgCss}"` : '';
+    // Corrección 24 ago 2026: los stickers con posición (formato nuevo) se
+    // superponen sobre la foto (o sobre el fondo de página si no hay foto)
+    // en vez de mostrarse en un cuadro aparte y vacío debajo — mismo criterio
+    // que en el compositor (ver refreshDiaryStickerStage()). Los stickers en
+    // formato viejo (sin posición) siguen igual que siempre, en una fila.
+    const hasPhoto = !!en.photo;
+    const positionedStickers = (en.stickers && en.stickers.length && typeof en.stickers[0] !== 'string') ? en.stickers : null;
     const stickersHtml = diaryStickersDisplayHtml(en.stickers);
     const font = en.font ? findDiaryFont(en.font) : null;
     const textStyle = font ? ` style="font-family:${font.family};"` : '';
@@ -3612,8 +3643,16 @@ function renderDiary() {
       ? (separator.glyph ? `<div class="diary-separator diary-separator-glyph">${separator.glyph}</div>` : `<div class="diary-separator diary-separator-line"></div>`)
       : '';
     const frame = en.frame ? DIARY_FRAMES.find(f => f.key === en.frame) : null;
-    const photoClass = frame ? ` diary-frame-${frame.key}` : '';
+    const photoClass = frame && hasPhoto ? ` diary-frame-${frame.key}` : '';
     const tagsHtml = (en.tags && en.tags.length) ? `<div class="diary-entry-tags">${en.tags.map(tg => `<span class="diary-entry-tag">#${escapeHtml(tg)}</span>`).join('')}</div>` : '';
+    // El "lienzo" (foto + stickers superpuestos) solo aparece si hay foto o
+    // stickers con posición que mostrar — si no hay ninguno de los dos, no
+    // tiene sentido pintar una caja vacía en la tarjeta guardada.
+    const mediaHtml = (hasPhoto || positionedStickers) ? `
+      <div class="diary-entry-photo-wrap${photoClass}${hasPhoto ? '' : ' no-photo'}"${hasPhoto ? '' : ` style="${bgCss || 'background:var(--panel-3);'}"`}>
+        ${hasPhoto ? `<img class="diary-entry-photo" src="${en.photo}">` : ''}
+        ${positionedStickers ? diaryStickersOverlayHtml(positionedStickers) : ''}
+      </div>` : '';
     return `
     <div class="diary-entry-card${theme ? ' themed' : ''}" data-date="${en.date}"${cardStyle}>
       <div class="diary-entry-head">
@@ -3627,7 +3666,7 @@ function renderDiary() {
       </div>
       ${separatorHtml}
       <div class="diary-entry-text${en.text ? '' : ' empty'}"${textStyle}>${en.text ? escapeHtml(en.text) : t('diaryEmptyText')}</div>
-      ${en.photo ? `<div class="diary-entry-photo-wrap${photoClass}"><img class="diary-entry-photo" src="${en.photo}"></div>` : ''}
+      ${mediaHtml}
       ${stickersHtml}
       ${tagsHtml}
     </div>
@@ -3980,9 +4019,16 @@ function deleteDiaryStageSticker(id) {
   refreshDiaryStickerStage();
 }
 function refreshDiaryStickerStage() {
+  const canvas = document.getElementById('diary-preview-canvas');
   const stage = document.getElementById('diary-sticker-stage');
+  // Corrección 24 ago 2026: el fondo (tema/textura) y el tamaño mínimo se
+  // pintan en #diary-preview-canvas, el contenedor que también sostiene la
+  // foto — #diary-sticker-stage vuelve a ser solo la capa transparente donde
+  // se dibujan los stickers encima, para que ambos (foto y stickers) se vean
+  // como un único lienzo en vez de una foto y luego un cuadro vacío aparte.
   const bgCss = diaryPageBackgroundCss(diaryComposerTheme, diaryComposerTexture);
-  stage.setAttribute('style', bgCss || '');
+  canvas.setAttribute('style', bgCss || '');
+  canvas.classList.toggle('empty-page', !diaryComposerPhoto);
   if (!diaryComposerStickers.length) {
     stage.innerHTML = `<div class="diary-sticker-stage-empty-hint">${t('diaryStickerStageEmpty')}</div>`;
     return;
@@ -4060,18 +4106,31 @@ function refreshDiaryStickerStage() {
   stage.addEventListener('pointerup', endDrag);
   stage.addEventListener('pointercancel', endDrag);
 })();
+// Corrección 24 ago 2026: la foto ya no vive en su propio contenedor aparte
+// (#diary-photo-preview) — ahora es el fondo del lienzo compartido con los
+// stickers (#diary-preview-canvas, ver refreshDiaryStickerStage()). Esta
+// función solo se encarga de mostrar/ocultar la imagen y sus íconos de
+// editar/quitar; el tamaño y fondo del lienzo lo recalcula
+// refreshDiaryStickerStage(), a la que siempre llama al final para que
+// quede sincronizado apenas cambia la foto.
 function refreshDiaryPhotoPreview() {
-  const preview = document.getElementById('diary-photo-preview');
   const img = document.getElementById('diary-photo-img');
+  const editBtn = document.getElementById('diary-photo-edit');
+  const removeBtn = document.getElementById('diary-photo-remove');
   const photoBtn = document.getElementById('diary-photo-btn');
   if (diaryComposerPhoto) {
     img.src = diaryComposerPhoto;
-    preview.style.display = 'block';
+    img.style.display = 'block';
+    editBtn.style.display = 'flex';
+    removeBtn.style.display = 'flex';
     photoBtn.textContent = t('diaryChangePhotoBtn');
   } else {
-    preview.style.display = 'none';
+    img.style.display = 'none';
+    editBtn.style.display = 'none';
+    removeBtn.style.display = 'none';
     photoBtn.textContent = t('diaryAddPhotoBtn');
   }
+  refreshDiaryStickerStage();
 }
 // Editor de foto del diario — recorte cuadrado sobre un <canvas>, con arrastre
 // para reposicionar, rueda/slider para zoom, y rotación en pasos de 90°. Se abre
