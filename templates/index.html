@@ -723,18 +723,31 @@ function pushChatMemory(role, content) {
   chatMemory.push({ role, content });
   if (chatMemory.length > 16) chatMemory = chatMemory.slice(-16);
 }
+// 25 ago 2026: se agregó un límite de tiempo (AbortController, 14s) a esta llamada.
+// Antes, si OpenAI (o la red de Render) tardaba mucho o se colgaba sin devolver
+// error, el fetch se quedaba esperando para siempre — say() nunca llegaba a
+// mostrar ni la respuesta real ni el texto de respaldo, así que el chat se veía
+// "sin responder" mensaje tras mensaje, sin ningún error visible (bug real
+// reportado por Tania: "logro"/"?"/"uhmm" enviados sin ninguna respuesta de
+// Bless). Con el límite de tiempo, una llamada que no contesta a tiempo se trata
+// igual que cualquier otra falla — se aborta y se usa el texto de respaldo.
+const BLESS_AI_TIMEOUT_MS = 14000;
 async function callBlessAI(systemPrompt, situationPrompt) {
   if (!aiEnabled()) return null;
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), BLESS_AI_TIMEOUT_MS);
   try {
     const res = await fetch('/api/bless-reply', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ system: systemPrompt, history: chatMemory.slice(-12), prompt: situationPrompt }),
+      signal: controller.signal,
     });
     if (!res.ok) return null;
     const data = await res.json();
     return (data && data.ok && data.reply) ? data.reply.trim() : null;
   } catch (e) { return null; }
+  finally { clearTimeout(timeoutId); }
 }
 function blessSystemPrompt() {
   const p = state.profile;
@@ -4257,6 +4270,16 @@ document.getElementById('diary-photo-input').addEventListener('change', async (e
   try {
     diaryComposerPhoto = await resizeImageFile(file);
     refreshDiaryPhotoPreview();
+    // Corrección 25 ago 2026: el lienzo del compositor tiene una altura fija
+    // (240px) y recorta la foto con object-fit:cover — con una foto de forma
+    // poco común (muy alta/angosta, ej. una hoja o documento fotografiado) eso
+    // podía dejar visible solo una tira irreconocible de la foto, sin que la
+    // persona supiera qué parte se estaba mostrando ni cómo ajustarla. Se abre
+    // el editor de recorte/zoom/rotación automáticamente apenas se elige una
+    // foto nueva, para que siempre se vea y se pueda ajustar el encuadre ANTES
+    // de que quede "horneado" en el lienzo pequeño — en vez de depender de que
+    // la persona note y toque el ícono ✏️ por su cuenta.
+    openPhotoEditor();
   } catch (err) {
     document.getElementById('diary-composer-status').textContent = t('diaryPhotoTooLarge');
   }
