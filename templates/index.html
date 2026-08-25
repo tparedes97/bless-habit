@@ -963,6 +963,12 @@ const I18N = {
     achievementDeclinedFallback: 'Va, no lo guardo — pero igual me alegra mucho por ti 🤍',
     achievementAskDetailFallback: ['¡Qué bueno que tengas un logro! 🎉 Cuéntame, ¿cuál fue?', '¡Me encanta! 🎉 ¿Qué fue exactamente lo que lograste?'],
     achievementFollowupFallback: ['Eso es enorme 🎉 Cuéntame, ¿cómo lo lograste?', '¡Me encanta! ¿Qué se sintió al conseguirlo?', 'Qué orgullo 🌟 ¿Qué fue lo que más te ayudó a lograrlo?'],
+    // 25 ago 2026: antes, mencionar la palabra "logro" de cualquier forma (incluso
+    // como deseo futuro, "quiero un logro", o negado, "no logré nada hoy") se
+    // guardaba como si fuera un logro real ya conseguido. Estos dos bancos cubren
+    // esos dos casos con una respuesta que sí tiene sentido.
+    aspirationalAchievementFallback: ['Me encanta esa energía 🌱 ¿Qué te gustaría lograr específicamente? Así vemos juntas/os cómo armar un hábito que te acerque ahí.', '¡Vamos por eso! 🌟 Cuéntame más de qué se trata ese logro que quieres alcanzar, para pensar el primer paso.'],
+    achievementNegatedFallback: ['Está bien no lograr todo siempre 🤍. No tienes que resolverlo hoy — ¿quieres contarme un poco más de cómo te sientes?', 'Te escucho 🤍. Los días así también cuentan. Estoy aquí si quieres hablar de eso.'],
     conversationalReplyFallback: ['Te escucho 🤍. Cuéntame más, o si quieres, dime qué te gustaría lograr hoy.', 'Gracias por contarme 🌱. ¿Hay algo en lo que te pueda ayudar hoy?'],
     diaryDifficultyFallback: ['Siento que estés pasando por esto 🤍. Tómate tu tiempo — y si te ayuda, sabes que tienes tu diario aquí mismo, es un espacio solo tuyo para escribir sin que nadie más lo vea.', 'Gracias por contarme, de verdad 🌱. No tienes que resolverlo todo ahora. Si quieres soltarlo por escrito, tu diario está ahí, como un espacio seguro solo para ti.'],
     diaryPromptFromChatDifficulty: '📔 Escribir sobre esto en mi diario',
@@ -1245,6 +1251,8 @@ const I18N = {
     achievementDeclinedFallback: "Okay, I won't save it — but I'm still really happy for you 🤍",
     achievementAskDetailFallback: ["That's great, you have an achievement! 🎉 Tell me, what was it?", "Love that! 🎉 What exactly did you achieve?"],
     achievementFollowupFallback: ["That's huge 🎉 Tell me, how did you pull it off?", "Love that! What did it feel like to get there?", "So proud of you 🌟 What helped you the most to make it happen?"],
+    aspirationalAchievementFallback: ["I love that energy 🌱 What would you like to achieve, specifically? Let's figure out a habit that gets you there.", "Let's go for it 🌟 Tell me more about the achievement you're after, and we'll think through the first step."],
+    achievementNegatedFallback: ["It's okay not to get everything done 🤍. You don't have to figure it out today — want to tell me a bit more about how you're feeling?", "I hear you 🤍. Days like this count too. I'm here if you want to talk about it."],
     conversationalReplyFallback: ["I hear you 🤍. Tell me more, or let me know what you'd like to get done today.", "Thanks for sharing 🌱. Is there anything I can help you with today?"],
     diaryDifficultyFallback: ["I'm sorry you're going through this 🤍. Take your time — and if it helps, your diary is right here, a space just for you to write without anyone else seeing it.", "Thank you for telling me, really 🌱. You don't have to figure it all out right now. If it helps to get it out in writing, your diary is there, a safe space just for you."],
     diaryPromptFromChatDifficulty: '📔 Write about this in my diary',
@@ -2608,13 +2616,39 @@ const PHRASES = {
    su perfil, con estilo dorado. También se agregan solos al llegar a
    rachas importantes (7 / 30 / 100 días) en un hábito.
    ============================================================ */
+// 25 ago 2026: Tania escribió "quiero un logro" y Bless lo trató como si ya lo
+// hubiera conseguido (le preguntó "qué te ayudó a lograrlo" y terminó guardando
+// "quiero un logro" tal cual como si fuera un logro real). El problema era que
+// detectAchievementMention() solo miraba si la palabra "logro" aparecía en algún
+// lado del mensaje, sin fijarse en el tiempo verbal ni en si la persona lo está
+// pidiendo (futuro/deseo) o negando, en vez de contando algo que ya pasó. Estos
+// dos patrones cubren esos dos casos para que NO se traten como un logro real.
+const ACHIEVEMENT_ASPIRATIONAL_PATTERN = /\b(quiero|quisiera|deseo|necesito|busco|me gustar[ií]a|ojal[aá]|alg[uú]n d[ií]a|espero (tener|lograr|conseguir))\b/i;
+const ACHIEVEMENT_ASPIRATIONAL_PATTERN_EN = /\b(i want|i wish|i'?d like|i need|someday|i hope to)\b/i;
+function looksLikeAspirationalAchievement(text) {
+  const l = text.toLowerCase();
+  const mentionsAchievement = /\blogros?\b/.test(l) || /\bachievements?\b/.test(l);
+  if (!mentionsAchievement) return false;
+  return ACHIEVEMENT_ASPIRATIONAL_PATTERN.test(text) || ACHIEVEMENT_ASPIRATIONAL_PATTERN_EN.test(text);
+}
+const ACHIEVEMENT_NEGATION_PATTERN = /\b(no|nunca|jam[aá]s|tampoco)\b.{0,25}\b(logr[eé]|consegu[ií]|complet[eé]|alcanc[eé]|cumpl[ií])/i;
+const ACHIEVEMENT_NEGATION_PATTERN_EN = /\b(didn'?t|did not|never|couldn'?t|could not|haven'?t|have not)\b.{0,25}\b(achiev|manage|complet|accomplish)/i;
+function looksLikeNegatedAchievement(text) {
+  return ACHIEVEMENT_NEGATION_PATTERN.test(text) || ACHIEVEMENT_NEGATION_PATTERN_EN.test(text);
+}
 function detectAchievementMention(text) {
   const l = text.toLowerCase();
   // Cubre tanto el verbo ("logré...") como el sustantivo que la propia app usa
   // ("tengo un logro", "logro", "mi logro") — antes solo el verbo disparaba esto,
   // así que alguien usando la palabra que ve en la pestaña de Perfil no activaba nada.
-  return /(logr[eé]|\blogros?\b|conseguí|consegui|baj[eé] de peso|sub[ií] de peso|complet[eé]|alcanc[eé]|cumpl[ií]|por fin (pude|logré)|lo logré|meta cumplida)/.test(l)
+  const mentioned = /(logr[eé]|\blogros?\b|conseguí|consegui|baj[eé] de peso|sub[ií] de peso|complet[eé]|alcanc[eé]|cumpl[ií]|por fin (pude|logré)|lo logré|meta cumplida)/.test(l)
     || /(i (achieved|managed to|finally|completed|accomplished|hit my goal)|i lost weight|i gained weight|i did it|\bachievements?\b)/.test(l);
+  if (!mentioned) return false;
+  // Una mención NO es un logro real si es un deseo futuro ("quiero un logro") o
+  // está negada ("no logré nada hoy") — esos casos se manejan aparte, con una
+  // respuesta que sí tiene sentido, en vez de guardarse como si fueran ciertos.
+  if (looksLikeAspirationalAchievement(text) || looksLikeNegatedAchievement(text)) return false;
+  return true;
 }
 // Detecta cuando la persona solo menciona la PALABRA "logro" sin contar en qué
 // consistió (ej. "un logro", "tengo un logro", "logro") — antes esto se guardaba
@@ -2851,6 +2885,22 @@ async function handleUserMessage(text) {
     return;
   }
 
+  // 25 ago 2026: estos dos van ANTES del chequeo normal de logro, porque
+  // detectAchievementMention() ya excluye estos dos casos (deseo futuro / logro
+  // negado) — sin una respuesta propia para ellos, el mensaje caería en el
+  // fallback genérico de "a qué hora lo hacemos", tratando "quiero un logro" o
+  // "no logré nada hoy" como si fueran el nombre de una tarea nueva.
+  if (!pending && looksLikeAspirationalAchievement(text)) {
+    const nudge = proactiveNudge();
+    await say(chatScroll, `La persona expresó el deseo de lograr algo en el futuro, NO que ya lo haya conseguido: "${text}". Como su mejor amigo/a que entiende de hábitos, respóndele con calidez genuina y pregúntale con curiosidad real qué le gustaría lograr específicamente, para poder ayudarla a pensar un hábito concreto que la acerque a eso. No la felicites como si ya lo hubiera logrado, ni le preguntes qué la ayudó a conseguirlo.${nudge.extraInstruction}`, t('aspirationalAchievementFallback') + nudge.extraFallback);
+    return;
+  }
+  if (!pending && looksLikeNegatedAchievement(text)) {
+    const nudge = proactiveNudge();
+    await say(chatScroll, `La persona contó que NO logró algo o que no pudo hacerlo: "${text}". Esto no es un logro para guardar — puede ser una frustración o un día difícil. Respóndele con calidez real, sin minimizar ni sonar a discurso motivacional vacío, y sin ofrecerle nada forzado todavía; solo hazla sentir acompañada.${nudge.extraInstruction}`, t('achievementNegatedFallback') + nudge.extraFallback);
+    return;
+  }
+
   // Si nada de lo anterior matcheó y sí veníamos de una oferta de sugerencia,
   // interpretamos la respuesta como sí/no a esa oferta. Esto es lo que mantiene a
   // la persona conversando en vez de quedarse sin saber qué escribir.
@@ -2901,7 +2951,12 @@ async function handleUserMessage(text) {
       addLogro(pending.text);
       const savedLogroIdx = state.profile.logros.length - 1;
       await say(chatScroll, `Se guardó el logro "${pending.text}" en el perfil de la persona, con estilo dorado. Celebra con ella brevemente, y si tiene sentido con lo que logró, aprovecha para preguntarle si quiere que la ayudes a convertir esto en un hábito nuevo que siga construyendo ese progreso.`, t('achievementSavedFallback'), undefined, '🏆');
+      // 25 ago 2026: antes había que tocar este aviso para siquiera ver cómo
+      // quedaría la tarjeta para compartir — Tania pidió que la vista previa
+      // aparezca sola apenas se guarda el logro. Se deja el aviso igual, tocable,
+      // como forma de volver a abrirla después si la cierra sin compartir.
       addNote(chatScroll, t('shareLogroPrompt'), 'agenda-note', () => openLogroShareCard(savedLogroIdx));
+      openLogroShareCard(savedLogroIdx);
       return;
     }
     if (isNegative(text)) {
