@@ -14,20 +14,35 @@
      el bloque de anuncios (.ad-slot) se ve vacío/con el rótulo de repuesto. -->
 <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client={{ adsense_client_id }}" crossorigin="anonymous"></script>
 {% endif %}
+<!-- Tipografía "Inter" — parte de la línea gráfica premium (blanco + lavanda) que Tania
+     mandó el 2 sept 2026 como referencia de rediseño (ver bloque de temas más abajo).
+     Con caída a las mismas fuentes del sistema que ya usaba la app si el enlace no carga. -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg: #0f1115; --panel: #171a21; --panel-2: #1e222b; --panel-3: #262c38;
-    --border: #2a2f3a; --text: #eef0f3; --text-dim: #9aa1ad;
-    --accent: #7c9eff; --accent-2: #6ee7b7; --accent-3: #ffb86c;
-    --user-bubble: #2d3546; --agent-bubble: #1f2530;
-    --warn-bg: #3a2f1a; --warn-text: #f0c975; --done-color: #6ee7b7;
-    --diag-bg: linear-gradient(135deg, #2a2f5c, #1e2a4a); --diag-text: #d3d8f5; --radius: 16px;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    /* WHITE PREMIUM is the canonical Bless Habit base theme. */
+    --bg: #ffffff; --panel: #ffffff; --panel-2: #f8f8fc; --panel-3: #f1f0fa;
+    --border: #e8e7f0; --text: #172033; --text-dim: #7b8192;
+    --accent: #7c62f5; --accent-2: #43d6a1; --accent-3: #ffc857;
+    --user-bubble: #7c62f5; --agent-bubble: #f7f6fc;
+    --warn-bg: #fff5d7; --warn-text: #8a5a10; --done-color: #43d6a1;
+    --diag-bg: linear-gradient(135deg, #f4f0ff 0%, #ffffff 58%, #effff8 100%); --diag-text: #172033; --radius: 18px;
+    /* --on-accent: color de texto sobre superficies con var(--accent)/--accent-2/--accent-3)
+       de fondo (botones, chips seleccionados, insignias). En el tema oscuro y el dorado el
+       acento es claro, así que el texto va oscuro; en el tema claro (ver más abajo) el acento
+       lavanda es más saturado, así que el texto va blanco — por eso es una variable de tema
+       y no un color fijo. --shadow/--shadow-sm son sombras suaves para tarjetas; el tema
+       oscuro no las necesita (fondo ya oscuro), así que quedan "none" acá y se activan en
+       el tema claro. */
+    --on-accent: #ffffff; --shadow: 0 12px 35px rgba(46,39,90,.09); --shadow-sm: 0 5px 18px rgba(46,39,90,.07);
+    font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   }
   * { box-sizing: border-box; }
   html, body { margin: 0; padding: 0; height: 100%; background: var(--bg); color: var(--text); }
   #app { max-width: 480px; margin: 0 auto; height: 100vh; display: flex; flex-direction: column; background: var(--panel); border-left: 1px solid var(--border); border-right: 1px solid var(--border); position: relative; overflow: hidden; }
-  header { padding: 14px 18px 10px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; background: var(--panel); position: sticky; top: 0; z-index: 5; }
+  header { padding: 14px 18px 10px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; background: var(--panel); position: sticky; top: 0; z-index: 5; box-shadow: var(--shadow-sm); }
   header .brand { display: flex; align-items: center; gap: 10px; }
   .avatar {
     width: 38px; height: 38px; border-radius: 50%;
@@ -71,7 +86,9 @@
   .agenda-note.tappable:hover { background: var(--panel-3); transform: translateY(-1px); }
   .logro-chip .logro-share-btn { cursor: pointer; opacity: .75; flex-shrink: 0; }
   .logro-chip .logro-share-btn:hover { opacity: 1; }
-  .celebrate-note { align-self: center; font-size: 13px; color: #10131a; background: linear-gradient(135deg, var(--accent-2), var(--accent-3)); padding: 10px 18px; border-radius: 999px; font-weight: 700; text-align: center; max-width: 90%; }
+  .logro-chip .logro-delete-btn { cursor: pointer; opacity: .6; flex-shrink: 0; }
+  .logro-chip .logro-delete-btn:hover { opacity: 1; }
+  .celebrate-note { align-self: center; font-size: 13px; color: var(--on-accent); background: linear-gradient(135deg, var(--accent-2), var(--accent-3)); padding: 10px 18px; border-radius: 999px; font-weight: 700; text-align: center; max-width: 90%; }
   @keyframes popIn { 0%{opacity:0; transform: scale(.6);} 70%{transform: scale(1.08);} 100%{opacity:1; transform: scale(1);} }
   .celebrate-sparkle { animation: popIn .45s cubic-bezier(.34,1.56,.64,1), sparkleWiggle 1.2s ease .45s 1; }
   @keyframes sparkleWiggle { 0%,100%{transform:rotate(0);} 25%{transform:rotate(-2deg) scale(1.02);} 75%{transform:rotate(2deg) scale(1.02);} }
@@ -90,7 +107,7 @@
   .celebrate-close-btn:active { transform: scale(.9); }
   .celebrate-particle { position: absolute; left: 50%; top: 50%; font-size: 20px; pointer-events: none; animation: particleBurst .9s cubic-bezier(.15,.8,.3,1) forwards; }
   @keyframes particleBurst { 0% { transform: translate(-50%,-50%) scale(.4); opacity: 1; } 100% { transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(1); opacity: 0; } }
-  .diag-card { align-self: stretch; background: var(--diag-bg); border: 1px solid #3d4a8a; border-radius: 18px; padding: 18px; animation: popIn .5s cubic-bezier(.34,1.56,.64,1); }
+  .diag-card { align-self: stretch; background: var(--diag-bg); border: 1px solid var(--border); border-radius: 20px; padding: 18px; animation: popIn .5s cubic-bezier(.34,1.56,.64,1); box-shadow: var(--shadow); }
   .diag-card .diag-label { font-size: 10px; text-transform: uppercase; letter-spacing: .08em; color: var(--accent-2); margin-bottom: 6px; }
   .diag-card .diag-title { font-size: 17px; font-weight: 800; margin-bottom: 8px; }
   .diag-card .diag-body { font-size: 13.5px; color: var(--diag-text); line-height: 1.5; }
@@ -108,11 +125,11 @@
   .qr-btn { background: var(--panel-2); border: 1px solid var(--border); color: var(--text); padding: 9px 14px; border-radius: 999px; font-size: 13.5px; cursor: pointer; transition: .15s; }
   .qr-btn:hover { border-color: var(--accent); color: var(--accent); transform: translateY(-1px); }
   .qr-btn:active { transform: scale(.95); }
-  .qr-btn.selected { background: var(--accent); color: #10131a; border-color: var(--accent); font-weight: 700; }
+  .qr-btn.selected { background: var(--accent); color: var(--on-accent); border-color: var(--accent); font-weight: 700; }
   .row-input { display: flex; gap: 8px; }
   input[type=text], input[type=number], input[type=time] { flex: 1; background: var(--panel-2); border: 1px solid var(--border); color: var(--text); padding: 11px 14px; border-radius: 12px; font-size: 14.5px; outline: none; transition: border-color .15s; }
   input:focus { border-color: var(--accent); }
-  .send-btn { background: var(--accent); border: none; color: #10131a; font-weight: 700; padding: 0 18px; border-radius: 12px; cursor: pointer; font-size: 14px; transition: transform .1s; }
+  .send-btn { background: var(--accent); border: none; color: var(--on-accent); font-weight: 700; padding: 0 18px; border-radius: 12px; cursor: pointer; font-size: 14px; transition: transform .1s; }
   .send-btn:active { transform: scale(.95); }
   .send-btn:disabled { opacity: .5; cursor: default; }
   .skip-link { font-size: 12px; color: var(--text-dim); text-align: center; cursor: pointer; text-decoration: underline; }
@@ -138,7 +155,7 @@
   .agenda-item.done .task { text-decoration: line-through; }
   .agenda-item .check { width: 20px; height: 20px; border-radius: 50%; border: 2px solid var(--border); display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink:0; font-size: 11px; transition: .15s; }
   .agenda-item .check:hover { border-color: var(--accent-2); }
-  .agenda-item.done .check { background: var(--done-color); border-color: var(--done-color); color: #10131a; }
+  .agenda-item.done .check { background: var(--done-color); border-color: var(--done-color); color: var(--on-accent); }
   .agenda-item .icon { font-size: 15px; flex-shrink: 0; }
   .agenda-item .time { color: var(--accent-2); font-weight: 700; min-width: 42px; }
   .agenda-item .task { flex: 1; margin: 0 4px; }
@@ -151,18 +168,18 @@
   .tab .ic { font-size: 18px; display: block; margin-bottom: 2px; }
 
   #view-profile { padding: 20px 18px; overflow-y: auto; }
-  .profile-card { background: var(--panel-2); border: 1px solid var(--border); border-radius: 14px; padding: 16px; margin-bottom: 14px; animation: bubbleIn .3s; }
+  .profile-card { background: var(--panel-2); border: 1px solid var(--border); border-radius: 18px; padding: 16px; margin-bottom: 14px; animation: bubbleIn .3s; box-shadow: var(--shadow-sm); }
   .profile-card h4 { margin: 0 0 10px; font-size: 12px; color: var(--text-dim); text-transform: uppercase; letter-spacing: .05em; }
   .profile-row { display: flex; justify-content: space-between; padding: 6px 0; font-size: 14px; border-bottom: 1px solid var(--border); gap: 12px; }
   .profile-row:last-child { border-bottom: none; }
   .profile-row span:first-child { color: var(--text-dim); flex-shrink: 0; }
   .profile-row span:last-child { text-align: right; }
   .stats-row { display: flex; gap: 10px; }
-  .stat-box { flex: 1; background: var(--panel-3); border-radius: 12px; padding: 12px; text-align: center; }
+  .stat-box { flex: 1; background: var(--panel-3); border: 1px solid var(--border); border-radius: 16px; padding: 12px; text-align: center; }
   .stat-box .num { font-size: 22px; font-weight: 800; color: var(--accent-2); }
   .stat-box .lbl { font-size: 10.5px; color: var(--text-dim); margin-top: 2px; }
   .habit-chip { display: inline-flex; align-items: center; gap: 6px; background: var(--panel-3); border-radius: 999px; padding: 6px 12px; font-size: 13px; margin: 3px 4px 3px 0; }
-  .habit-chip .streak { background: var(--accent-3); color: #10131a; border-radius: 999px; padding: 1px 7px; font-size: 11px; font-weight: 800; margin-left: 4px; }
+  .habit-chip .streak { background: var(--accent-3); color: var(--on-accent); border-radius: 999px; padding: 1px 7px; font-size: 11px; font-weight: 800; margin-left: 4px; }
   .chip-edit-btn { cursor: pointer; margin-left: 6px; opacity: 0.75; font-size: 12px; }
   .chip-edit-btn:hover { opacity: 1; }
   .agenda-item .edit { cursor: pointer; opacity: 0.6; padding: 0 4px; }
@@ -173,6 +190,28 @@
   .logro-chip { display: flex; align-items: center; gap: 8px; background: linear-gradient(135deg, #caa23a, #f0d78c); color: #3b2e08; border-radius: 12px; padding: 8px 12px; font-size: 13px; font-weight: 700; margin-bottom: 6px; }
   .logro-chip .logro-date { font-size: 10px; font-weight: 700; opacity: .75; margin-left: auto; white-space: nowrap; }
 
+  /* ============================================================
+     NIVELES Y XP — agregado 2 sept 2026 junto con el rediseño visual claro/
+     lavanda que mandó Tania. Reutiliza var(--diag-bg)/var(--accent)/etc, así
+     que hereda el degradé y los colores de cada tema automáticamente en vez
+     de tener sus propios colores fijos.
+     ============================================================ */
+  #level-hero { flex-shrink: 0; }
+  .level-hero-card { margin: 14px 16px 4px; border-radius: 20px; padding: 16px 18px; background: var(--diag-bg); border: 1px solid var(--border); box-shadow: var(--shadow); }
+  .level-hero-row { display: flex; justify-content: space-between; align-items: center; gap: 14px; }
+  .level-hero-sub { font-size: 11.5px; color: var(--text-dim); margin-top: 8px; max-width: 230px; line-height: 1.4; }
+  .level-badge { display: inline-flex; align-items: center; gap: 5px; padding: 6px 11px; border-radius: 999px; background: var(--panel); border: 1px solid var(--border); color: var(--accent); font-size: 10.5px; font-weight: 800; white-space: nowrap; }
+  .level-orb { width: 56px; height: 56px; border-radius: 50%; flex-shrink: 0; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, var(--accent), var(--accent-2)); color: var(--on-accent); font-weight: 900; font-size: 18px; box-shadow: var(--shadow-sm); }
+  .level-orb small { display: block; font-size: 7px; font-weight: 700; opacity: .85; text-align: center; margin-top: -2px; }
+  .xp-line { display: flex; justify-content: space-between; margin: 12px 0 6px; font-size: 11px; color: var(--text-dim); }
+  .xp-line b { color: var(--text); }
+  .xp-progress { height: 8px; border-radius: 999px; background: var(--panel-3); overflow: hidden; }
+  .xp-progress > i { display: block; height: 100%; border-radius: 999px; background: linear-gradient(90deg, var(--accent), var(--accent-2)); }
+  .level-row { display: flex; align-items: center; gap: 10px; padding: 10px; border: 1px solid var(--border); border-radius: 14px; margin-bottom: 8px; }
+  .level-row:last-child { margin-bottom: 0; }
+  .level-row.locked { opacity: .48; }
+  .level-dot { width: 33px; height: 33px; border-radius: 11px; flex-shrink: 0; background: var(--panel-3); display: flex; align-items: center; justify-content: center; color: var(--accent); font-weight: 900; font-size: 12px; }
+
   #view-diary { flex: 1; display: none; padding: 20px 18px; overflow-y: auto; min-height: 0; }
   #view-diary.active { display: block; }
   .diary-new-card { border: 2px dashed var(--border); border-radius: 16px; padding: 26px 16px; text-align: center; cursor: pointer; transition: .15s; margin-bottom: 16px; background: var(--panel-2); }
@@ -180,7 +219,7 @@
   .diary-new-card .plus { font-size: 30px; color: var(--accent); line-height: 1; margin-bottom: 6px; }
   .diary-new-card .lbl { font-size: 14px; font-weight: 700; color: var(--text); }
   .diary-new-card .desc { font-size: 12.5px; color: var(--text-dim); margin-top: 4px; }
-  .diary-entry-card { background: var(--panel-2); border: 1px solid var(--border); border-radius: 14px; padding: 14px; margin-bottom: 12px; animation: bubbleIn .3s; }
+  .diary-entry-card { background: var(--panel-2); border: 1px solid var(--border); border-radius: 18px; padding: 14px; margin-bottom: 12px; animation: bubbleIn .3s; box-shadow: var(--shadow-sm); }
   .diary-entry-head { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
   .diary-entry-mood { font-size: 20px; flex-shrink: 0; }
   .diary-entry-date { font-weight: 700; font-size: 13.5px; flex: 1; }
@@ -250,7 +289,7 @@
      (24 ago 2026). */
   .diary-view-toggle { display: flex; gap: 6px; margin-bottom: 14px; }
   .diary-view-toggle-btn { flex: 1; text-align: center; padding: 8px 10px; border-radius: 10px; background: var(--panel-2); border: 1px solid var(--border); font-size: 12.5px; font-weight: 700; color: var(--text-dim); cursor: pointer; transition: .15s; }
-  .diary-view-toggle-btn.active { background: var(--accent); border-color: var(--accent); color: #10131a; }
+  .diary-view-toggle-btn.active { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
   .diary-stats-grid { margin-bottom: 4px; }
   .diary-month-summary { font-size: 12px; color: var(--text-dim); margin: 0 0 14px; }
   .diary-onthisday-row { margin-bottom: 14px; }
@@ -322,15 +361,38 @@
     --status-critical: #d03b3b;
   }
 
-  /* ---- Temas — claro / oscuro (por defecto) / dorado Premium ---- */
+  /* ---- Temas — claro / oscuro (por defecto) / dorado Premium ----
+     El tema claro es el que usan las cuentas nuevas (ver applyTheme() / bootstrapApp()).
+     2 sept 2026: Tania mandó un archivo de referencia ("Bless Habit — Premium White UI +
+     Niveles") con una línea gráfica nueva para ese tema claro — fondo blanco, tarjetas
+     blancas con borde #ECECF4, sombras suaves, lavanda #7C62F5 como acento principal,
+     menta #43D6A1, amarillo #FFC857 y coral #FF8E8E como acentos secundarios, texto
+     #172033, radios más generosos (16–22px) y mucho espacio en blanco. Como casi todos
+     los estilos de la app ya estaban armados sobre estas variables de tema (en vez de
+     colores sueltos), actualizar estos valores basta para que la mayor parte de las
+     pantallas adopten la nueva línea gráfica sin tocar cada componente uno por uno. El
+     tema oscuro y el dorado Premium quedan igual que antes — Tania no mandó una versión
+     oscura de este estilo. */
+  html[data-theme="dark"] {
+    --bg:#0f1115; --panel:#171a21; --panel-2:#1e222b; --panel-3:#262c38;
+    --border:#2a2f3a; --text:#eef0f3; --text-dim:#9aa1ad;
+    --accent:#7c9eff; --accent-2:#6ee7b7; --accent-3:#ffb86c;
+    --user-bubble:#2d3546; --agent-bubble:#1f2530;
+    --warn-bg:#3a2f1a; --warn-text:#f0c975; --done-color:#6ee7b7;
+    --diag-bg:linear-gradient(135deg,#2a2f5c,#1e2a4a); --diag-text:#d3d8f5;
+    --seq-0:#171a21; --seq-1:#184f95; --seq-2:#1c5cab; --seq-3:#256abf; --seq-4:#2a78d6; --seq-5:#3987e5;
+    --on-accent:#10131a; --shadow:none; --shadow-sm:none;
+  }
   html[data-theme="light"] {
-    --bg: #f3f4f7; --panel: #ffffff; --panel-2: #f0f1f5; --panel-3: #e6e8ee;
-    --border: #dcdfe6; --text: #1c2029; --text-dim: #6b7280;
-    --accent: #4c6fe0; --accent-2: #17a878; --accent-3: #e08a2c;
-    --user-bubble: #dfe6ff; --agent-bubble: #eef0f5;
-    --warn-bg: #fdeecb; --warn-text: #8a5a10; --done-color: #17a878;
-    --diag-bg: linear-gradient(135deg, #e4e9ff, #dfe6ff); --diag-text: #33396b;
-    --seq-0: #e6e8ee; --seq-1: #b7cbf5; --seq-2: #8fb0ec; --seq-3: #679ce6; --seq-4: #3f83de; --seq-5: #1f66c9;
+    --bg: #F5F5F8; --panel: #ffffff; --panel-2: #F8F8FC; --panel-3: #F1F0FA;
+    --border: #E8E7F0; --text: #172033; --text-dim: #7B8192;
+    --accent: #7C62F5; --accent-2: #43D6A1; --accent-3: #FFC857;
+    --user-bubble: #7C62F5; --agent-bubble: #F7F6FC;
+    --warn-bg: #FFF5D7; --warn-text: #8a5a10; --done-color: #43D6A1;
+    --diag-bg: linear-gradient(135deg, #F4F0FF 0%, #FFFFFF 58%, #EFFFF8 100%); --diag-text: #172033;
+    --seq-0: #F1F0FA; --seq-1: #D7CEFF; --seq-2: #BCA9FF; --seq-3: #A084FF; --seq-4: #8B6BFF; --seq-5: #7C62F5;
+    --on-accent: #ffffff;
+    --shadow: 0 12px 35px rgba(46,39,90,.09); --shadow-sm: 0 5px 18px rgba(46,39,90,.07);
   }
   html[data-theme="premium"] {
     --bg: #131107; --panel: #1c1810; --panel-2: #241f14; --panel-3: #302819;
@@ -340,13 +402,14 @@
     --warn-bg: #3a2f1a; --warn-text: #f0c975; --done-color: #e0b84c;
     --diag-bg: linear-gradient(135deg, #3a2f16, #241f14); --diag-text: #f0e6c8;
     --seq-0: #241f14; --seq-1: #6b551f; --seq-2: #8a6d26; --seq-3: #ab862c; --seq-4: #cca233; --seq-5: #f0c33d;
+    --on-accent: #10131a; --shadow: none; --shadow-sm: none;
   }
 
   #view-calendar, #view-metrics { flex: 1; display: none; flex-direction: column; min-height: 0; overflow-y: auto; }
   #view-calendar.active, #view-metrics.active { display: flex; }
   .cal-subtabs { display: flex; gap: 6px; padding: 12px 16px 0; }
   .cal-subtab { flex: 1; text-align: center; padding: 8px 0; border-radius: 10px; font-size: 12.5px; font-weight: 700; cursor: pointer; background: var(--panel-2); color: var(--text-dim); border: 1px solid var(--border); }
-  .cal-subtab.active { background: var(--accent); color: #10131a; border-color: var(--accent); }
+  .cal-subtab.active { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
   .cal-body { padding: 14px 16px 24px; }
 
   /* Día */
@@ -385,11 +448,11 @@
 
   /* Métricas */
   .kpi-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
-  .kpi-tile { background: var(--panel-2); border: 1px solid var(--border); border-radius: 14px; padding: 14px; }
+  .kpi-tile { background: var(--panel-2); border: 1px solid var(--border); border-radius: 16px; padding: 14px; }
   .kpi-tile .kpi-num { font-size: 24px; font-weight: 800; color: var(--accent-2); }
   .kpi-tile .kpi-lbl { font-size: 11px; color: var(--text-dim); margin-top: 2px; }
   .kpi-tile .kpi-sub { font-size: 10.5px; margin-top: 4px; font-weight: 700; }
-  .metrics-section { background: var(--panel-2); border: 1px solid var(--border); border-radius: 14px; padding: 16px; margin-bottom: 14px; }
+  .metrics-section { background: var(--panel-2); border: 1px solid var(--border); border-radius: 18px; padding: 16px; margin-bottom: 14px; box-shadow: var(--shadow-sm); }
   .metrics-section h4 { margin: 0 0 12px; font-size: 12px; color: var(--text-dim); text-transform: uppercase; letter-spacing: .05em; }
   .bar-row { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; font-size: 12.5px; }
   .bar-row .bar-lbl { width: 82px; flex-shrink: 0; color: var(--text-dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -415,7 +478,7 @@
      estilo que el flotante de Bless, al lado izquierdo. */
   .day-add-fab { position: absolute; right: 78px; bottom: 74px; width: 50px; height: 50px; border-radius: 50%;
     background: linear-gradient(135deg, var(--accent), var(--accent-2)); display: none; align-items: center; justify-content: center;
-    font-size: 22px; font-weight: 800; color: #10131a; box-shadow: 0 6px 18px rgba(0,0,0,.4); cursor: pointer; z-index: 30; transition: transform .15s; }
+    font-size: 22px; font-weight: 800; color: var(--on-accent); box-shadow: 0 6px 18px rgba(0,0,0,.4); cursor: pointer; z-index: 30; transition: transform .15s; }
   .day-add-fab.show { display: flex; }
   .day-add-fab:active { transform: scale(.88); }
 
@@ -443,13 +506,76 @@
   /* Plan Premium (Paddle Billing) + banda de anuncios (plan gratis) */
   .premium-lock { border-color: #3d4a8a; background: var(--diag-bg); }
   .premium-lock h4 { color: var(--accent-2); }
-  .premium-btn { width: 100%; background: linear-gradient(135deg, var(--accent), var(--accent-2)); border: none; color: #10131a; font-weight: 800; padding: 12px 16px; border-radius: 12px; cursor: pointer; font-size: 14px; margin-top: 4px; transition: transform .1s; }
+  .premium-btn { width: 100%; background: linear-gradient(135deg, var(--accent), var(--accent-2)); border: none; color: var(--on-accent); font-weight: 800; padding: 12px 16px; border-radius: 12px; cursor: pointer; font-size: 14px; margin-top: 4px; transition: transform .1s; }
   .premium-btn:active { transform: scale(.97); }
   .premium-note { font-size: 11.5px; color: var(--text-dim); margin-top: 8px; line-height: 1.4; }
   .premium-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 800; padding: 3px 10px; border-radius: 999px; background: rgba(124,158,255,.18); color: var(--accent); border: 1px solid rgba(124,158,255,.4); margin-top: 6px; }
   .ad-slot { margin-top: 16px; padding: 8px; border: 1px dashed var(--border); border-radius: 12px; text-align: center; min-height: 60px; display: flex; align-items: center; justify-content: center; }
   .ad-slot .ad-fallback-label { font-size: 10px; color: var(--text-dim); text-transform: uppercase; letter-spacing: .06em; }
+
+  /* ============================================================
+     BLESS WHITE PREMIUM — FINAL VISUAL NORMALIZATION
+     All new screens/components must follow this design system.
+     If a requested screen does not exist, recreate it using these
+     exact visual rules instead of inventing a different style.
+     ============================================================ */
+  html[data-theme="light"] body { background:#fff; color:var(--text); }
+  html[data-theme="light"] #app { background:#fff; border-color:#ececf4; box-shadow:0 20px 60px rgba(46,39,90,.08); }
+  html[data-theme="light"] header { background:rgba(255,255,255,.96); border-color:#ececf4; box-shadow:0 5px 20px rgba(46,39,90,.05); }
+  html[data-theme="light"] .profile-card,
+  html[data-theme="light"] .stat-box,
+  html[data-theme="light"] .habit-row,
+  html[data-theme="light"] .metric-card,
+  html[data-theme="light"] .calendar-card,
+  html[data-theme="light"] .diary-card,
+  html[data-theme="light"] .chat-bubble,
+  html[data-theme="light"] .onboarding-card,
+  html[data-theme="light"] .modal-content,
+  html[data-theme="light"] .settings-card {
+    background:#fff; border-color:#e8e7f0; box-shadow:0 7px 24px rgba(46,39,90,.06);
+  }
+  html[data-theme="light"] .profile-card:hover,
+  html[data-theme="light"] .habit-row:hover,
+  html[data-theme="light"] .diary-card:hover { box-shadow:0 12px 30px rgba(46,39,90,.09); }
+  html[data-theme="light"] input, html[data-theme="light"] textarea, html[data-theme="light"] select {
+    background:#fafafd; color:#172033; border-color:#e6e4ee;
+  }
+  html[data-theme="light"] input:focus, html[data-theme="light"] textarea:focus, html[data-theme="light"] select:focus {
+    border-color:#b8aaff; box-shadow:0 0 0 4px #f0ecff; outline:none;
+  }
+  html[data-theme="light"] .bottom-nav { background:rgba(255,255,255,.98); border-color:#e8e7f0; box-shadow:0 -7px 24px rgba(46,39,90,.06); }
+  html[data-theme="light"] .bottom-nav .nav-item.active { color:#7c62f5; }
+  html[data-theme="light"] .primary-btn, html[data-theme="light"] .send-btn, html[data-theme="light"] .save-btn {
+    background:#7c62f5; border-color:#7c62f5; color:#fff; box-shadow:0 8px 18px rgba(124,98,245,.20);
+  }
+  html[data-theme="light"] .primary-btn:hover, html[data-theme="light"] .send-btn:hover, html[data-theme="light"] .save-btn:hover { transform:translateY(-1px); }
+  html[data-theme="light"] .user-bubble { background:#7c62f5; color:#fff; border-color:#7c62f5; }
+  html[data-theme="light"] .agent-bubble { background:#f7f6fc; color:#172033; border-color:#e8e7f0; }
+  html[data-theme="light"] .level-card, html[data-theme="light"] .xp-card {
+    background:linear-gradient(135deg,#f4f0ff 0%,#fff 58%,#effff8 100%); border:1px solid #e2dcff; box-shadow:0 12px 32px rgba(88,69,170,.09);
+  }
+  html[data-theme="light"] .level-badge, html[data-theme="light"] .xp-badge { background:#eee9ff; color:#5d49d5; border-color:#ddd5ff; }
+  html[data-theme="light"] .progress-bar, html[data-theme="light"] .xp-progress { background:#eceaf5; }
+  html[data-theme="light"] .progress-bar > *, html[data-theme="light"] .xp-progress > * { background:linear-gradient(90deg,#7c62f5,#a890ff); }
+  html[data-theme="light"] .completed, html[data-theme="light"] .done { color:#168a65; }
+  html[data-theme="light"] .achievement-card, html[data-theme="light"] .achievement { background:linear-gradient(135deg,#fff9e7,#fff); border-color:#f0e0aa; }
+  html[data-theme="light"] .fab { background:#7c62f5; color:#fff; box-shadow:0 12px 25px rgba(124,98,245,.25); }
+  html[data-theme="light"] .overlay, html[data-theme="light"] [id$="-overlay"] { background:rgba(23,32,51,.24); backdrop-filter:blur(6px); }
+  html[data-theme="light"] .modal-content, html[data-theme="light"] [id$="-overlay"] > div { border-radius:22px; }
+  /* Calendar: readable white base + semantic status colors. */
+  html[data-theme="light"] .month-cell.has-pct .dnum { color:#172033; text-shadow:none; }
+  html[data-theme="light"] .month-cell .dpct { color:#172033; text-shadow:none; }
+  html[data-theme="light"] .month-cell { border-color:#ecebf2; background:#f8f8fc; }
+  html[data-theme="light"] .month-cell.good { background:#dff9ef; }
+  html[data-theme="light"] .month-cell.warning { background:#fff2c9; }
+  html[data-theme="light"] .month-cell.critical { background:#ffe1e1; }
+  /* Hard-coded legacy dark surfaces: neutralize them in White Premium. */
+  html[data-theme="light"] #photo-editor-canvas { background:#f3f3f8; }
+  html[data-theme="light"] .stage-sticker-handle { color:#fff; }
 </style>
+
+/* Prevent the old dark base from ever flashing while the account state loads. */
+document.documentElement.setAttribute('data-theme', 'light');
 </head>
 <body>
 <div id="app">
@@ -480,6 +606,7 @@
   </div>
 
   <div id="view-chat">
+    <div id="level-hero"></div>
     <div id="chat-scroll"></div>
     <div id="agenda-panel">
       <h3><span data-i18n="agendaTitle">Agenda de hoy</span><span id="agenda-count"></span></h3>
@@ -611,6 +738,17 @@
     </div>
   </div>
 
+  <!-- Niveles y XP — agregado 2 sept 2026 junto con el rediseño visual claro/lavanda.
+       Lista los 8 niveles con su recompensa, marcando cuáles ya se alcanzaron. -->
+  <div id="levels-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:88;align-items:center;justify-content:center;padding:16px;">
+    <div class="profile-card" style="max-width:380px;width:100%;max-height:85vh;overflow-y:auto;margin:0;">
+      <h4 id="levels-modal-title"></h4>
+      <div style="font-size:12px;color:var(--text-dim);margin-bottom:12px;" id="levels-modal-intro"></div>
+      <div id="levels-list"></div>
+      <div style="text-align:center;margin-top:14px;"><span class="logout-link" id="levels-close-btn"></span></div>
+    </div>
+  </div>
+
   <!-- Compositor de una entrada del diario — siempre trabaja sobre la fecha
        state.diaryComposerDate (por defecto hoy), con ánimo + texto libre + foto
        opcional. La foto se comprime a data URL en el navegador antes de guardarse
@@ -732,6 +870,22 @@ function pushChatMemory(role, content) {
 // Bless). Con el límite de tiempo, una llamada que no contesta a tiempo se trata
 // igual que cualquier otra falla — se aborta y se usa el texto de respaldo.
 const BLESS_AI_TIMEOUT_MS = 14000;
+// 25 ago 2026: handleUserMessage() ya hace pushChatMemory('user', text) apenas
+// entra, ANTES de llegar a los puntos que llaman a la IA — así que cuando el
+// prompt que mandamos es literalmente el mensaje crudo de la persona (charla
+// libre, clasificación de logros), ese mismo texto ya está como el último turno
+// del historial. Sin este recorte, se lo mandaríamos a OpenAI dos veces seguidas
+// como si fueran dos turnos distintos. Con instrucciones sintéticas (el resto de
+// los flujos, que todavía arman un párrafo describiendo la situación) esto nunca
+// pasaba porque los dos textos eran distintos — se deja el chequeo genérico para
+// que cubra ambos casos sin tener que distinguir cuál es cuál.
+function recentHistoryFor(promptText) {
+  let h = chatMemory.slice(-12);
+  if (h.length && h[h.length - 1].role === 'user' && h[h.length - 1].content === promptText) {
+    h = h.slice(0, -1);
+  }
+  return h;
+}
 async function callBlessAI(systemPrompt, situationPrompt) {
   if (!aiEnabled()) return null;
   const controller = new AbortController();
@@ -740,12 +894,39 @@ async function callBlessAI(systemPrompt, situationPrompt) {
     const res = await fetch('/api/bless-reply', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ system: systemPrompt, history: chatMemory.slice(-12), prompt: situationPrompt }),
+      body: JSON.stringify({ system: systemPrompt, history: recentHistoryFor(situationPrompt), prompt: situationPrompt }),
       signal: controller.signal,
     });
     if (!res.ok) return null;
     const data = await res.json();
     return (data && data.ok && data.reply) ? data.reply.trim() : null;
+  } catch (e) { return null; }
+  finally { clearTimeout(timeoutId); }
+}
+// 25 ago 2026: primera parte del rediseño "que Bless entienda como GPT" — en vez
+// de que reglas escritas a mano (regex) decidan si un mensaje con la palabra
+// "logro" es un logro real, un deseo futuro, una negación o una pregunta de
+// gestión, se lo mandamos a la propia IA con "function calling" (ver
+// ACHIEVEMENT_TOOLS en app.py) para que ella misma decida la intención Y
+// redacte la respuesta, en una sola llamada — mismo costo por mensaje que
+// antes, no el doble. Si la IA no está disponible o no contesta a tiempo,
+// quien llama a esta función recibe null y debe caer al detector por reglas
+// de siempre como respaldo (ver handleUserMessage).
+async function classifyAchievementMessage(text) {
+  if (!aiEnabled()) return null;
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), BLESS_AI_TIMEOUT_MS);
+  try {
+    const res = await fetch('/api/bless-reply', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ system: blessSystemPrompt(), history: recentHistoryFor(text), prompt: text, mode: 'achievement' }),
+      signal: controller.signal,
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    if (!data || !data.ok || data.kind !== 'tool' || !data.args || !data.args.intent || !data.args.reply) return null;
+    return data.args;
   } catch (e) { return null; }
   finally { clearTimeout(timeoutId); }
 }
@@ -776,11 +957,25 @@ Reglas de estilo, muy importantes:
 - Variá tus frases y expresiones; evitá sonar repetitiva o a guion ("qué buena noticia", "listo, guardado") si ya las usaste antes en la conversación.
 - Respuestas cortas, de 1 a 3 líneas, sin markdown, sin viñetas, sin emojis excesivos (máximo 1 o 2).
 
+Cuando lo que te paso a continuación es exactamente lo que la persona escribió (charla libre real, no una situación descrita entre instrucciones para vos), tratalo como estar chateando de verdad con ella — leé lo que dijo y reaccioná a eso:
+- Si es una pregunta general y no te está pidiendo agendar nada, respondé de forma natural y cercana; si tiene sentido, podés mencionar brevemente lo que le queda pendiente hoy en su agenda. Nunca le preguntes "¿a qué hora lo hacemos?" a una pregunta — eso es solo para cuando te da el nombre de una tarea nueva.
+- Si es un comentario, un sentimiento o charla casual (no el nombre corto de una tarea), reaccioná con calidez y curiosidad real a lo que contó, en vez de tratarlo como algo para agendar.
+- Si suena a que está pasando por un momento difícil (estrés, tristeza, agobio, cansancio emocional), respondé con calidez real sin minimizar ni dar soluciones apresuradas; podés sugerir con suavidad, sin insistir, que use su diario personal dentro de la app como espacio seguro para escribir sobre esto.
+
 Responde solo con el mensaje que Bless le diría ahora a la persona, nada más (sin comillas, sin explicar lo que vas a decir, sin repetir instrucciones).`;
 }
 /* Intenta responder con OpenAI; si no hay key o falla, usa el texto simulado como respaldo */
-async function say(container, situationDesc, fallbackText, delay, reactionEmoji) {
-  const aiReply = await callBlessAI(blessSystemPrompt(), situationDesc);
+// 25 ago 2026: se agregó el parámetro opcional extraSystem — permite sumar una
+// instrucción puntual (ej. el empujón proactivo cada 3 turnos de charla libre)
+// SIN tener que envolver el mensaje real de la persona en una situación
+// descrita entre instrucciones. Así, cuando situationDesc es literalmente lo
+// que la persona escribió (ver los usos en la charla libre de
+// handleUserMessage), la IA lo recibe tal cual — como estar chateando de
+// verdad — y extraSystem le suma solo el contexto interno adicional que
+// necesita, por fuera del mensaje del usuario.
+async function say(container, situationDesc, fallbackText, delay, reactionEmoji, extraSystem) {
+  const sys = extraSystem ? `${blessSystemPrompt()}\n\n${extraSystem}` : blessSystemPrompt();
+  const aiReply = await callBlessAI(sys, situationDesc);
   await agentSay(container, aiReply || fallbackText, delay, reactionEmoji);
 }
 
@@ -791,7 +986,10 @@ const state = {
   profile: {
     nombre: "", edad: null, trabajoInicio: "", trabajoFin: "", energia: "", tipo: "", peso: null, talla: null,
     dificultades: [], intentosPrevios: [], detonantes: [], despertar: "", dormir: "", tiempoLibre: "",
-    motivacion: "", diasDificiles: [], habitos: [], logros: []
+    motivacion: "", diasDificiles: [], habitos: [], logros: [],
+    // NIVELES — XP acumulado (nunca baja) y la fecha en que ya se pagó el bono de
+    // "día completo" (evita sumarlo de nuevo si se destilda/retilda algo el mismo día).
+    xp: 0, xpAllDoneDate: null,
   },
   settings: { language: null, country: null, theme: 'light' },
   diagnostic: null,
@@ -969,6 +1167,7 @@ const I18N = {
     // esos dos casos con una respuesta que sí tiene sentido.
     aspirationalAchievementFallback: ['Me encanta esa energía 🌱 ¿Qué te gustaría lograr específicamente? Así vemos juntas/os cómo armar un hábito que te acerque ahí.', '¡Vamos por eso! 🌟 Cuéntame más de qué se trata ese logro que quieres alcanzar, para pensar el primer paso.'],
     achievementNegatedFallback: ['Está bien no lograr todo siempre 🤍. No tienes que resolverlo hoy — ¿quieres contarme un poco más de cómo te sientes?', 'Te escucho 🤍. Los días así también cuentan. Estoy aquí si quieres hablar de eso.'],
+    achievementManageFallback: ['¡Claro! Para eliminar un logro, ve a tu Perfil → 🏆 Tus logros, y toca el ícono 🗑️ junto al que quieras quitar.', 'Sí se puede — en tu Perfil, en la sección 🏆 Tus logros, cada uno tiene un ícono 🗑️ para eliminarlo cuando quieras.'],
     conversationalReplyFallback: ['Te escucho 🤍. Cuéntame más, o si quieres, dime qué te gustaría lograr hoy.', 'Gracias por contarme 🌱. ¿Hay algo en lo que te pueda ayudar hoy?'],
     diaryDifficultyFallback: ['Siento que estés pasando por esto 🤍. Tómate tu tiempo — y si te ayuda, sabes que tienes tu diario aquí mismo, es un espacio solo tuyo para escribir sin que nadie más lo vea.', 'Gracias por contarme, de verdad 🌱. No tienes que resolverlo todo ahora. Si quieres soltarlo por escrito, tu diario está ahí, como un espacio seguro solo para ti.'],
     diaryPromptFromChatDifficulty: '📔 Escribir sobre esto en mi diario',
@@ -1018,6 +1217,8 @@ const I18N = {
     diasDificilesTitle: 'Días difíciles para ti', habitosTitle: 'Hábitos que quiere construir',
     logrosTitle: '🏆 Tus logros', noLogros: 'Aún no tienes logros guardados — cuéntale a Bless cuando consigas algo importante y lo guarda aquí. 🌟',
     shareLogroIconTitle: 'Compartir este logro',
+    deleteLogroIconTitle: 'Eliminar este logro',
+    confirmDeleteLogro: (text) => `¿Eliminar el logro "${text}"? Esta acción no se puede deshacer.`,
     shareLogroTitle: 'Comparte tu logro',
     downloadBtn: '📥 Descargar', shareBtn: '📤 Compartir',
     logroCardUnlocked: 'LOGRO DESBLOQUEADO', logroCardBrand: 'blesshabit.app',
@@ -1114,6 +1315,25 @@ const I18N = {
     cumplimientoHoy: 'Cumplimiento hoy', cumplimientoSemana: 'Cumplimiento semana', cumplimientoMes: 'Cumplimiento mes',
     rachaActualLbl: 'Racha actual (días)', maximaLbl: (n) => `Máxima: ${n} días`, soloPremium: 'Solo Premium',
     sinDatosCap: 'Sin datos',
+
+    // NIVELES — agregado 2 sept 2026 junto con el rediseño visual claro/lavanda.
+    levelBadgeLabel: (n) => `NIVEL ${n}`,
+    levelOrbLabel: 'NIVEL',
+    levelHeroSub: 'Tu constancia está construyendo tu mejor versión.',
+    nextLevelLabel: (xp) => `Siguiente nivel: ${xp} XP`,
+    yourLevelTitle: 'Tu nivel',
+    viewLevelsBtn: 'Ver niveles y recompensas',
+    levelsTitle: '✨ Niveles Bless',
+    levelsIntro: 'Gana XP por acciones reales — completar hábitos, escribir en tu diario, sostener una racha — y sube de nivel. Los niveles nunca reinician tu racha.',
+    levelUpMsg: (n, name) => `¡Subiste a Nivel ${n} · ${name}!`,
+    level1Name: 'Semilla', level1Reward: '🌱 Empezar tu camino',
+    level2Name: 'Explorador', level2Reward: '🎨 Nuevos colores de diario',
+    level3Name: 'En camino', level3Reward: '✨ Insignia En camino',
+    level4Name: 'Constante', level4Reward: '🏆 Tarjeta de logro',
+    level5Name: 'Imparable', level5Reward: '💎 Marco Premium para tus fotos del diario',
+    level6Name: 'Inspirador', level6Reward: '🌟 Perfil especial',
+    level7Name: 'Maestro de hábitos', level7Reward: '👑 Insignia de Maestría',
+    level8Name: 'Leyenda Bless', level8Reward: '💜 Estatus Leyenda',
   },
   en: {
     headerSubKnowing: 'Bless is getting to know you…',
@@ -1253,6 +1473,7 @@ const I18N = {
     achievementFollowupFallback: ["That's huge 🎉 Tell me, how did you pull it off?", "Love that! What did it feel like to get there?", "So proud of you 🌟 What helped you the most to make it happen?"],
     aspirationalAchievementFallback: ["I love that energy 🌱 What would you like to achieve, specifically? Let's figure out a habit that gets you there.", "Let's go for it 🌟 Tell me more about the achievement you're after, and we'll think through the first step."],
     achievementNegatedFallback: ["It's okay not to get everything done 🤍. You don't have to figure it out today — want to tell me a bit more about how you're feeling?", "I hear you 🤍. Days like this count too. I'm here if you want to talk about it."],
+    achievementManageFallback: ['Sure! To delete an achievement, go to your Profile → 🏆 Your achievements, and tap the 🗑️ icon next to the one you want to remove.', "Yep, that's possible — in your Profile, under 🏆 Your achievements, each one has a 🗑️ icon to delete it whenever you want."],
     conversationalReplyFallback: ["I hear you 🤍. Tell me more, or let me know what you'd like to get done today.", "Thanks for sharing 🌱. Is there anything I can help you with today?"],
     diaryDifficultyFallback: ["I'm sorry you're going through this 🤍. Take your time — and if it helps, your diary is right here, a space just for you to write without anyone else seeing it.", "Thank you for telling me, really 🌱. You don't have to figure it all out right now. If it helps to get it out in writing, your diary is there, a safe space just for you."],
     diaryPromptFromChatDifficulty: '📔 Write about this in my diary',
@@ -1302,6 +1523,8 @@ const I18N = {
     diasDificilesTitle: 'Hard days for you', habitosTitle: 'Habits you want to build',
     logrosTitle: '🏆 Your achievements', noLogros: "You don't have any saved achievements yet — tell Bless when you accomplish something important and it'll be saved here. 🌟",
     shareLogroIconTitle: 'Share this achievement',
+    deleteLogroIconTitle: 'Delete this achievement',
+    confirmDeleteLogro: (text) => `Delete the achievement "${text}"? This can't be undone.`,
     shareLogroTitle: 'Share your achievement',
     downloadBtn: '📥 Download', shareBtn: '📤 Share',
     logroCardUnlocked: 'ACHIEVEMENT UNLOCKED', logroCardBrand: 'blesshabit.app',
@@ -1398,6 +1621,25 @@ const I18N = {
     cumplimientoHoy: "Today's completion", cumplimientoSemana: "Week's completion", cumplimientoMes: "Month's completion",
     rachaActualLbl: 'Current streak (days)', maximaLbl: (n) => `Best: ${n} days`, soloPremium: 'Premium only',
     sinDatosCap: 'No data',
+
+    // LEVELS — added 2 sept 2026 together with the light/lavender visual redesign.
+    levelBadgeLabel: (n) => `LEVEL ${n}`,
+    levelOrbLabel: 'LEVEL',
+    levelHeroSub: 'Your consistency is building your best self.',
+    nextLevelLabel: (xp) => `Next level: ${xp} XP`,
+    yourLevelTitle: 'Your level',
+    viewLevelsBtn: 'View levels and rewards',
+    levelsTitle: '✨ Bless Levels',
+    levelsIntro: 'Earn XP for real actions — completing habits, writing in your diary, keeping a streak — and level up. Levels never reset your streak.',
+    levelUpMsg: (n, name) => `You leveled up to Level ${n} · ${name}!`,
+    level1Name: 'Seed', level1Reward: '🌱 Start your journey',
+    level2Name: 'Explorer', level2Reward: '🎨 New diary colors',
+    level3Name: 'On track', level3Reward: '✨ On-track badge',
+    level4Name: 'Consistent', level4Reward: '🏆 Achievement card',
+    level5Name: 'Unstoppable', level5Reward: '💎 Premium frame for your diary photos',
+    level6Name: 'Inspiring', level6Reward: '🌟 Special profile',
+    level7Name: 'Habit master', level7Reward: '👑 Mastery badge',
+    level8Name: 'Bless legend', level8Reward: '💜 Legend status',
   },
 };
 
@@ -1529,7 +1771,7 @@ function itemDisplayLabel(item) {
 }
 function applyTheme(theme) {
   const th = (theme === 'premium' && !isPremium) ? 'light' : (theme || 'light');
-  document.documentElement.setAttribute('data-theme', th === 'dark' ? '' : th);
+  document.documentElement.setAttribute('data-theme', th);
   state.settings = state.settings || {};
   state.settings.theme = th;
 }
@@ -2158,6 +2400,9 @@ async function bootstrapApp() {
       Object.assign(state, stateData.state);
       state.settings = Object.assign({ language: null, country: null, theme: 'light' }, state.settings || {});
       state.profile.logros = state.profile.logros || [];
+      // Cuentas guardadas antes del sistema de Niveles (2 sept 2026) no traen "xp" —
+      // se normaliza acá mismo, igual que ya se hace arriba con "logros".
+      state.profile.xp = state.profile.xp || 0;
       rolloverDayIfNeeded();
       applyTheme(state.settings.theme);
       refreshLocaleArrays();
@@ -2401,6 +2646,7 @@ function startChat() {
   document.getElementById('header-sub').textContent = t('headerSubHello', state.profile.nombre);
   renderHeaderRing();
   renderAgenda();
+  renderLevelHero();
   renderChatAdSlot();
   say(chatScroll, `La persona acaba de terminar su evaluación inicial y entra al chat por primera vez hoy. Salúdala usando su nombre y pregúntale qué quiere lograr hoy.`, tp('greetingFallback', state.profile.nombre), 300).then(() => {
     if (state.agenda.length) addNote(chatScroll, t('dayArmedNote'));
@@ -2536,6 +2782,92 @@ function maybeCelebrate(pct) {
   celebrateExplosion(tier.emoji, `${phrase}${extra}`, tier.anim);
 }
 
+/* ============================================================
+   NIVELES Y XP — agregado 2 sept 2026 a partir de un archivo de referencia
+   que mandó Tania ("Bless Habit — Premium White UI + Niveles") con el
+   rediseño visual claro/lavanda (ver bloque de temas en el <style>) y un
+   sistema de niveles funcionando de verdad. Reglas de XP:
+     +10 al marcar un hábito (una sola vez por tarea por día — item.xpAwarded)
+     +15 al guardar una entrada NUEVA del diario (editar una ya existente no suma)
+     +25 al completar el 100% de la agenda del día (una sola vez por día)
+     +30 al llegar a una racha de 7/30/100 días en un hábito — mismos hitos que
+         ya usan los logros automáticos (ver maybeAutoLogroFromStreak)
+   El XP se acumula y nunca baja; el nivel sale de umbrales fijos. Al subir de
+   nivel se reutiliza la misma "explosión" de celebración que ya existe para
+   tareas y logros, en vez de un componente nuevo, para no meter un segundo
+   sistema de notificaciones encima del que ya hay.
+   ============================================================ */
+const LEVELS = [
+  { n: 1, min: 0,   max: 100,  nameKey: 'level1Name', rewardKey: 'level1Reward' },
+  { n: 2, min: 100, max: 200,  nameKey: 'level2Name', rewardKey: 'level2Reward' },
+  { n: 3, min: 200, max: 300,  nameKey: 'level3Name', rewardKey: 'level3Reward' },
+  { n: 4, min: 300, max: 400,  nameKey: 'level4Name', rewardKey: 'level4Reward' },
+  { n: 5, min: 400, max: 550,  nameKey: 'level5Name', rewardKey: 'level5Reward' },
+  { n: 6, min: 550, max: 700,  nameKey: 'level6Name', rewardKey: 'level6Reward' },
+  { n: 7, min: 700, max: 900,  nameKey: 'level7Name', rewardKey: 'level7Reward' },
+  { n: 8, min: 900, max: 1200, nameKey: 'level8Name', rewardKey: 'level8Reward' },
+];
+function levelInfo(xp) {
+  let l = LEVELS[0];
+  for (const x of LEVELS) { if ((xp || 0) >= x.min) l = x; }
+  return l;
+}
+function xpProgressPct(xp, l) {
+  return Math.max(0, Math.min(100, Math.round(((xp || 0) - l.min) / ((l.max - l.min) || 1) * 100)));
+}
+function renderLevelHero() {
+  const el = document.getElementById('level-hero');
+  if (!el) return;
+  const xp = state.profile.xp || 0;
+  const l = levelInfo(xp);
+  const next = LEVELS.find(x => x.n === l.n + 1);
+  el.innerHTML = `
+    <div class="level-hero-card">
+      <div class="level-hero-row">
+        <div>
+          <div class="level-badge">✨ ${t('levelBadgeLabel', l.n)} · ${t(l.nameKey)}</div>
+          <div class="level-hero-sub">${t('levelHeroSub')}</div>
+        </div>
+        <div class="level-orb"><span>${l.n}</span><small>${t('levelOrbLabel')}</small></div>
+      </div>
+      <div class="xp-line"><span><b>${xp}</b> XP</span><span>${t('nextLevelLabel', next ? next.min : l.max)}</span></div>
+      <div class="xp-progress"><i style="width:${xpProgressPct(xp, l)}%;"></i></div>
+    </div>`;
+}
+function renderLevelsList() {
+  const wrap = document.getElementById('levels-list');
+  if (!wrap) return;
+  const current = levelInfo(state.profile.xp || 0);
+  wrap.innerHTML = LEVELS.map(l => `
+    <div class="level-row${l.n > current.n ? ' locked' : ''}">
+      <div class="level-dot">${l.n}</div>
+      <div style="flex:1;"><b style="font-size:12.5px;">${t(l.nameKey)}</b>
+        <div style="font-size:11px;color:var(--text-dim);">${l.min} XP · ${t(l.rewardKey)}</div>
+      </div>
+      <span>${l.n <= current.n ? '✓' : '🔒'}</span>
+    </div>`).join('');
+}
+function openLevelsModal() {
+  document.getElementById('levels-modal-title').textContent = t('levelsTitle');
+  document.getElementById('levels-modal-intro').textContent = t('levelsIntro');
+  document.getElementById('levels-close-btn').textContent = t('closeBtn');
+  renderLevelsList();
+  document.getElementById('levels-overlay').style.display = 'flex';
+}
+function closeLevelsModal() { document.getElementById('levels-overlay').style.display = 'none'; }
+function awardXp(amount) {
+  const prevLevel = levelInfo(state.profile.xp || 0).n;
+  state.profile.xp = (state.profile.xp || 0) + amount;
+  const newLevel = levelInfo(state.profile.xp).n;
+  renderLevelHero();
+  if (document.getElementById('view-profile').classList.contains('active')) renderProfile();
+  saveStateToServer();
+  if (newLevel > prevLevel) {
+    const l = levelInfo(state.profile.xp);
+    celebrateExplosion('✨', t('levelUpMsg', l.n, t(l.nameKey)), 'celebrate-trophy');
+  }
+}
+
 function toggleDone(idx) {
   const item = state.agenda[idx]; item.done = !item.done;
   state.streaks[item.habitKey] = Math.max(0, (state.streaks[item.habitKey] || 0) + (item.done ? 1 : -1));
@@ -2546,6 +2878,14 @@ function toggleDone(idx) {
     setAvatarMood('happy', 1600);
     maybeAutoLogroFromStreak(item.habitKey);
     maybeCelebrate(pct);
+    // NIVELES: +10 XP la primera vez que se marca ESTA tarea (item.xpAwarded evita
+    // sumar de nuevo si se destilda y se vuelve a marcar en el mismo día), y +25 de
+    // bono al completar el 100% de la agenda de hoy (una sola vez por día).
+    if (!item.xpAwarded) { item.xpAwarded = true; awardXp(10); }
+    if (pct === 100 && total > 0) {
+      const todayStr = ymd(new Date());
+      if (state.profile.xpAllDoneDate !== todayStr) { state.profile.xpAllDoneDate = todayStr; awardXp(25); }
+    }
   } else {
     // Al desmarcar (ej. lo tildó por error), bajamos la marca de "ya celebrado" al
     // % actual — así, si vuelve a marcarlo y sube de nuevo a un tramo que ya había
@@ -2636,6 +2976,16 @@ const ACHIEVEMENT_NEGATION_PATTERN_EN = /\b(didn'?t|did not|never|couldn'?t|coul
 function looksLikeNegatedAchievement(text) {
   return ACHIEVEMENT_NEGATION_PATTERN.test(text) || ACHIEVEMENT_NEGATION_PATTERN_EN.test(text);
 }
+// 25 ago 2026: Tania preguntó "podemos eliminar un logro?" y Bless respondió
+// "¡Me encanta! ¿Qué se sintió al conseguirlo?" — trató una PREGUNTA sobre la
+// función de logros como si fuera un logro nuevo siendo reportado. Este patrón
+// cubre preguntas de gestión (eliminar/borrar/editar un logro) para que se
+// respondan de forma útil en vez de colarse en el flujo de "logro real".
+const ACHIEVEMENT_MANAGE_PATTERN = /\b(elimin\w*|borr\w*|quit\w*|remov\w*|edit\w*)\b.{0,25}\blogros?\b|\blogros?\b.{0,25}\b(elimin\w*|borr\w*|quit\w*|remov\w*|edit\w*)\b/i;
+const ACHIEVEMENT_MANAGE_PATTERN_EN = /\b(delete|remove|edit)\b.{0,25}\bachievements?\b|\bachievements?\b.{0,25}\b(delete|remove|edit)\b/i;
+function looksLikeAchievementManagementQuestion(text) {
+  return ACHIEVEMENT_MANAGE_PATTERN.test(text) || ACHIEVEMENT_MANAGE_PATTERN_EN.test(text);
+}
 function detectAchievementMention(text) {
   const l = text.toLowerCase();
   // Cubre tanto el verbo ("logré...") como el sustantivo que la propia app usa
@@ -2644,10 +2994,11 @@ function detectAchievementMention(text) {
   const mentioned = /(logr[eé]|\blogros?\b|conseguí|consegui|baj[eé] de peso|sub[ií] de peso|complet[eé]|alcanc[eé]|cumpl[ií]|por fin (pude|logré)|lo logré|meta cumplida)/.test(l)
     || /(i (achieved|managed to|finally|completed|accomplished|hit my goal)|i lost weight|i gained weight|i did it|\bachievements?\b)/.test(l);
   if (!mentioned) return false;
-  // Una mención NO es un logro real si es un deseo futuro ("quiero un logro") o
-  // está negada ("no logré nada hoy") — esos casos se manejan aparte, con una
+  // Una mención NO es un logro real si es un deseo futuro ("quiero un logro"), si
+  // está negada ("no logré nada hoy"), o si es una pregunta sobre gestionar los
+  // logros ("podemos eliminar un logro?") — esos casos se manejan aparte, con una
   // respuesta que sí tiene sentido, en vez de guardarse como si fueran ciertos.
-  if (looksLikeAspirationalAchievement(text) || looksLikeNegatedAchievement(text)) return false;
+  if (looksLikeAspirationalAchievement(text) || looksLikeNegatedAchievement(text) || looksLikeAchievementManagementQuestion(text)) return false;
   return true;
 }
 // Detecta cuando la persona solo menciona la PALABRA "logro" sin contar en qué
@@ -2817,7 +3168,9 @@ function maybeAutoLogroFromStreak(habitKey) {
   state.profile.logros = state.profile.logros || [];
   if (state.profile.logros.some(l => l.text === text)) return;
   state.profile.logros.push({ text, date: ymd(new Date()) });
-  saveStateToServer();
+  // NIVELES: +30 XP al llegar a una racha importante (7/30/100 días) — awardXp() ya
+  // guarda el estado, así que no hace falta un saveStateToServer() aparte acá.
+  awardXp(30);
 }
 
 function detectAddHabitIntent(text) {
@@ -2885,20 +3238,66 @@ async function handleUserMessage(text) {
     return;
   }
 
-  // 25 ago 2026: estos dos van ANTES del chequeo normal de logro, porque
-  // detectAchievementMention() ya excluye estos dos casos (deseo futuro / logro
-  // negado) — sin una respuesta propia para ellos, el mensaje caería en el
-  // fallback genérico de "a qué hora lo hacemos", tratando "quiero un logro" o
-  // "no logré nada hoy" como si fueran el nombre de una tarea nueva.
-  if (!pending && looksLikeAspirationalAchievement(text)) {
-    const nudge = proactiveNudge();
-    await say(chatScroll, `La persona expresó el deseo de lograr algo en el futuro, NO que ya lo haya conseguido: "${text}". Como su mejor amigo/a que entiende de hábitos, respóndele con calidez genuina y pregúntale con curiosidad real qué le gustaría lograr específicamente, para poder ayudarla a pensar un hábito concreto que la acerque a eso. No la felicites como si ya lo hubiera logrado, ni le preguntes qué la ayudó a conseguirlo.${nudge.extraInstruction}`, t('aspirationalAchievementFallback') + nudge.extraFallback);
-    return;
-  }
-  if (!pending && looksLikeNegatedAchievement(text)) {
-    const nudge = proactiveNudge();
-    await say(chatScroll, `La persona contó que NO logró algo o que no pudo hacerlo: "${text}". Esto no es un logro para guardar — puede ser una frustración o un día difícil. Respóndele con calidez real, sin minimizar ni sonar a discurso motivacional vacío, y sin ofrecerle nada forzado todavía; solo hazla sentir acompañada.${nudge.extraInstruction}`, t('achievementNegatedFallback') + nudge.extraFallback);
-    return;
+  // 25 ago 2026: rediseño pedido por Tania ("necesito que sea aún más
+  // inteligente, programa que sea como estar chateando con GPT") — reemplaza los
+  // 4 detectores por regex que había acá (logro real / deseo futuro / negación /
+  // pregunta de gestión) por UNA sola llamada donde la propia IA lee el mensaje y
+  // decide directamente cuál de los 4 casos es, redactando la respuesta en la
+  // misma llamada (mismo costo por mensaje que antes — no el doble — porque casi
+  // todas estas respuestas ya pasaban por la IA de todas formas, solo que antes
+  // la clasificación la hacía JS con reglas en vez de la IA). Solo se llama a la
+  // IA si el mensaje siquiera menciona la palabra logro/achievement (filtro
+  // barato, para no gastar una llamada en mensajes que no tienen nada que ver).
+  // Si la IA no está disponible o no contesta a tiempo, se usa el mismo detector
+  // por reglas de siempre como respaldo — el chat nunca se queda sin responder.
+  const mentionsAchievementWord = /logr[eé]|\blogros?\b|conseguí|consegui|\bachievements?\b/i.test(text);
+  if (!pending && mentionsAchievementWord) {
+    const classified = await classifyAchievementMessage(text);
+    if (classified) {
+      if (classified.intent === 'future_goal' || classified.intent === 'setback' || classified.intent === 'manage_achievement') {
+        await agentSay(chatScroll, classified.reply);
+        return;
+      }
+      if (classified.intent === 'real_achievement') {
+        if (classified.achievement_summary) {
+          state.pending = { type: 'needsAchievementFollowup', detail: classified.achievement_summary };
+        } else {
+          state.pending = { type: 'needsAchievementDetail' };
+        }
+        await agentSay(chatScroll, classified.reply);
+        return;
+      }
+      // intent === 'unrelated' → seguimos procesando el mensaje normalmente.
+    } else {
+      // Respaldo por reglas (IA no disponible, sin OPENAI_API_KEY, o no contestó
+      // a tiempo) — mismo comportamiento que había antes de este rediseño.
+      if (looksLikeAspirationalAchievement(text)) {
+        const nudge = proactiveNudge();
+        await say(chatScroll, `La persona expresó el deseo de lograr algo en el futuro, NO que ya lo haya conseguido: "${text}". Como su mejor amigo/a que entiende de hábitos, respóndele con calidez genuina y pregúntale con curiosidad real qué le gustaría lograr específicamente, para poder ayudarla a pensar un hábito concreto que la acerque a eso. No la felicites como si ya lo hubiera logrado, ni le preguntes qué la ayudó a conseguirlo.${nudge.extraInstruction}`, t('aspirationalAchievementFallback') + nudge.extraFallback);
+        return;
+      }
+      if (looksLikeNegatedAchievement(text)) {
+        const nudge = proactiveNudge();
+        await say(chatScroll, `La persona contó que NO logró algo o que no pudo hacerlo: "${text}". Esto no es un logro para guardar — puede ser una frustración o un día difícil. Respóndele con calidez real, sin minimizar ni sonar a discurso motivacional vacío, y sin ofrecerle nada forzado todavía; solo hazla sentir acompañada.${nudge.extraInstruction}`, t('achievementNegatedFallback') + nudge.extraFallback);
+        return;
+      }
+      if (looksLikeAchievementManagementQuestion(text)) {
+        await say(chatScroll, `La persona está preguntando CÓMO eliminar o editar un logro guardado, no contando un logro nuevo: "${text}". Explícale con calidez que puede hacerlo desde su Perfil, en la sección "🏆 Tus logros", tocando el ícono 🗑️ junto al logro que quiera quitar.`, t('achievementManageFallback'));
+        return;
+      }
+      if (detectAchievementMention(text)) {
+        if (isGenericAchievementMention(text)) {
+          state.pending = { type: 'needsAchievementDetail' };
+          await say(chatScroll, `La persona mencionó que tiene un logro pero todavía no contó cuál fue. Como su mejor amigo/a, muéstrate genuinamente emocionada/o y pregúntale qué fue exactamente lo que logró, para poder guardarlo bien en su perfil.`, t('achievementAskDetailFallback'));
+          return;
+        }
+        state.pending = { type: 'needsAchievementFollowup', detail: text };
+        await say(chatScroll, `La persona acaba de contarte un logro: "${text}". Como su mejor amigo/a que además entiende de verdad de hábitos, alégrate genuinamente y pregúntale con curiosidad real cómo lo logró o cómo se siente con eso — todavía NO le preguntes si quiere guardarlo, primero queremos indagar un poco más para poder guardar una descripción rica de su logro.`, t('achievementFollowupFallback'));
+        return;
+      }
+      // Ninguna regla de respaldo matcheó tampoco (raro, dado el filtro de
+      // arriba) — seguimos procesando el mensaje normalmente.
+    }
   }
 
   // Si nada de lo anterior matcheó y sí veníamos de una oferta de sugerencia,
@@ -2915,17 +3314,6 @@ async function handleUserMessage(text) {
     }
     // respuesta ambigua (ej. ya escribió una tarea nueva) — seguimos procesando
     // el mensaje normalmente en vez de insistir con la oferta.
-  }
-
-  if (!pending && detectAchievementMention(text)) {
-    if (isGenericAchievementMention(text)) {
-      state.pending = { type: 'needsAchievementDetail' };
-      await say(chatScroll, `La persona mencionó que tiene un logro pero todavía no contó cuál fue. Como su mejor amigo/a, muéstrate genuinamente emocionada/o y pregúntale qué fue exactamente lo que logró, para poder guardarlo bien en su perfil.`, t('achievementAskDetailFallback'));
-      return;
-    }
-    state.pending = { type: 'needsAchievementFollowup', detail: text };
-    await say(chatScroll, `La persona acaba de contarte un logro: "${text}". Como su mejor amigo/a que además entiende de verdad de hábitos, alégrate genuinamente y pregúntale con curiosidad real cómo lo logró o cómo se siente con eso — todavía NO le preguntes si quiere guardarlo, primero queremos indagar un poco más para poder guardar una descripción rica de su logro.`, t('achievementFollowupFallback'));
-    return;
   }
 
   if (pending && pending.type === 'needsAchievementDetail') {
@@ -3054,13 +3442,20 @@ async function handleUserMessage(text) {
   // (Bless terminaba preguntando "¿a qué hora hacemos 'que hago?'?", sin sentido) —
   // si el mensaje suena a pregunta genérica, respondemos de forma conversacional en
   // vez de arrancar el flujo de agendar.
+  // 25 ago 2026: antes, estas dos ramas armaban un párrafo en español contándole
+  // a la IA "la persona escribió tal cosa, respondele así" — la IA nunca veía el
+  // mensaje real de la persona como turno de usuario, solo una descripción de la
+  // situación. Ahora le pasamos el texto TAL CUAL como prompt (las reglas de cómo
+  // responder a cada caso quedaron en blessSystemPrompt(), como reglas fijas), así
+  // que la IA lo lee y contesta como si de verdad estuviera chateando con ella —
+  // el pedido explícito de Tania ("que sea como estar chateando con GPT").
   if (looksLikeGenericQuestion(text)) {
     // Termina la respuesta ofreciendo proactivamente una sugerencia concreta — así la
     // persona no se queda sin saber qué escribir después, y es más probable que se
     // quede conversando con Bless en vez de cerrar la app sin hacer nada.
     state.pending = { type: 'offerSuggestion' };
     const nudge = proactiveNudge();
-    await say(chatScroll, `La persona te hizo una pregunta general ("${text}"), no te está pidiendo agendar nada todavía. Respóndele de forma natural y cercana, como su mejor amigo/a que además entiende de hábitos — si tiene sentido, puedes mencionar brevemente lo que le queda pendiente hoy en su agenda para ayudarla a decidir. No le preguntes a qué hora quiere hacer "${text}", porque eso no es el nombre de una tarea. Termina preguntándole con calidez si quiere que le sugieras algo.${nudge.extraInstruction}`, t('genericQuestionFallback') + nudge.extraFallback);
+    await say(chatScroll, text, t('genericQuestionFallback') + nudge.extraFallback, undefined, undefined, nudge.extraInstruction);
     return;
   }
   // Igual de importante: si el mensaje suena a charla libre (un comentario, un
@@ -3074,11 +3469,11 @@ async function handleUserMessage(text) {
     // — con un aviso tocable que abre el compositor directo desde el chat,
     // sin que tenga que ir a buscar la pestaña.
     if (looksLikeDifficultyMention(text)) {
-      await say(chatScroll, `La persona escribió algo que suena difícil o pesado para ella: "${text}". Respóndele con mucha calidez y validación real, como su mejor amigo/a — no minimices lo que siente ni le des soluciones apresuradas. Sugiérele con suavidad, sin insistir ni sonar a guion, que si quiere puede escribir sobre esto en su diario personal dentro de la app, recordándole que es un espacio seguro solo para ella.${nudge.extraInstruction}`, t('diaryDifficultyFallback') + nudge.extraFallback);
+      await say(chatScroll, text, t('diaryDifficultyFallback') + nudge.extraFallback, undefined, undefined, nudge.extraInstruction);
       addNote(chatScroll, t('diaryPromptFromChatDifficulty'), 'agenda-note', () => openDiaryComposer(todayStr()));
       return;
     }
-    await say(chatScroll, `La persona te escribió algo conversacional, no el nombre de una tarea para agendar ni una pregunta directa: "${text}". Respóndele de forma natural y cercana, como su mejor amigo/a que además entiende de hábitos — reacciona genuinamente a lo que contó, con curiosidad real.${nudge.extraInstruction}`, t('conversationalReplyFallback') + nudge.extraFallback);
+    await say(chatScroll, text, t('conversationalReplyFallback') + nudge.extraFallback, undefined, undefined, nudge.extraInstruction);
     return;
   }
   await say(chatScroll, `La persona escribió "${text}" sin especificar hora. Pregúntale a qué hora quiere hacerlo hoy.`, PHRASES.askTime(text));
@@ -3174,13 +3569,27 @@ function renderProfile() {
   const el = document.getElementById('view-profile');
   const total = state.agenda.length, done = state.agenda.filter(a=>a.done).length;
   const weekSuffix = t('weekSuffix');
-  const habitsHtml = p.habitos.map((h, i) => `<span class="habit-chip">${h.icon} ${habitDisplayLabel(h)}<span class="streak">🔥 ${state.streaks[h.key]||0}</span><span style="font-size:11px;color:var(--text-dim);margin-left:6px;">${habitDaysCompact(h)}${h.durationWeeks ? ' · ' + h.durationWeeks + weekSuffix : ''}</span>${h.suggestedByBless ? `<span style="font-size:10px;font-weight:800;color:#10131a;background:linear-gradient(135deg, var(--accent-2), var(--accent-3));padding:2px 7px;border-radius:999px;margin-left:6px;">${t('sugerenciaBless')}</span>` : ''}<span class="chip-edit-btn" data-idx="${i}" title="${t('editIconTitle')}">✏️</span></span>`).join('');
+  const habitsHtml = p.habitos.map((h, i) => `<span class="habit-chip">${h.icon} ${habitDisplayLabel(h)}<span class="streak">🔥 ${state.streaks[h.key]||0}</span><span style="font-size:11px;color:var(--text-dim);margin-left:6px;">${habitDaysCompact(h)}${h.durationWeeks ? ' · ' + h.durationWeeks + weekSuffix : ''}</span>${h.suggestedByBless ? `<span style="font-size:10px;font-weight:800;color:var(--on-accent);background:linear-gradient(135deg, var(--accent-2), var(--accent-3));padding:2px 7px;border-radius:999px;margin-left:6px;">${t('sugerenciaBless')}</span>` : ''}<span class="chip-edit-btn" data-idx="${i}" title="${t('editIconTitle')}">✏️</span></span>`).join('');
+  const lp = levelInfo(p.xp || 0);
+  const lpNext = LEVELS.find(x => x.n === lp.n + 1);
   el.innerHTML = `
     ${state.diagnostic ? `<div class="diag-card" style="margin-bottom:14px;"><div class="diag-label">${t('diagLabel')}</div><div class="diag-title">${state.diagnostic.title}</div><div class="diag-body">${state.diagnostic.body}</div></div>` : ''}
     <div class="stats-row" style="margin-bottom:14px;">
       <div class="stat-box"><div class="num">${done}/${total||0}</div><div class="lbl">${t('tareasHoy')}</div></div>
       <div class="stat-box"><div class="num">${p.habitos.length}</div><div class="lbl">${t('habitosActivos')}</div></div>
       <div class="stat-box"><div class="num">${Object.values(state.streaks).reduce((a,b)=>a+b,0)}</div><div class="lbl">${t('rachaTotal')}</div></div>
+    </div>
+    <div class="profile-card">
+      <h4>${t('yourLevelTitle')}</h4>
+      <div style="display:flex;align-items:center;gap:12px;">
+        <div class="level-orb" style="width:48px;height:48px;font-size:15px;"><span>${lp.n}</span><small>${t('levelOrbLabel')}</small></div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-weight:800;font-size:13.5px;">${t(lp.nameKey)}</div>
+          <div style="font-size:11px;color:var(--text-dim);">${p.xp || 0} / ${lpNext ? lpNext.min : lp.max} XP</div>
+        </div>
+      </div>
+      <div class="xp-progress" style="margin-top:10px;"><i style="width:${xpProgressPct(p.xp || 0, lp)}%;"></i></div>
+      <button class="send-btn" id="view-levels-btn" style="width:100%;margin-top:12px;background:linear-gradient(135deg, var(--panel-3), var(--panel-2)); color:var(--text);">${t('viewLevelsBtn')}</button>
     </div>
     <div class="profile-card"><h4>${t('basicDataTitle')}</h4>
       <div class="profile-row"><span>${t('nombreLabel')}</span><span>${p.nombre || '—'} <span class="chip-edit-btn" data-field="nombre" data-label-key="nombreLabel" title="${t('editIconTitle')}">✏️</span></span></div>
@@ -3202,7 +3611,7 @@ function renderProfile() {
     <div class="profile-card"><h4>${t('diasDificilesTitle')}</h4>${chipList(optLabelList('diasDificiles', p.diasDificiles))}</div>
     <div class="profile-card"><h4>${t('habitosTitle')}</h4><div>${habitsHtml || '—'}</div></div>
     <div class="profile-card logros-card"><h4>${t('logrosTitle')}</h4>
-      ${(p.logros && p.logros.length) ? p.logros.map((l, i) => ({l, i})).reverse().map(({l, i}) => `<div class="logro-chip">🏆 ${l.text}<span class="logro-share-btn" data-logro-idx="${i}" title="${t('shareLogroIconTitle')}">📤</span><span class="logro-date">${l.date}</span></div>`).join('') : `<div style="font-size:13px;color:var(--text-dim);">${t('noLogros')}</div>`}
+      ${(p.logros && p.logros.length) ? p.logros.map((l, i) => ({l, i})).reverse().map(({l, i}) => `<div class="logro-chip">🏆 ${l.text}<span class="logro-share-btn" data-logro-idx="${i}" title="${t('shareLogroIconTitle')}">📤</span><span class="logro-delete-btn" data-logro-idx="${i}" title="${t('deleteLogroIconTitle')}">🗑️</span><span class="logro-date">${l.date}</span></div>`).join('') : `<div style="font-size:13px;color:var(--text-dim);">${t('noLogros')}</div>`}
     </div>
     <div class="profile-card">
       <h4>${t('addHabitTitle')}</h4>
@@ -3247,6 +3656,8 @@ function renderProfile() {
   if (addCustomBtn) addCustomBtn.onclick = () => openHabitEditor(null);
   const openSettingsBtn = document.getElementById('open-settings-btn');
   if (openSettingsBtn) openSettingsBtn.onclick = openSettings;
+  const viewLevelsBtn = document.getElementById('view-levels-btn');
+  if (viewLevelsBtn) viewLevelsBtn.onclick = openLevelsModal;
   el.querySelectorAll('.chip-edit-btn[data-idx]').forEach(btn => {
     btn.onclick = () => openHabitEditor(parseInt(btn.dataset.idx, 10));
   });
@@ -3264,6 +3675,23 @@ function renderProfile() {
   el.querySelectorAll('.logro-share-btn').forEach(btn => {
     btn.onclick = () => openLogroShareCard(parseInt(btn.dataset.logroIdx, 10));
   });
+  el.querySelectorAll('.logro-delete-btn').forEach(btn => {
+    btn.onclick = () => deleteLogro(parseInt(btn.dataset.logroIdx, 10));
+  });
+}
+// 25 ago 2026: antes no existía ninguna forma de eliminar un logro guardado —
+// ni en el chat ni en Perfil. Se agregó este ícono 🗑️ junto a cada logro
+// (mismo patrón que el ícono de compartir 📤 ya existente), con confirm() del
+// navegador para evitar borrados accidentales, siguiendo el mismo patrón simple
+// ya usado para otras confirmaciones destructivas en la app (ej. quitar un
+// hábito de un día vs. de toda la serie).
+function deleteLogro(idx) {
+  const logro = state.profile.logros && state.profile.logros[idx];
+  if (!logro) return;
+  if (!confirm(t('confirmDeleteLogro', logro.text))) return;
+  state.profile.logros.splice(idx, 1);
+  saveStateToServer();
+  renderProfile();
 }
 
 /* ============================================================
@@ -4295,9 +4723,15 @@ function saveDiaryEntry() {
   const stickersToSave = diaryComposerStickers.map(s => ({ emoji: s.emoji, x: s.x, y: s.y, size: s.size, rotation: s.rotation, z: s.z }));
   const entry = { date: diaryComposerDate, text, mood, photo: diaryComposerPhoto, theme: diaryComposerTheme, texture: diaryComposerTexture, font: diaryComposerFont, separator: diaryComposerSeparator, frame: diaryComposerFrame, stickers: stickersToSave, favorite: diaryComposerFavorite, tags: diaryComposerTags.slice(), updatedAt: Date.now() };
   const idx = (state.journal || []).findIndex(e => e.date === diaryComposerDate);
-  if (idx >= 0) state.journal[idx] = Object.assign({}, state.journal[idx], entry);
-  else { if (!state.journal) state.journal = []; state.journal.push(entry); }
-  saveStateToServer();
+  if (idx >= 0) { state.journal[idx] = Object.assign({}, state.journal[idx], entry); saveStateToServer(); }
+  else {
+    if (!state.journal) state.journal = [];
+    state.journal.push(entry);
+    // NIVELES: +15 XP por entrada NUEVA (awardXp() ya guarda el estado). Editar una
+    // entrada que ya existía no vuelve a sumar — si no, alcanzaría con retocar el
+    // texto de un día viejo para farmear XP sin límite.
+    awardXp(15);
+  }
   closeDiaryComposer();
   renderDiary();
 }
@@ -4617,6 +5051,7 @@ document.getElementById('settings-overlay').addEventListener('click', (e) => {
   if (e.target.id === 'settings-overlay') closeSettings();
 });
 document.getElementById('settings-cancel-btn').onclick = closeSettings;
+document.getElementById('levels-close-btn').onclick = closeLevelsModal;
 document.getElementById('settings-save-btn').onclick = () => {
   const theme = document.querySelector('#settings-theme-options .qr-btn.selected')?.dataset.code || 'light';
   const language = document.querySelector('#settings-lang-options .qr-btn.selected')?.dataset.code || 'es';
