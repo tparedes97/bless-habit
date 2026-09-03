@@ -572,10 +572,240 @@
   /* Hard-coded legacy dark surfaces: neutralize them in White Premium. */
   html[data-theme="light"] #photo-editor-canvas { background:#f3f3f8; }
   html[data-theme="light"] .stage-sticker-handle { color:#fff; }
+
+  /* ============================================================
+     BLESS WHITE PREMIUM 2.0 — visual hierarchy inspired by Diary
+     The Diary is the reference module: calm, editorial, personal.
+     Other screens inherit the same visual language.
+     ============================================================ */
+  html[data-theme="light"] body { background:#f7f7fb; }
+  html[data-theme="light"] #app { background:#fff; box-shadow:0 24px 70px rgba(43,38,80,.10); }
+  html[data-theme="light"] header { padding:16px 18px 13px; background:rgba(255,255,255,.98); box-shadow:0 1px 0 #eeeef5; }
+  html[data-theme="light"] header h1 { font-size:16px; letter-spacing:-.02em; }
+  html[data-theme="light"] .sub { color:#8a8fa0; }
+
+  html[data-theme="light"] #view-calendar,
+  html[data-theme="light"] #view-metrics,
+  html[data-theme="light"] #view-diary,
+  html[data-theme="light"] #view-profile { background:#fff; }
+  html[data-theme="light"] .cal-body,
+  html[data-theme="light"] #view-metrics,
+  html[data-theme="light"] #view-diary,
+  html[data-theme="light"] #view-profile { padding:18px 16px 88px; }
+
+  /* Section titles: fewer dashboard boxes, more editorial hierarchy. */
+  html[data-theme="light"] .section-title,
+  html[data-theme="light"] .diary-title { font-size:22px; font-weight:800; letter-spacing:-.03em; color:#1b2438; }
+  html[data-theme="light"] .card,
+  html[data-theme="light"] .profile-card,
+  html[data-theme="light"] .metric-card,
+  html[data-theme="light"] .calendar-card,
+  html[data-theme="light"] .stat-box { border-radius:20px; }
+
+  /* Calendar */
+  html[data-theme="light"] .cal-subtabs { padding:10px 16px 2px; gap:8px; background:#fff; }
+  html[data-theme="light"] .cal-subtab { border:1px solid #ecebf2; background:#fafafd; color:#7e8496; border-radius:14px; font-weight:700; padding:10px 12px; }
+  html[data-theme="light"] .cal-subtab.active { background:#7c62f5; border-color:#7c62f5; color:#fff; box-shadow:0 7px 16px rgba(124,98,245,.18); }
+  html[data-theme="light"] .month-cell { border:1px solid #ecebf3; background:#fafafd; border-radius:14px; min-height:66px; }
+  html[data-theme="light"] .month-cell.good { background:#e7faf2; border-color:#c9f1df; }
+  html[data-theme="light"] .month-cell.warning { background:#fff5d9; border-color:#f4e4ad; }
+  html[data-theme="light"] .month-cell.critical { background:#fff0f0; border-color:#f4cccc; }
+  html[data-theme="light"] .month-cell.today { outline:2px solid #7c62f5; outline-offset:1px; }
+
+  /* Metrics: one hero insight, then supporting facts. */
+  html[data-theme="light"] #view-metrics .kpi-grid { gap:10px; }
+  html[data-theme="light"] #view-metrics .kpi-tile { background:#fff; border:1px solid #ecebf2; border-radius:20px; box-shadow:0 8px 24px rgba(48,42,90,.055); }
+  html[data-theme="light"] #view-metrics .kpi-num { font-size:25px; letter-spacing:-.04em; }
+  html[data-theme="light"] #view-metrics .metric-card { background:#fff; border:1px solid #ecebf2; box-shadow:0 8px 24px rgba(48,42,90,.055); }
+  html[data-theme="light"] #view-metrics .metric-card h3 { font-size:14px; color:#70778a; text-transform:none; letter-spacing:0; }
+
+  /* Profile: progress identity first, personal data second. */
+  html[data-theme="light"] #view-profile .profile-card { border:1px solid #ecebf2; background:#fff; box-shadow:0 8px 24px rgba(48,42,90,.055); }
+  html[data-theme="light"] #view-profile .level-card { border-radius:22px; padding:18px; }
+  html[data-theme="light"] #view-profile .achievement { border-radius:16px; }
+
+  /* Chat: softer conversation, less “dashboard”. */
+  html[data-theme="light"] #chat-scroll { padding:18px 16px 8px; }
+  html[data-theme="light"] .agent { background:#f7f6fc; border:1px solid #eceaf5; color:#263047; box-shadow:0 4px 14px rgba(48,42,90,.035); }
+  html[data-theme="light"] .user { background:#7c62f5; box-shadow:0 6px 15px rgba(124,98,245,.18); }
+  html[data-theme="light"] #chat-input { padding:10px 12px 12px; background:#fff; border-top:1px solid #eeeef4; }
+  html[data-theme="light"] #chat-text { border-radius:16px; background:#fafafd; }
+  html[data-theme="light"] .send-btn { border-radius:14px; }
+
+  /* Diary remains the visual north star. */
+  html[data-theme="light"] .diary-entry-card,
+  html[data-theme="light"] .diary-new-card,
+  html[data-theme="light"] .diary-onthisday-card { border-radius:22px; box-shadow:0 8px 24px rgba(48,42,90,.055); }
+  html[data-theme="light"] .diary-entry-card { border:1px solid #ecebf2; }
+  html[data-theme="light"] .diary-new-card { border:1px dashed #d9d3f7; background:linear-gradient(135deg,#faf8ff,#fff); }
+
+  /* All overlays share one modal language. */
+  html[data-theme="light"] [id$="-overlay"] { background:rgba(31,35,52,.34) !important; backdrop-filter:blur(8px); }
+  html[data-theme="light"] [id$="-overlay"] > div { background:#fff !important; border:1px solid #eeeef4; box-shadow:0 24px 70px rgba(31,35,52,.18); border-radius:24px !important; }
+  html[data-theme="light"] [id$="-overlay"] input,
+  html[data-theme="light"] [id$="-overlay"] textarea,
+  html[data-theme="light"] [id$="-overlay"] select { background:#fafafd; border-color:#e7e5ef; }
+  html[data-theme="light"] [id$="-overlay"] .send-btn { box-shadow:0 8px 18px rgba(124,98,245,.18); }
+
+  /* Floating Bless button: friendly, not intrusive. */
+  html[data-theme="light"] .bless-fab { background:linear-gradient(135deg,#7c62f5,#43d6a1); border:4px solid #fff; box-shadow:0 12px 28px rgba(75,66,150,.22); }
+  html[data-theme="light"] .day-add-fab { background:#7c62f5; box-shadow:0 10px 22px rgba(124,98,245,.22); }
+
+  /* Never let a future screen fall back to the old dark visual language. */
+  html[data-theme="light"] .legacy-dark,
+  html[data-theme="light"] .dark-panel { background:#fff !important; color:#172033 !important; border-color:#ecebf2 !important; }
+
+  /* ==========================================================
+     BLESS WHITE PREMIUM — CONSISTENCIA VISUAL FINAL
+     El Diario es la referencia: cálido, editorial, ligero y colorido.
+     Ninguna pantalla nueva debe volver a parecer un dashboard oscuro.
+     ========================================================== */
+  html[data-theme="light"] body { background:#F7F7FB; }
+  html[data-theme="light"] #app { background:#fff; box-shadow:0 0 55px rgba(71,61,130,.08); }
+  html[data-theme="light"] header { padding:14px 18px 12px; box-shadow:0 3px 18px rgba(71,61,130,.045); }
+  html[data-theme="light"] .avatar { width:42px;height:42px;background:transparent;box-shadow:none; }
+  .bless-logo-svg { width:100%;height:100%;display:block; }
+  html[data-theme="light"] .login-avatar { background:transparent !important; box-shadow:none !important; width:86px !important;height:86px !important; }
+  html[data-theme="light"] .login-avatar .bless-logo-svg { width:86px;height:86px; }
+
+  /* Chat: menos chatbot genérico, más conversación personal. */
+  html[data-theme="light"] #chat-scroll { padding:18px 16px 12px; gap:10px; }
+  html[data-theme="light"] .agent { background:#F7F5FC; border:1px solid #ECE9F6; box-shadow:0 5px 18px rgba(74,63,133,.045); border-radius:18px 18px 18px 5px; }
+  html[data-theme="light"] .user { background:linear-gradient(135deg,#7860F4,#8C72FF); border-radius:18px 18px 5px 18px; }
+  html[data-theme="light"] .chat-agenda-pill { background:#F7FFFB; border-color:#D8F4E9; color:#526171; }
+  html[data-theme="light"] #chat-input { background:#fff; }
+  html[data-theme="light"] #chat-text { border:1px solid #E8E6F0; background:#FBFAFE; }
+  html[data-theme="light"] .send-btn { background:linear-gradient(135deg,#785FF4,#8C71FF); box-shadow:0 8px 20px rgba(124,98,245,.20); }
+
+  /* Niveles: protagonista, pero sin aspecto de videojuego pesado. */
+  html[data-theme="light"] .level-hero-card { background:linear-gradient(135deg,#F6F1FF 0%,#FFFFFF 52%,#ECFFF8 100%); border-color:#E8E2FA; border-radius:24px; padding:18px; box-shadow:0 10px 28px rgba(72,61,132,.08); }
+  html[data-theme="light"] .level-orb { background:linear-gradient(145deg,#7069F7 0%,#55BFEA 48%,#43D6A1 100%); box-shadow:0 10px 24px rgba(83,100,205,.20); }
+  html[data-theme="light"] .xp-progress { height:9px; background:#ECEAF5; }
+  html[data-theme="light"] .xp-progress > i { background:linear-gradient(90deg,#7860F4,#B28CFF 48%,#43D6A1); }
+
+  /* Calendario: más editorial y menos cuadrícula técnica. */
+  html[data-theme="light"] .cal-subtabs { padding:12px 16px 4px; background:#fff; }
+  html[data-theme="light"] .cal-subtab { background:#FAFAFD; border-color:#ECEAF2; color:#858A9B; border-radius:14px; padding:10px; }
+  html[data-theme="light"] .cal-subtab.active { background:#7860F4; color:#fff; border-color:#7860F4; }
+  html[data-theme="light"] .cal-body { padding-top:16px; }
+  html[data-theme="light"] .month-nav { margin-bottom:12px; }
+  html[data-theme="light"] .month-nav button, html[data-theme="light"] .day-nav button { background:#FAFAFD; border-color:#EAE8F1; color:#596175; }
+  html[data-theme="light"] .month-cell { min-height:68px; border-radius:15px; background:#FAFAFD; border-color:#ECEAF2; transition:transform .15s,box-shadow .15s; }
+  html[data-theme="light"] .month-cell:hover { transform:translateY(-1px); box-shadow:0 5px 14px rgba(60,53,110,.07); }
+  html[data-theme="light"] .month-cell.good { background:linear-gradient(145deg,#E7FAF2,#F3FFF9); border-color:#C9F0DF; }
+  html[data-theme="light"] .month-cell.warning { background:linear-gradient(145deg,#FFF4CF,#FFF9E9); border-color:#F1DFA4; }
+  html[data-theme="light"] .month-cell.critical { background:linear-gradient(145deg,#FFEAEA,#FFF4F4); border-color:#F3CECE; }
+
+  /* Métricas: primero interpretación, luego datos. */
+  html[data-theme="light"] .kpi-grid { gap:10px; }
+  html[data-theme="light"] .kpi-tile { background:#fff; border-color:#ECEAF2; border-radius:18px; box-shadow:0 6px 20px rgba(57,49,104,.045); }
+  html[data-theme="light"] .metrics-section { background:#fff; border-color:#ECEAF2; border-radius:20px; box-shadow:0 7px 22px rgba(57,49,104,.045); }
+  html[data-theme="light"] .bar-track { background:#F0EFF6; }
+  html[data-theme="light"] .bar-fill { background:linear-gradient(90deg,#7860F4,#A58AFF) !important; }
+
+  /* Perfil: evolución primero; datos personales después. */
+  html[data-theme="light"] #view-profile { padding:18px 16px 28px; }
+  html[data-theme="light"] #view-profile .profile-card { background:#fff; border-color:#ECEAF2; border-radius:20px; box-shadow:0 7px 22px rgba(57,49,104,.045); }
+  html[data-theme="light"] #view-profile .profile-card:first-child { background:linear-gradient(135deg,#F7F2FF,#FFFFFF 60%,#F0FFF9); }
+  html[data-theme="light"] .habit-chip { background:#F8F7FC; border:1px solid #ECEAF2; }
+  html[data-theme="light"] .tag-chip { background:#F7F6FB; }
+
+  /* Logros: dorado cálido, no tarjeta oscura. */
+  html[data-theme="light"] .logros-card { background:linear-gradient(135deg,#FFF9E7,#FFFFFF) !important; border-color:#F2D88B !important; }
+  html[data-theme="light"] .logros-card h4 { color:#B47B09; }
+  html[data-theme="light"] .logro-chip { background:linear-gradient(135deg,#FFF0B8,#FFE08A); color:#62480A; border:1px solid #F1D37A; }
+
+  /* Bottom nav: limpia y reconocible. */
+  html[data-theme="light"] footer.tabbar { background:rgba(255,255,255,.98); border-top:1px solid #EEEFF5; box-shadow:0 -5px 18px rgba(56,49,100,.045); }
+  html[data-theme="light"] .tab { padding:9px 0 8px; }
+  html[data-theme="light"] .tab .ic { filter:saturate(1.15); }
+  html[data-theme="light"] .tab.active-tab { color:#765CF2; font-weight:700; }
+
+  /* FAB de Bless con el mismo logo, no un emoji genérico. */
+  html[data-theme="light"] .bless-fab { background:linear-gradient(145deg,#6F7BFF,#61CBEF 48%,#43D6A1) !important; border:4px solid #fff; padding:7px; box-shadow:0 12px 28px rgba(71,75,170,.22); }
+  html[data-theme="light"] .day-add-fab { background:linear-gradient(135deg,#7860F4,#8D72FF); }
+
+  /* Modales: blancos, suaves y consistentes. */
+  html[data-theme="light"] [id$="-overlay"] { background:rgba(31,35,52,.28) !important; backdrop-filter:blur(10px); }
+  html[data-theme="light"] [id$="-overlay"] > div { border-radius:26px !important; box-shadow:0 28px 80px rgba(35,30,70,.20) !important; }
+
+  /* El Diario sigue siendo la referencia visual y recibe solo refinamientos. */
+  html[data-theme="light"] #view-diary { padding:18px 16px 28px; }
+  html[data-theme="light"] .diary-new-card { background:linear-gradient(135deg,#FBF9FF,#FFFFFF); border-color:#DCD5F8; border-radius:22px; box-shadow:0 7px 22px rgba(57,49,104,.04); }
+  html[data-theme="light"] .diary-entry-card { background:#fff; border-color:#ECEAF2; }
+
+  /* Regla de continuidad: toda vista futura debe heredar este sistema. */
+  html[data-theme="light"] .screen, html[data-theme="light"] .view, html[data-theme="light"] .new-screen { background:#fff; color:#172033; }
+
+  /* ============================================================
+     BLESS 4 — CLEAN MODULE ARCHITECTURE
+     Chat is intentionally the only conversational surface. Agenda,
+     levels, metrics and configuration belong to their own modules.
+     ============================================================ */
+  html[data-theme="light"] .profile-top-card {
+    display:flex; align-items:center; justify-content:space-between; gap:12px;
+    padding:16px; margin:0 0 12px; border:1px solid #E9E6F2; border-radius:22px;
+    background:linear-gradient(135deg,#F8F5FF 0%,#FFFFFF 62%,#F1FFF9 100%);
+    box-shadow:0 8px 24px rgba(57,49,104,.055);
+  }
+  .profile-top-main { display:flex; align-items:center; gap:11px; min-width:0; }
+  .profile-mini-avatar { width:46px; height:46px; border-radius:50%; flex:0 0 46px; overflow:hidden; box-shadow:0 5px 14px rgba(82,91,190,.18); }
+  .profile-mini-avatar .bless-logo-svg { width:100%; height:100%; display:block; }
+  .profile-greeting { font-size:15px; font-weight:800; color:#20283A; line-height:1.2; }
+  .profile-greeting-sub { font-size:11.5px; color:#7B8192; margin-top:4px; line-height:1.35; }
+  .settings-icon-btn { width:42px; height:42px; border-radius:14px; border:1px solid #E5E2EE; background:#fff; color:#6657D9; display:flex; align-items:center; justify-content:center; font-size:19px; cursor:pointer; box-shadow:0 4px 12px rgba(57,49,104,.06); transition:.15s; flex:0 0 42px; }
+  .settings-icon-btn:hover { transform:translateY(-1px); border-color:#CFC7F7; background:#F8F5FF; }
+  .settings-icon-btn:active { transform:scale(.95); }
+
+  /* Botones de acción: una sola jerarquía visual en toda la app. */
+  html[data-theme="light"] .send-btn, html[data-theme="light"] .premium-btn { min-height:44px; border-radius:14px; font-weight:800; box-shadow:0 7px 16px rgba(104,82,221,.13); }
+  html[data-theme="light"] .send-btn { background:linear-gradient(135deg,#7C62F5,#6953E8); }
+  html[data-theme="light"] .send-btn:hover, html[data-theme="light"] .premium-btn:hover { transform:translateY(-1px); }
+  html[data-theme="light"] .qr-btn { min-height:40px; border-radius:13px; background:#FAF9FD; border-color:#E7E4EF; }
+  html[data-theme="light"] .qr-btn.selected { background:#7C62F5; border-color:#7C62F5; color:#fff; box-shadow:0 5px 14px rgba(124,98,245,.18); }
+
+  /* Chat: solo conversación. Sin nivel, agenda, accesos flotantes ni mini-dashboard. */
+  html[data-theme="light"] #view-chat { background:#fff; }
+  html[data-theme="light"] #chat-scroll { padding:20px 16px 14px; gap:13px; }
+  html[data-theme="light"] #chat-input { padding:10px 12px 12px; gap:8px; }
+  html[data-theme="light"] #chat-text { min-height:44px; border-radius:15px; }
+  html[data-theme="light"] #chat-send { min-width:76px; }
+  #level-hero, #chat-agenda-pill, #agenda-panel, #bless-fab { display:none !important; }
+
+  /* Encabezados de módulos: menos sensación de formulario, más producto. */
+  .module-heading { display:flex; align-items:flex-end; justify-content:space-between; gap:12px; margin:2px 0 14px; }
+  .module-heading h2 { margin:0; font-size:20px; line-height:1.15; font-weight:850; color:#20283A; }
+  .module-heading p { margin:4px 0 0; font-size:11.5px; color:#858B9C; }
+  .module-heading .module-icon { width:40px; height:40px; border-radius:13px; display:flex; align-items:center; justify-content:center; background:#F4F1FF; border:1px solid #E4DFFC; font-size:19px; }
+
+  /* Configuración: una hoja de preferencias, no una tarjeta genérica perdida. */
+  html[data-theme="light"] .settings-overlay { background:rgba(27,31,48,.30) !important; backdrop-filter:blur(12px); }
+  html[data-theme="light"] .settings-modal { background:#fff !important; border:1px solid #E7E4EF; border-radius:26px !important; padding:20px !important; box-shadow:0 28px 80px rgba(35,30,70,.20) !important; }
+  .modal-heading { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; margin-bottom:16px; }
+  .modal-heading h4 { margin:0 0 3px !important; font-size:16px !important; color:#222A3B !important; text-transform:none !important; letter-spacing:0 !important; }
+  .modal-kicker { font-size:11px; color:#8A90A1; }
+  .modal-close-btn { width:34px; height:34px; border:1px solid #E6E3ED; background:#FAF9FD; color:#70778A; border-radius:11px; font-size:22px; line-height:1; cursor:pointer; }
+  .modal-close-btn:hover { background:#F1EEFF; color:#6657D9; }
+
+  /* El calendario contiene agenda y edición: no duplicarla en Bless. */
+  html[data-theme="light"] .cal-body { padding:4px 16px 24px; }
+  html[data-theme="light"] #day-items .agenda-item { min-height:58px; border-radius:16px; background:#fff; box-shadow:0 5px 16px rgba(57,49,104,.045); }
+  html[data-theme="light"] #day-items .agenda-item .edit { width:32px; height:32px; border-radius:10px; background:#F6F3FF; display:flex; align-items:center; justify-content:center; }
+
+  /* Métricas: encabezado propio para que el contenido no empiece abruptamente. */
+  html[data-theme="light"] #view-metrics { background:#fff; }
+  html[data-theme="light"] #view-metrics > div { padding-top:16px !important; }
+
+  /* Ocultar el FAB de Bless definitivamente: no hay chat fuera de Bless. */
+  .bless-fab { display:none !important; }
+
+  html[data-theme="light"] .calendar-module-heading { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:16px 16px 8px; background:#fff; }
+  .calendar-module-title { font-size:20px; font-weight:850; color:#20283A; line-height:1.15; }
+  .calendar-module-sub { margin-top:4px; font-size:11.5px; color:#858B9C; }
+  .calendar-module-icon { width:40px; height:40px; border-radius:13px; background:#F4F1FF; border:1px solid #E4DFFC; display:flex; align-items:center; justify-content:center; font-size:19px; }
 </style>
 
-/* Prevent the old dark base from ever flashing while the account state loads. */
-document.documentElement.setAttribute('data-theme', 'light');
+<script>document.documentElement.setAttribute('data-theme', 'light');</script>
 </head>
 <body>
 <div id="app">
@@ -583,7 +813,7 @@ document.documentElement.setAttribute('data-theme', 'light');
 
   <header>
     <div class="brand">
-      <div class="avatar" id="agent-avatar">🌱</div>
+      <div class="avatar" id="agent-avatar"><svg class="bless-logo-svg" viewBox="0 0 64 64" aria-hidden="true"><defs><linearGradient id="blessLogoBg" x1="8" y1="4" x2="56" y2="60" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#6F7BFF"/><stop offset=".48" stop-color="#6CCEF1"/><stop offset="1" stop-color="#42D6A1"/></linearGradient><linearGradient id="blessLogoLeaf" x1="20" y1="20" x2="45" y2="43" gradientUnits="userSpaceOnUse"><stop stop-color="#DFFF65"/><stop offset="1" stop-color="#62E6A9"/></linearGradient></defs><circle cx="32" cy="32" r="30" fill="url(#blessLogoBg)"/><circle cx="32" cy="32" r="27.5" fill="none" stroke="#fff" stroke-opacity=".7" stroke-width="1.5"/><path d="M31.8 43.8c.2-8.7.4-15.1 2.4-21.5" fill="none" stroke="#6B4B43" stroke-width="4" stroke-linecap="round"/><path d="M32 34c-8.6.4-13.6-3.4-15.2-10.5 7.7-.6 13.2 2.4 15.2 10.5Z" fill="url(#blessLogoLeaf)"/><path d="M34 28.5c1.5-8.1 6.3-12.6 14.1-13.5.3 7.9-4.3 12.7-14.1 13.5Z" fill="#B9F36B"/><path d="M22.5 46.5h19" stroke="#F08A9D" stroke-width="4" stroke-linecap="round"/></svg></div>
       <div>
         <h1 id="header-title">Bless Habit</h1>
         <p class="sub" id="header-sub" data-i18n="headerSubKnowing">Bless te está conociendo…</p>
@@ -593,7 +823,7 @@ document.documentElement.setAttribute('data-theme', 'light');
   </header>
 
   <div id="view-login" class="active">
-    <div class="login-avatar">🌱</div>
+    <div class="login-avatar"><svg class="bless-logo-svg" viewBox="0 0 64 64" aria-hidden="true"><defs><linearGradient id="blessLogoBg" x1="8" y1="4" x2="56" y2="60" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#6F7BFF"/><stop offset=".48" stop-color="#6CCEF1"/><stop offset="1" stop-color="#42D6A1"/></linearGradient><linearGradient id="blessLogoLeaf" x1="20" y1="20" x2="45" y2="43" gradientUnits="userSpaceOnUse"><stop stop-color="#DFFF65"/><stop offset="1" stop-color="#62E6A9"/></linearGradient></defs><circle cx="32" cy="32" r="30" fill="url(#blessLogoBg)"/><circle cx="32" cy="32" r="27.5" fill="none" stroke="#fff" stroke-opacity=".7" stroke-width="1.5"/><path d="M31.8 43.8c.2-8.7.4-15.1 2.4-21.5" fill="none" stroke="#6B4B43" stroke-width="4" stroke-linecap="round"/><path d="M32 34c-8.6.4-13.6-3.4-15.2-10.5 7.7-.6 13.2 2.4 15.2 10.5Z" fill="url(#blessLogoLeaf)"/><path d="M34 28.5c1.5-8.1 6.3-12.6 14.1-13.5.3 7.9-4.3 12.7-14.1 13.5Z" fill="#B9F36B"/><path d="M22.5 46.5h19" stroke="#F08A9D" stroke-width="4" stroke-linecap="round"/></svg></div>
     <h2>Bless Habit</h2>
     <p data-i18n="loginDesc">Tu compañero de hábitos y agenda. Inicia sesión para que Bless recuerde tu perfil y tu progreso entre visitas.</p>
     <a href="/auth/login" class="google-btn" id="google-login-btn" data-i18n="loginBtn">Continuar con Google</a>
@@ -606,17 +836,7 @@ document.documentElement.setAttribute('data-theme', 'light');
   </div>
 
   <div id="view-chat">
-    <div id="level-hero"></div>
     <div id="chat-scroll"></div>
-    <div id="agenda-panel">
-      <h3><span data-i18n="agendaTitle">Agenda de hoy</span><span id="agenda-count"></span></h3>
-      <div id="agenda-list"></div>
-    </div>
-    <div id="chat-agenda-pill" class="chat-agenda-pill" style="display:none;">
-      <span id="chat-agenda-pill-text"></span>
-      <span class="arrow" data-i18n="viewAgendaArrow">Ver agenda →</span>
-    </div>
-    <div id="chat-ad-slot"></div>
     <div id="chat-input">
       <input type="text" id="chat-text" data-i18n-ph="chatPlaceholder" placeholder="Cuéntame qué quieres hacer hoy…" />
       <button class="send-btn" id="chat-send" data-i18n="sendBtn">Enviar</button>
@@ -624,6 +844,7 @@ document.documentElement.setAttribute('data-theme', 'light');
   </div>
 
   <div id="view-calendar">
+    <div class="calendar-module-heading"><div><div class="calendar-module-title">Tu agenda</div><div class="calendar-module-sub">Organiza tus hábitos y mira tu constancia.</div></div><div class="calendar-module-icon">📅</div></div>
     <div class="cal-subtabs">
       <div class="cal-subtab active" data-calsub="day" data-i18n="calDay">Día</div>
       <div class="cal-subtab" data-calsub="week" data-i18n="calWeek">Semana</div>
@@ -639,7 +860,6 @@ document.documentElement.setAttribute('data-theme', 'light');
 
   <div id="view-profile"></div>
 
-  <div id="bless-fab" class="bless-fab" data-i18n-title="blessFabTitle" title="Hablar con Bless">🌱</div>
   <div id="day-add-fab" class="day-add-fab" data-i18n-title="addHabitTitleAttr" title="Agregar hábito">＋</div>
 
   <div id="celebrate-float" class="celebrate-float"></div>
@@ -724,9 +944,9 @@ document.documentElement.setAttribute('data-theme', 'light');
     </div>
   </div>
 
-  <div id="settings-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:85;align-items:center;justify-content:center;padding:16px;">
-    <div class="profile-card" style="max-width:380px;width:100%;max-height:85vh;overflow-y:auto;margin:0;">
-      <h4 data-i18n="settingsTitle">⚙️ Configuración</h4>
+  <div id="settings-overlay" class="settings-overlay" style="display:none;position:fixed;inset:0;z-index:85;align-items:center;justify-content:center;padding:16px;">
+    <div class="profile-card settings-modal" style="max-width:380px;width:100%;max-height:85vh;overflow-y:auto;margin:0;">
+      <div class="modal-heading"><div><h4 data-i18n="settingsTitle">⚙️ Configuración</h4><div class="modal-kicker">Personaliza tu experiencia</div></div><button type="button" class="modal-close-btn" id="settings-x-btn" aria-label="Cerrar">×</button></div>
       <div style="font-size:12px;color:var(--text-dim);margin:10px 0 6px;" data-i18n="settingsTheme">Tema</div>
       <div class="quick-replies" id="settings-theme-options"></div>
       <div style="font-size:12px;color:var(--text-dim);margin:14px 0 6px;" data-i18n="settingsLang">Idioma</div>
@@ -860,6 +1080,7 @@ function pushChatMemory(role, content) {
   if (!content) return;
   chatMemory.push({ role, content });
   if (chatMemory.length > 16) chatMemory = chatMemory.slice(-16);
+  state.chatMemory = chatMemory.slice(-16);
 }
 // 25 ago 2026: se agregó un límite de tiempo (AbortController, 14s) a esta llamada.
 // Antes, si OpenAI (o la red de Render) tardaba mucho o se colgaba sin devolver
@@ -930,39 +1151,71 @@ async function classifyAchievementMessage(text) {
   } catch (e) { return null; }
   finally { clearTimeout(timeoutId); }
 }
+function blessContextSnapshot() {
+  const today = todayStr();
+  const habits = Array.isArray(state.profile.habitos) ? state.profile.habitos : [];
+  const todayItems = Array.isArray(state.agenda) ? state.agenda : [];
+  const completed = habits.filter(h => h && h.completedToday).map(h => h.label).filter(Boolean);
+  const pendingHabits = habits.filter(h => h && !h.completedToday).map(h => h.label).filter(Boolean);
+  const recentDiary = Array.isArray(state.journal) ? state.journal.slice().sort((a,b)=>String(b.date).localeCompare(String(a.date))).slice(0,3) : [];
+  const recentDiaryText = recentDiary.map(e => `${e.date}: ${e.mood || ''} ${e.text || ''}`.trim()).join(' | ') || 'sin entradas recientes';
+  const todayAgenda = todayItems.slice().sort((a,b)=>String(a.time||'').localeCompare(String(b.time||''))).slice(0,8)
+    .map(x => `${x.done ? '✓' : '○'} ${x.time || ''} ${x.task || x.label || ''}`.trim()).join(' | ') || 'sin actividades agendadas';
+  const streaks = state.streaks || {};
+  const streakText = habits.map(h => `${h.label}: ${streaks[h.key] || 0} días`).join(' | ') || 'sin rachas registradas';
+  const level = getLevelInfo ? getLevelInfo(state.profile.xp || 0) : null;
+  return `
+CONTEXTO ACTUAL DE LA PERSONA (úsalo solo para comprenderla, no lo recites como ficha):
+- Fecha: ${today}
+- Nombre: ${state.profile.nombre || 'sin nombre'}
+- Nivel: ${level ? `${level.level} · ${level.name}` : '1'} | XP: ${state.profile.xp || 0}
+- Hábitos activos: ${habits.map(h=>h.label).filter(Boolean).join(', ') || 'ninguno'}
+- Hábitos cumplidos hoy: ${completed.join(', ') || 'ninguno'}
+- Hábitos pendientes hoy: ${pendingHabits.join(', ') || 'ninguno'}
+- Agenda de hoy: ${todayAgenda}
+- Rachas: ${streakText}
+- Últimas notas del diario: ${recentDiaryText}
+- Logros recientes: ${(state.profile.logros||[]).slice(-5).map(x=>x.text).filter(Boolean).join(' | ') || 'ninguno'}
+`;
+}
 function blessSystemPrompt() {
   const p = state.profile;
   const lang = (state.settings && state.settings.language === 'en') ? 'inglés' : 'español';
-  return `Eres Bless dentro de la app "Bless Habit": un consultor profesional de hábitos, a medio camino entre coach, psicólogo/a y consultor motivacional — con el conocimiento y el criterio de alguien que de verdad entiende cambio de comportamiento (constancia, disparadores, recompensas, diseño de entorno), pero con la cercanía y calidez de la mejor amiga o amigo de ${p.nombre || 'la persona'}, nunca la frialdad de un asistente formal ni de un bot de soporte. Hablas en ${lang}, tono cálido, seguro y natural — nunca como un formulario ni una lista de opciones.
+  return `Eres Bless, el compañero inteligente de hábitos de la app Bless Habit. Tu trabajo no es contestar como un chatbot genérico: debes conversar como alguien que conoce a la persona, recuerda lo que te ha contado y usa ese contexto para darle respuestas útiles, humanas y oportunas.
 
-Perfil de la persona:
-- Le cuesta: ${(p.dificultades||[]).join(', ') || 'sostener la constancia'}
-- Qué ya intentó antes (y no le funcionó): ${(p.intentosPrevios||[]).join(', ') || '—'}
-- Detonantes de fallo: ${(p.detonantes||[]).join(', ') || '—'}
-- Estilo de motivación: ${p.motivacion || '—'}
-- Más energía en: ${p.energia || '—'}
-- Tiempo libre real: ${p.tiempoLibre || '—'}
-- Hábitos que ya está construyendo: ${(p.habitos||[]).map(h => h.label).join(', ') || 'ninguno todavía'}
+Hablas en ${lang}. Eres cálida, natural, observadora y directa. Puedes ser divertida cuando encaja, pero nunca artificial. No eres terapeuta ni haces diagnósticos. Tu especialidad es acompañar cambios de comportamiento cotidianos: hábitos, constancia, energía, organización, descanso, reflexión y pequeños pasos.
 
-Cómo pensás (no lo digas explícito, pero que se note en cómo respondés):
-- Como coach: no das cátedra ni sermoneás, pero sí tenés una lectura clara de qué patrón está en juego (motivación vs. disciplina, entorno vs. voluntad, etc.) y lo usas para guiar, no solo para simpatizar.
-- Como psicólogo/a: te interesa genuinamente el "por qué" detrás de lo que cuenta — qué siente, qué le costó, qué significó — no solo el dato en sí. Preguntas con curiosidad real, nunca como un cuestionario.
-- Como consultor motivacional: no te quedás pasiva/o esperando a que te pidan ayuda. Proponés, sugerís hábitos concretos que conecten con lo que la persona ya contó de sí misma, y buscás activamente ayudarla a descubrir el próximo paso — sin ser insistente ni pesada/o.
+PERFIL:
+- Nombre: ${p.nombre || 'la persona'}
+- Dificultades: ${(p.dificultades||[]).join(', ') || 'no definido'}
+- Intentos previos: ${(p.intentosPrevios||[]).join(', ') || 'no definido'}
+- Detonantes: ${(p.detonantes||[]).join(', ') || 'no definido'}
+- Motivación: ${p.motivacion || 'no definido'}
+- Energía: ${p.energia || 'no definido'}
+- Tiempo libre: ${p.tiempoLibre || 'no definido'}
+- Hábitos: ${(p.habitos||[]).map(h=>h.label).filter(Boolean).join(', ') || 'ninguno'}
 
-Reglas de estilo, muy importantes:
-- Tenés memoria de esta conversación (te paso el historial de mensajes reales antes de cada turno). Usala: si la persona ya contó un detalle, no se lo vuelvas a preguntar ni actúes como si no lo supieras.
-- Reaccioná a los detalles concretos que la persona dijo, con tus propias palabras — nunca repitas ni parafrasees mecánicamente la "situación" que te describan entre instrucciones, eso es solo contexto interno para vos, no algo que la persona haya escrito.
-- No todas tus respuestas tienen que cerrar con una pregunta de sí/no tipo formulario. Cuando tenga sentido, mostrá curiosidad genuina — por ejemplo preguntá cómo lo logró, cómo se sintió, o algo específico de lo que contó — antes o en vez de saltar directo al siguiente paso práctico.
-- Cuando el contexto lo sugiera, sé proactiva/o de verdad: proponé un hábito concreto, hacé una pregunta que ayude a descubrir qué le gustaría mejorar, o notá un patrón en lo que ha contado — no esperes siempre a que ella pida algo primero.
-- Variá tus frases y expresiones; evitá sonar repetitiva o a guion ("qué buena noticia", "listo, guardado") si ya las usaste antes en la conversación.
-- Respuestas cortas, de 1 a 3 líneas, sin markdown, sin viñetas, sin emojis excesivos (máximo 1 o 2).
+${blessContextSnapshot()}
 
-Cuando lo que te paso a continuación es exactamente lo que la persona escribió (charla libre real, no una situación descrita entre instrucciones para vos), tratalo como estar chateando de verdad con ella — leé lo que dijo y reaccioná a eso:
-- Si es una pregunta general y no te está pidiendo agendar nada, respondé de forma natural y cercana; si tiene sentido, podés mencionar brevemente lo que le queda pendiente hoy en su agenda. Nunca le preguntes "¿a qué hora lo hacemos?" a una pregunta — eso es solo para cuando te da el nombre de una tarea nueva.
-- Si es un comentario, un sentimiento o charla casual (no el nombre corto de una tarea), reaccioná con calidez y curiosidad real a lo que contó, en vez de tratarlo como algo para agendar.
-- Si suena a que está pasando por un momento difícil (estrés, tristeza, agobio, cansancio emocional), respondé con calidez real sin minimizar ni dar soluciones apresuradas; podés sugerir con suavidad, sin insistir, que use su diario personal dentro de la app como espacio seguro para escribir sobre esto.
+CÓMO DEBES CONVERSAR:
+1. Responde primero a lo que la persona acaba de decir. No empieces con una pregunta genérica.
+2. Usa un detalle real del contexto cuando sea útil. Si acaba de cumplir algo, reconócelo; si tiene un hábito pendiente, puedes mencionarlo solo si aporta valor.
+3. No repitas preguntas que ya fueron respondidas. Si ya sabes que le cuesta algo, trabaja desde ahí.
+4. No conviertas automáticamente una frase en una tarea. Solo agenda cuando la persona realmente quiere programar algo o da una hora. Si dice “quiero empezar a correr”, conversa sobre la meta; no preguntes “¿a qué hora?”.
+5. Si hace una pregunta, contéstala. Después, si aporta valor, haz UNA pregunta concreta para continuar.
+6. Si expresa una emoción, primero acompaña y demuestra que entendiste; no saltes inmediatamente a consejos.
+7. Si pide consejo, ofrece una recomendación concreta y personalizada, no una lista genérica de hábitos.
+8. Si hay varias posibilidades, elige la más razonable y explica brevemente por qué. No devuelvas “puedo ayudarte con A/B/C” como menú.
+9. Mantén continuidad. La conversación debe sentirse como una sola charla, no como mensajes aislados.
+10. No menciones que eres una IA, que recibes un prompt, ni que tienes “contexto”.
+11. Evita muletillas repetidas como “te escucho”, “qué buena noticia”, “¿hay algo en lo que pueda ayudarte?” y “cuéntame más” salvo que realmente encajen.
+12. No fuerces una pregunta al final de cada respuesta.
+13. Responde normalmente en 2-5 frases cortas cuando el tema lo necesite; sé breve en confirmaciones.
+14. Máximo 2 emojis y solo si aportan personalidad.
 
-Responde solo con el mensaje que Bless le diría ahora a la persona, nada más (sin comillas, sin explicar lo que vas a decir, sin repetir instrucciones).`;
+REGLA DE ORO: si la respuesta puede sonar igual para cualquier usuario, todavía no es una buena respuesta de Bless. Hazla específica a esta persona y a lo que acaba de pasar.
+
+Responde solo con el mensaje que Bless le diría ahora. No uses listas ni encabezados salvo que la persona pida explícitamente una lista.`;
 }
 /* Intenta responder con OpenAI; si no hay key o falla, usa el texto simulado como respaldo */
 // 25 ago 2026: se agregó el parámetro opcional extraSystem — permite sumar una
@@ -1002,6 +1255,8 @@ const state = {
   // llega al umbral, el siguiente turno de charla libre incluye una propuesta o
   // pregunta proactiva — así Bless no se queda solo reaccionando pasivamente.
   proactiveCounter: 0,
+  // Memoria breve de conversación persistida para que Bless no olvide el hilo al recargar.
+  chatMemory: [],
 };
 
 /* ============================================================
@@ -1846,17 +2101,18 @@ const chatScroll = document.getElementById('chat-scroll');
 const agendaList = document.getElementById('agenda-list');
 const progressFill = document.getElementById('onboarding-progress-fill');
 const avatarEl = document.getElementById('agent-avatar');
-const fabEl = document.getElementById('bless-fab');
+const fabEl = null; // Bless se abre exclusivamente desde la pestaña Bless
 const dayAddFabEl = document.getElementById('day-add-fab');
 dayAddFabEl.onclick = () => openAddHabitPicker();
 function badgeHtml() { return ''; }
 
 const MOODS = { default: '🌱', thinking: '🤔', happy: '🎉', caring: '🤍', proud: '🌟' };
 function setAvatarMood(mood, revertMs) {
-  avatarEl.textContent = MOODS[mood] || MOODS.default;
+  // El logo colorido es parte de la identidad de Bless y permanece visible.
+  // El estado emocional se comunica con una animación sutil, no sustituyendo el logo por emojis.
+  avatarEl.dataset.mood = mood || 'default';
   avatarEl.classList.remove('bounce'); void avatarEl.offsetWidth; avatarEl.classList.add('bounce');
-  if (fabEl) { fabEl.textContent = avatarEl.textContent; fabEl.classList.remove('bounce'); void fabEl.offsetWidth; fabEl.classList.add('bounce'); }
-  if (revertMs) setTimeout(() => { avatarEl.textContent = MOODS.default; if (fabEl) fabEl.textContent = MOODS.default; }, revertMs);
+  if (revertMs) setTimeout(() => { avatarEl.dataset.mood = 'default'; }, revertMs);
 }
 
 function addBubble(container, text, who, reactionEmoji) {
@@ -2307,6 +2563,8 @@ function openSettings() {
   document.getElementById('settings-overlay').style.display = 'flex';
 }
 function closeSettings() { document.getElementById('settings-overlay').style.display = 'none'; }
+const settingsXBtn = document.getElementById('settings-x-btn');
+if (settingsXBtn) settingsXBtn.onclick = closeSettings;
 
 /* ============================================================
    PLAN PREMIUM (Paddle Billing) — declarado antes de bootstrapApp() a
@@ -2403,6 +2661,8 @@ async function bootstrapApp() {
       // Cuentas guardadas antes del sistema de Niveles (2 sept 2026) no traen "xp" —
       // se normaliza acá mismo, igual que ya se hace arriba con "logros".
       state.profile.xp = state.profile.xp || 0;
+      state.chatMemory = Array.isArray(state.chatMemory) ? state.chatMemory.slice(-16) : [];
+      chatMemory = state.chatMemory.slice(-16);
       rolloverDayIfNeeded();
       applyTheme(state.settings.theme);
       refreshLocaleArrays();
@@ -2644,12 +2904,10 @@ function startChat() {
   document.getElementById('tabbar').style.display = 'flex';
   document.getElementById('header-title').textContent = 'Bless Habit';
   document.getElementById('header-sub').textContent = t('headerSubHello', state.profile.nombre);
-  renderHeaderRing();
+  document.getElementById('header-right').innerHTML = '';
   renderAgenda();
-  renderLevelHero();
   renderChatAdSlot();
   say(chatScroll, `La persona acaba de terminar su evaluación inicial y entra al chat por primera vez hoy. Salúdala usando su nombre y pregúntale qué quiere lograr hoy.`, tp('greetingFallback', state.profile.nombre), 300).then(() => {
-    if (state.agenda.length) addNote(chatScroll, t('dayArmedNote'));
     // Deja la puerta abierta a una sugerencia proactiva: si la persona responde con
     // un simple "sí"/"dale" al saludo, Bless le propone algo concreto en vez de
     // quedarse sin saber qué contestar — esto es lo que la mantiene conversando
@@ -2895,19 +3153,11 @@ function toggleDone(idx) {
   }
 }
 function renderAgenda() {
+  // La agenda se renderiza exclusivamente en Calendario → Día. El chat no debe
+  // duplicar tareas, contadores ni controles. Mantenemos esta función porque
+  // otras acciones del sistema la invocan para sincronizar el estado.
+  if (!agendaList) return;
   const total = state.agenda.length, done = state.agenda.filter(a=>a.done).length;
-  document.getElementById('agenda-count').textContent = total ? `${done}/${total}` : '';
-  // La lista completa ya no se ve en el chat (ver #agenda-panel) — en su lugar, un
-  // pill compacto de una línea que salta a Calendario→Día si se toca.
-  const pill = document.getElementById('chat-agenda-pill');
-  if (pill) {
-    if (total > 0) {
-      document.getElementById('chat-agenda-pill-text').textContent = t('chatAgendaPillText', done, total);
-      pill.style.display = 'flex';
-    } else {
-      pill.style.display = 'none';
-    }
-  }
   agendaList.innerHTML = '';
   if (state.agenda.length === 0) { agendaList.innerHTML = `<div style="font-size:12px;color:var(--text-dim);padding:4px 0;">${t('noAgendaYet')}</div>`; return; }
   state.agenda.forEach((item, idx) => {
@@ -3462,7 +3712,7 @@ async function handleUserMessage(text) {
   // sentimiento, un saludo) en vez del nombre corto de una tarea/hábito, no
   // arranquemos el flujo de "¿a qué hora lo hacemos?" — eso es justo lo que hacía
   // que el chat se sintiera como un robot de formulario ante cualquier comentario.
-  if (looksLikeConversationalStatement(text)) {
+  if (looksLikeConversationalStatement(text) || looksLikeGoalOrAdvice(text)) {
     const nudge = proactiveNudge();
     // Si suena a que está pasando por un momento difícil, Bless valida lo que
     // siente y le recuerda con calidez que tiene el diario como espacio seguro
@@ -3483,13 +3733,13 @@ async function handleUserMessage(text) {
 // al llegar al umbral, agrega una propuesta/pregunta proactiva a la respuesta —
 // para que Bless proponga hábitos y pregunte para descubrirlos, en vez de solo
 // reaccionar pasivamente a lo que la persona escribe.
-const PROACTIVE_TURNS_THRESHOLD = 3;
+const PROACTIVE_TURNS_THRESHOLD = 5;
 function proactiveNudge() {
   state.proactiveCounter = (state.proactiveCounter || 0) + 1;
   if (state.proactiveCounter < PROACTIVE_TURNS_THRESHOLD) return { extraInstruction: '', extraFallback: '' };
   state.proactiveCounter = 0;
   return {
-    extraInstruction: ' Además, aprovecha este momento para ser proactiva/o de verdad: proponele un hábito concreto que conecte con lo que sabes de ella, o hazle una pregunta que ayude a descubrir qué le gustaría mejorar — no te quedes solo reaccionando pasivamente.',
+    extraInstruction: ' Además, aprovecha este momento para ser proactiva/o de verdad: solo si realmente aporta valor, conecta lo que acaba de decir con un siguiente paso pequeño y personalizado; no propongas un hábito por obligación.',
     extraFallback: ' ' + t('proactiveNudgeFallback'),
   };
 }
@@ -3499,6 +3749,10 @@ function proactiveNudge() {
 // "¿a qué hora lo hacemos?", una de las cosas que hacían sentir al chat como un robot.
 const CONVERSATIONAL_GREETING_ONLY = /^(hola+|hey|buenas|ok(ay)?|vale|genial|perfecto|entiendo|ya veo|wow|uff+|ay|gracias|de nada|hi|thanks|thank you|cool|got it|nice)[\s!.]*$/i;
 const CONVERSATIONAL_PATTERNS = /\b(estoy|me siento|tuve|tengo un d[ií]a|hoy fue|hoy tuve|quiero contarte|no s[ée] qu[eé]|siento que|creo que|pienso que|me pas[oó]|jaja+|jsjs+|qu[eé] tal|c[oó]mo est[aá]s|buenos d[ií]as|buenas tardes|buenas noches|gracias|de nada|i feel|i'm (tired|sad|happy|stressed|exhausted)|i had a|i don't know what|today was|thanks|thank you)\b/i;
+const GOAL_OR_ADVICE_PATTERNS = /\b(quiero|necesito|me gustar[ií]a|quisiera|estoy pensando|estoy tratando|quiero empezar|quiero dejar|quiero mejorar|quiero cambiar|me cuesta|no logro|no consigo|ay[uú]dame|ayuda|necesito consejo|qué debería|que deber[ií]a|vale la pena|cómo puedo|como puedo|i want|i need|i'd like|i would like|i'm trying|i want to start|help me|i need advice|how can i)\b/i;
+function looksLikeGoalOrAdvice(text) {
+  return GOAL_OR_ADVICE_PATTERNS.test(text.trim());
+}
 function looksLikeConversationalStatement(text) {
   const l = text.trim();
   if (!l) return false;
@@ -3544,25 +3798,17 @@ const ALL_VIEWS = ['view-chat', 'view-calendar', 'view-metrics', 'view-diary', '
 function switchTab(which) {
   document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active-tab', t.dataset.tab === which));
   ALL_VIEWS.forEach(id => document.getElementById(id).classList.remove('active'));
-  if (which === 'chat') { document.getElementById('view-chat').classList.add('active'); dayAddFabEl.classList.remove('show'); }
-  else if (which === 'calendar') { document.getElementById('view-calendar').classList.add('active'); renderCalendar(); }
-  else if (which === 'metrics') { renderMetrics(); document.getElementById('view-metrics').classList.add('active'); dayAddFabEl.classList.remove('show'); }
-  else if (which === 'diary') { document.getElementById('view-diary').classList.add('active'); renderDiary(); dayAddFabEl.classList.remove('show'); }
-  else { renderProfile(); document.getElementById('view-profile').classList.add('active'); dayAddFabEl.classList.remove('show'); }
-  fabEl.classList.toggle('show', which !== 'chat');
+  if (which === 'chat') {
+    document.getElementById('view-chat').classList.add('active');
+    dayAddFabEl.classList.remove('show');
+    document.getElementById('header-right').innerHTML = '';
+  }
+  else if (which === 'calendar') { document.getElementById('view-calendar').classList.add('active'); renderCalendar(); renderHeaderRing(); }
+  else if (which === 'metrics') { renderMetrics(); document.getElementById('view-metrics').classList.add('active'); dayAddFabEl.classList.remove('show'); document.getElementById('header-right').innerHTML = ''; }
+  else if (which === 'diary') { document.getElementById('view-diary').classList.add('active'); renderDiary(); dayAddFabEl.classList.remove('show'); document.getElementById('header-right').innerHTML = ''; }
+  else { renderProfile(); document.getElementById('view-profile').classList.add('active'); dayAddFabEl.classList.remove('show'); document.getElementById('header-right').innerHTML = ''; }
 }
 document.querySelectorAll('.tab').forEach(tab => { tab.onclick = () => switchTab(tab.dataset.tab); });
-fabEl.onclick = () => {
-  document.querySelector('.tab[data-tab="chat"]').click();
-  addNote(chatScroll, tp('fabPrompt'));
-};
-// El pill compacto de "X/Y hábitos hoy" que reemplazó a la lista completa dentro
-// del chat (ver renderAgenda()) — al tocarlo, salta directo a Calendario→Día.
-document.getElementById('chat-agenda-pill').onclick = () => {
-  switchTab('calendar');
-  const dayTab = document.querySelector('.cal-subtab[data-calsub="day"]');
-  if (dayTab && !dayTab.classList.contains('active')) dayTab.click();
-};
 function chipList(arr) { return (arr && arr.length) ? arr.map(x => `<span class="tag-chip">${x}</span>`).join('') : '<span style="color:var(--text-dim);font-size:13px;">—</span>'; }
 function renderProfile() {
   const p = state.profile;
@@ -3573,6 +3819,13 @@ function renderProfile() {
   const lp = levelInfo(p.xp || 0);
   const lpNext = LEVELS.find(x => x.n === lp.n + 1);
   el.innerHTML = `
+    <div class="profile-top-card">
+      <div class="profile-top-main">
+        <div class="profile-mini-avatar"><svg class="bless-logo-svg" viewBox="0 0 64 64" aria-hidden="true"><defs><linearGradient id="profileLogoBg" x1="8" y1="4" x2="56" y2="60" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#6F7BFF"/><stop offset=".48" stop-color="#6CCEF1"/><stop offset="1" stop-color="#42D6A1"/></linearGradient><linearGradient id="profileLogoLeaf" x1="20" y1="20" x2="45" y2="43" gradientUnits="userSpaceOnUse"><stop stop-color="#DFFF65"/><stop offset="1" stop-color="#62E6A9"/></linearGradient></defs><circle cx="32" cy="32" r="30" fill="url(#profileLogoBg)"/><circle cx="32" cy="32" r="27.5" fill="none" stroke="#fff" stroke-opacity=".7" stroke-width="1.5"/><path d="M31.8 43.8c.2-8.7.4-15.1 2.4-21.5" fill="none" stroke="#6B4B43" stroke-width="4" stroke-linecap="round"/><path d="M32 34c-8.6.4-13.6-3.4-15.2-10.5 7.7-.6 13.2 2.4 15.2 10.5Z" fill="url(#profileLogoLeaf)"/><path d="M34 28.5c1.5-8.1 6.3-12.6 14.1-13.5.3 7.9-4.3 12.7-14.1 13.5Z" fill="#B9F36B"/><path d="M22.5 46.5h19" stroke="#F08A9D" stroke-width="4" stroke-linecap="round"/></svg></div>
+        <div><div class="profile-greeting">Tu espacio, ${p.nombre || 'tú'} ✨</div><div class="profile-greeting-sub">Aquí ves tu progreso y configuras Bless.</div></div>
+      </div>
+      <button class="settings-icon-btn" id="open-settings-top-btn" title="${t('openConfigBtn')}" aria-label="${t('openConfigBtn')}">⚙️</button>
+    </div>
     ${state.diagnostic ? `<div class="diag-card" style="margin-bottom:14px;"><div class="diag-label">${t('diagLabel')}</div><div class="diag-title">${state.diagnostic.title}</div><div class="diag-body">${state.diagnostic.body}</div></div>` : ''}
     <div class="stats-row" style="margin-bottom:14px;">
       <div class="stat-box"><div class="num">${done}/${total||0}</div><div class="lbl">${t('tareasHoy')}</div></div>
@@ -3621,11 +3874,6 @@ function renderProfile() {
       <div id="add-habit-status" style="font-size:12px;color:var(--text-dim);margin-top:8px;"></div>
     </div>
     <div class="profile-card">
-      <h4>${t('configTitle')}</h4>
-      <div style="font-size:13px;color:var(--text-dim);margin-bottom:10px;">${t('configDesc', isPremium ? t('configDescPremiumExtra') : '')}</div>
-      <button class="send-btn" id="open-settings-btn" style="width:100%;background:linear-gradient(135deg, var(--panel-3), var(--panel-2)); color:var(--text);">${t('openConfigBtn')}</button>
-    </div>
-    <div class="profile-card">
       <h4>${t('planTitle')}</h4>
       ${isPremium
         ? `<div class="premium-badge">${t('premiumBadge')}</div>${IS_NATIVE_APP ? '' : `<div style="margin-top:10px;"><span class="logout-link" id="cancel-premium-link">${t('cancelSubLink')}</span></div>`}`
@@ -3654,7 +3902,7 @@ function renderProfile() {
   if (pendingAddHabitStatus) { setAddHabitStatus(pendingAddHabitStatus); pendingAddHabitStatus = ''; }
   const addCustomBtn = document.getElementById('add-habit-custom-btn');
   if (addCustomBtn) addCustomBtn.onclick = () => openHabitEditor(null);
-  const openSettingsBtn = document.getElementById('open-settings-btn');
+  const openSettingsBtn = document.getElementById('open-settings-top-btn');
   if (openSettingsBtn) openSettingsBtn.onclick = openSettings;
   const viewLevelsBtn = document.getElementById('view-levels-btn');
   if (viewLevelsBtn) viewLevelsBtn.onclick = openLevelsModal;
@@ -4209,7 +4457,7 @@ function renderDiary() {
     ${filterEmptyHtml}
   `;
   el.innerHTML = `
-    <div style="font-size:20px;font-weight:800;margin-bottom:14px;">${t('diaryTitle')}</div>
+    <div class="module-heading"><div><h2>${t('diaryTitle')}</h2><p>Un espacio para guardar lo que importa.</p></div><div class="module-icon">📔</div></div>
     ${viewToggleHtml}
     ${statsHtml}
     ${summaryLineHtml}
@@ -5543,6 +5791,7 @@ function renderMetrics() {
 
   el.innerHTML = `
     <div style="padding:18px 16px 24px;">
+      <div class="module-heading"><div><h2>Tu evolución</h2><p>Entiende cómo está cambiando tu constancia.</p></div><div class="module-icon">📊</div></div>
       <div class="kpi-grid">
         <div class="kpi-tile"><div class="kpi-num" style="color:${tileColor(m.pctToday)}">${m.pctToday!==null?m.pctToday+'%':'—'}</div><div class="kpi-lbl">${t('cumplimientoHoy')}</div></div>
         <div class="kpi-tile"><div class="kpi-num" style="color:${tileColor(m.pctWeek)}">${m.pctWeek!==null?m.pctWeek+'%':(m.hasHistory?'—':t('sinDatosCap'))}</div><div class="kpi-lbl">${t('cumplimientoSemana')}</div></div>
