@@ -1454,7 +1454,9 @@ const I18N = {
     paddleNotConfigured: 'El cobro con Paddle todavía no está configurado en el servidor (faltan las Secrets de Paddle). Avísale a quien administra la app.',
     paddleWidgetFail: 'No se pudo cargar el widget de pago de Paddle. Revisa tu conexión e intenta de nuevo.',
     paddleThanks: '¡Gracias! Estamos confirmando tu pago — Bless Habit Premium se activa en unos segundos…',
-    cancelConfirm: '¿Seguro que quieres cancelar tu suscripción Premium?',
+    cancelConfirm: '¿Seguro que quieres cancelar tu suscripción Premium? Seguirás con Premium hasta el final del periodo que ya pagaste.',
+    cancelScheduled: 'Listo. Tu suscripción no se renovará y conservas Premium hasta el final del periodo que ya pagaste.',
+    cancelFail: 'No se pudo cancelar tu suscripción. Revisa tu conexión e intenta de nuevo.',
 
     tareasHoy: 'Tareas hoy', habitosActivos: 'Hábitos activos', rachaTotal: 'Racha total 🔥',
 
@@ -1758,7 +1760,9 @@ const I18N = {
     paddleNotConfigured: 'Paddle billing is not configured on the server yet (missing Paddle Secrets). Let whoever manages the app know.',
     paddleWidgetFail: "Could not load Paddle's payment widget. Check your connection and try again.",
     paddleThanks: 'Thank you! We are confirming your payment — Bless Habit Premium will activate in a few seconds…',
-    cancelConfirm: 'Are you sure you want to cancel your Premium subscription?',
+    cancelConfirm: 'Are you sure you want to cancel your Premium subscription? You keep Premium until the end of the period you already paid for.',
+    cancelScheduled: 'Done. Your subscription will not renew and you keep Premium until the end of the period you already paid for.',
+    cancelFail: 'Could not cancel your subscription. Check your connection and try again.',
 
     tareasHoy: "Today's tasks", habitosActivos: 'Active habits', rachaTotal: 'Total streak 🔥',
 
@@ -2603,6 +2607,38 @@ function nativeLoginWithGoogle() {
   plugins.Browser.open({ url: window.location.origin + '/auth/login?native=1' });
 }
 
+/* Botón "atrás" de Android: cierra la ventana abierta (la de más arriba); si
+   no hay ninguna, vuelve a la pestaña Bless; y si ya está ahí, minimiza la app
+   (en vez de cerrarla o no hacer nada). */
+const NATIVE_BACK_OVERLAYS = [
+  ['diary-photo-editor-overlay', () => closePhotoEditor()],
+  ['levels-overlay', () => closeLevelsModal()],
+  ['logro-share-overlay', () => closeLogroShareCard()],
+  ['diary-composer-overlay', () => closeDiaryComposer()],
+  ['settings-overlay', () => closeSettings()],
+  ['day-item-action-overlay', () => closeDayItemAction()],
+  ['option-picker-overlay', () => closeOptionPicker()],
+  ['add-habit-picker-overlay', () => closeAddHabitPicker()],
+  ['habit-editor-overlay', () => closeHabitEditor()],
+];
+function setupNativeBackButton() {
+  const plugins = window.Capacitor && window.Capacitor.Plugins;
+  if (!plugins || !plugins.App) return;
+  plugins.App.addListener('backButton', () => {
+    for (const [id, close] of NATIVE_BACK_OVERLAYS) {
+      const el = document.getElementById(id);
+      if (el && el.style.display && el.style.display !== 'none') { close(); return; }
+    }
+    const tabbar = document.getElementById('tabbar');
+    const activeTab = document.querySelector('.tab.active-tab');
+    if (tabbar && tabbar.style.display !== 'none' && activeTab && activeTab.dataset.tab !== 'chat') {
+      switchTab('chat');
+      return;
+    }
+    plugins.App.minimizeApp();
+  });
+}
+
 function setupNativeAppUrlListener() {
   const plugins = window.Capacitor && window.Capacitor.Plugins;
   if (!plugins || !plugins.App) return;
@@ -2617,8 +2653,8 @@ function setupNativeAppUrlListener() {
       }
       if (url.hostname !== 'auth-callback' && url.pathname !== '/auth-callback') return;
       const token = url.searchParams.get('token');
-      if (!token) return;
       if (plugins.Browser) { try { await plugins.Browser.close(); } catch (e) {} }
+      if (!token) return; // login cancelado: se vuelve a la pantalla de login
       const res = await fetch('/auth/native-exchange?token=' + encodeURIComponent(token));
       if (res.ok) window.location.reload();
     } catch (e) { /* enlace no reconocido, se ignora */ }
@@ -2730,22 +2766,38 @@ if (IS_NATIVE_APP) {
   }
   setupNativeAppUrlListener();
   setupNativeBrowserFinishedListener();
+  setupNativeBackButton();
 }
 bootstrapApp();
+
+/* La app nativa (y una pestaña abierta) puede quedar en segundo plano de un
+   día para otro sin recargarse: al volver, si cambió el día, se archiva el de
+   ayer y se arma la agenda de hoy, igual que al abrir la app. */
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState !== 'visible') return;
+  if (!state.profile || !state.profile.nombre || !state.lastActiveDate) return;
+  if (state.lastActiveDate === ymd(new Date())) return;
+  rolloverDayIfNeeded();
+  saveStateToServer();
+  renderAgenda();
+  const activeTab = document.querySelector('.tab.active-tab');
+  if (activeTab) switchTab(activeTab.dataset.tab);
+});
 
 /* Banda de anuncios — solo se dibuja para usuarios del plan gratuito, y solo hace algo
    real si ya configuraste ADSENSE_CLIENT_ID / ADSENSE_SLOT_ID en las Secrets del servidor
    y tu cuenta de AdSense ya aprobó el sitio. Mientras tanto muestra un rótulo de repuesto
    para que se note dónde va a aparecer el anuncio. */
 function adBannerHtml() {
-  if (isPremium) return '';
+  // AdSense no permite mostrarse dentro de apps (WebView); en la app iría AdMob.
+  if (isPremium || IS_NATIVE_APP) return '';
   if (ADSENSE_CLIENT_ID && ADSENSE_SLOT_ID) {
     return `<div class="ad-slot"><ins class="adsbygoogle" style="display:block;width:100%;" data-ad-client="${ADSENSE_CLIENT_ID}" data-ad-slot="${ADSENSE_SLOT_ID}" data-ad-format="auto" data-full-width-responsive="true"></ins></div>`;
   }
   return `<div class="ad-slot"><span class="ad-fallback-label">${t('adFallbackLabel')}</span></div>`;
 }
 function pushAdsenseSlots() {
-  if (isPremium || !ADSENSE_CLIENT_ID || !ADSENSE_SLOT_ID) return;
+  if (isPremium || IS_NATIVE_APP || !ADSENSE_CLIENT_ID || !ADSENSE_SLOT_ID) return;
   try { (window.adsbygoogle = window.adsbygoogle || []).push({}); } catch (e) { /* AdSense aún no cargó o el sitio no está aprobado */ }
 }
 function renderChatAdSlot() {
@@ -2824,10 +2876,13 @@ async function openPaddleCheckout() {
 
 async function cancelPremium() {
   if (!confirm(t('cancelConfirm'))) return;
+  let data = null;
   try {
-    await fetch('/api/cancel-subscription', { method: 'POST' });
-  } catch (e) { /* igual la quitamos localmente */ }
-  isPremium = false;
+    data = await (await fetch('/api/cancel-subscription', { method: 'POST' })).json();
+  } catch (e) { /* se avisa abajo */ }
+  if (!data || !data.ok) { alert(t('cancelFail')); return; }
+  if (data.endsAtPeriodEnd) { alert(t('cancelScheduled')); return; }
+  isPremium = !!data.premium;
   renderMetrics();
   renderProfile();
 }
@@ -2867,6 +2922,9 @@ async function refreshPushUI() {
   const btnEl = document.getElementById('push-toggle-btn');
   if (!textEl || !btnEl) return;
   if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+    // El WebView de la app de Android no soporta Web Push: en vez de un
+    // "no soportado" confuso, se oculta la tarjeta entera.
+    if (IS_NATIVE_APP) { const card = textEl.closest('.profile-card'); if (card) card.style.display = 'none'; return; }
     textEl.textContent = t('pushNotSupported');
     btnEl.style.display = 'none';
     return;
@@ -4246,7 +4304,7 @@ function diaryStickersOverlayHtml(stickers) {
   return stickers.map(s => `<span class="stage-sticker" style="left:${s.x}%;top:${s.y}%;font-size:${s.size}px;transform:translate(-50%,-50%) rotate(${s.rotation}deg);z-index:${s.z};">${s.emoji}</span>`).join('');
 }
 
-function todayStr() { return new Date().toISOString().slice(0, 10); }
+function todayStr() { return ymd(new Date()); }
 function findJournalEntry(dateStr) { return (state.journal || []).find(e => e.date === dateStr) || null; }
 
 // Comprime una foto subida a un data URL JPEG razonable en tamaño (máx. ~700px
@@ -4328,7 +4386,7 @@ function diaryStats() {
   return { totalEntries, totalWords, rachaActual, rachaMax };
 }
 function diaryMonthSummary() {
-  const ymPrefix = new Date().toISOString().slice(0, 7); // 'YYYY-MM'
+  const ymPrefix = todayStr().slice(0, 7); // 'YYYY-MM'
   const monthEntries = (state.journal || []).filter(e => e.date.startsWith(ymPrefix));
   const words = monthEntries.reduce((sum, e) => sum + (e.text ? e.text.trim().split(/\s+/).filter(Boolean).length : 0), 0);
   return { count: monthEntries.length, words };
@@ -5429,7 +5487,9 @@ const DAY_NAMES_SHORT_ES = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
 const DAY_NAMES_EN = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
 const DAY_NAMES_SHORT_EN = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 
-function ymd(d) { return d.toISOString().slice(0,10); }
+// Fecha LOCAL 'YYYY-MM-DD'. Antes usaba toISOString(), que da la fecha en UTC:
+// en Perú (UTC-5) el "día" cambiaba a las 7 p. m. y la agenda se reiniciaba de noche.
+function ymd(d) { return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0'); }
 function addDays(d, n) { const r = new Date(d); r.setDate(r.getDate()+n); return r; }
 
 // Guarda la agenda de un día ya cerrado como un día real de historial (se
@@ -5471,7 +5531,7 @@ function fullHistory() { return [...(state.history||[]), todayDayEntry()]; }
 function futureDayEntry(dateStr) {
   // proyecta los hábitos recurrentes en días que aún no llegan, respetando qué
   // días de la semana les tocan y hasta cuándo duran (si tienen fecha de fin)
-  const dow = new Date(dateStr).getDay();
+  const dow = new Date(dateStr + 'T00:00:00').getDay();
   const items = state.profile.habitos
     .filter(h => habitRepeatDays(h).includes(dow) && habitActiveOnDate(h, dateStr))
     .map(h => ({ habitKey: h.key, icon: h.icon, label: h.label, done: false, time: habitTimeForDay(h, dow) }));
@@ -5481,7 +5541,7 @@ function findDay(dateStr) {
   const todayStr = ymd(new Date());
   if (dateStr === todayStr) return todayDayEntry();
   if (dateStr > todayStr) return futureDayEntry(dateStr);
-  return (state.history||[]).find(d => d.date === dateStr) || { date: dateStr, dow: new Date(dateStr).getDay(), items: [], pct: null };
+  return (state.history||[]).find(d => d.date === dateStr) || { date: dateStr, dow: new Date(dateStr + 'T00:00:00').getDay(), items: [], pct: null };
 }
 
 function heatColor(pct) {

@@ -23,6 +23,15 @@ app = Flask(__name__)
 # de "https://", lo que rompe el login de Google (error redirect_uri_mismatch).
 app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
 app.secret_key = os.environ.get("FLASK_SECRET_KEY", "dev-secret-cambia-esto-en-produccion")
+if not os.environ.get("FLASK_SECRET_KEY"):
+    print("[seguridad] FALTA FLASK_SECRET_KEY: cualquiera podría falsificar sesiones. Configúrala en Render.")
+# La sesión dura un año (en vez de morir al cerrar el navegador): el WebView de
+# la app de Android borra las cookies "de sesión" cuando el sistema cierra la
+# app, y sin esto habría que volver a iniciar sesión con Google cada vez.
+from datetime import timedelta
+app.config["PERMANENT_SESSION_LIFETIME"] = timedelta(days=365)
+app.config["SESSION_COOKIE_SECURE"] = os.environ.get("FLASK_ENV") != "development"
+app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
 
 # ============================================================
 # OPENAI — la key vive SOLO en el servidor (Replit Secrets).
@@ -448,16 +457,26 @@ def auth_login():
 
 @app.route("/auth/callback")
 def auth_callback():
-    token = google.authorize_access_token()
-    userinfo = token.get("userinfo")
+    # Si la persona cancela en la pantalla de Google (o el estado de OAuth se
+    # perdió porque el servidor se reinició), Authlib lanza una excepción: en
+    # vez de un error 500, la devolvemos a la pantalla de login.
+    try:
+        token = google.authorize_access_token()
+    except Exception as e:
+        print(f"[auth] login cancelado o fallido: {e}")
+        token = None
+    userinfo = token.get("userinfo") if token else None
     if not userinfo:
-        return "No se pudo confirmar tu cuenta de Google. Intenta iniciar sesión de nuevo.", 400
+        if session.pop("native_login", False):
+            return redirect(f"{NATIVE_APP_URL_SCHEME}://auth-callback?error=1")
+        return redirect("/")
     user_id = get_or_create_user(
         google_id=userinfo["sub"],
         email=userinfo.get("email"),
         name=userinfo.get("name"),
         picture=userinfo.get("picture"),
     )
+    session.permanent = True
     session["user_id"] = user_id
     if session.pop("native_login", False):
         _cleanup_native_login_tokens()
@@ -480,6 +499,7 @@ def auth_native_exchange():
     user_id, expires_at = entry
     if expires_at < time.time():
         return "El enlace de acceso expiró. Intenta iniciar sesión de nuevo.", 400
+    session.permanent = True
     session["user_id"] = user_id
     return redirect("/")
 
@@ -561,22 +581,28 @@ def api_cancel_subscription():
     user = get_user(user_id)
     subscription_id = user.get("paddle_subscription_id")
     if subscription_id and paddle_configured():
+        # Se cancela al final del periodo ya pagado (no "immediately"): la
+        # persona conserva Premium hasta esa fecha, y quien lo quita es el
+        # webhook subscription.canceled que Paddle manda ese día.
+        # Endpoint según https://developer.paddle.com/api-reference/subscriptions/cancel-subscription
         try:
-            # NOTA: no se pudo confirmar en vivo el endpoint exacto de cancelar
-            # (sin salida a internet en este entorno). Según la documentación de
-            # Paddle Billing es POST /subscriptions/{id}/cancel — verifica esto
-            # contra https://developer.paddle.com/api-reference/subscriptions/cancel-subscription
-            # antes de depender de esto en producción.
-            requests.post(
+            resp = requests.post(
                 f"{PADDLE_API_BASE}/subscriptions/{subscription_id}/cancel",
-                json={"effective_from": "immediately"},
+                json={"effective_from": "next_billing_period"},
                 headers=paddle_headers(),
                 timeout=15,
             )
+            ok = resp.status_code < 300
         except Exception as e:
-            print(f"[paddle] no se pudo cancelar en Paddle (se quita Premium localmente igual): {e}")
+            print(f"[paddle] error al cancelar: {e}")
+            ok = False
+        if not ok:
+            # No quitamos Premium localmente: si Paddle no canceló, seguiría
+            # cobrando y la persona creería que ya canceló.
+            return jsonify({"ok": False, "error": "No se pudo cancelar en Paddle. Intenta de nuevo."}), 502
+        return jsonify({"ok": True, "premium": True, "endsAtPeriodEnd": True})
     set_user_premium(user_id, False)
-    return jsonify({"ok": True})
+    return jsonify({"ok": True, "premium": False})
 
 
 # ============================================================
@@ -673,10 +699,16 @@ def webhook_paddle():
             user = find_user_by_paddle_subscription(subscription_id)
 
         if user:
+            # subscription.updated llega tanto al activar como al cancelar/pausar,
+            # así que lo que manda es el "status" actual de la suscripción.
+            status = data.get("status") if event_type.startswith("subscription.") else None
             if event_type in ("subscription.canceled", "subscription.past_due", "subscription.paused"):
                 set_user_premium(user["id"], False)
             elif event_type in ("subscription.created", "subscription.activated", "subscription.trialing", "subscription.resumed", "subscription.updated"):
-                set_user_premium(user["id"], True, customer_id=customer_id, subscription_id=subscription_id)
+                if status in (None, "active", "trialing"):
+                    set_user_premium(user["id"], True, customer_id=customer_id, subscription_id=subscription_id)
+                else:
+                    set_user_premium(user["id"], False, customer_id=customer_id, subscription_id=subscription_id)
     except Exception as e:
         print(f"[paddle] error procesando webhook: {e}")
     return jsonify({"ok": True})
@@ -805,6 +837,10 @@ def status():
 
 @app.route("/api/bless-reply", methods=["POST"])
 def bless_reply():
+    # Solo para usuarios con sesión: si no, cualquiera en internet podría usar
+    # este endpoint y gastar tu saldo de OpenAI.
+    if not session.get("user_id"):
+        return jsonify({"ok": False, "reply": None, "error": "No autenticado"}), 401
     data = request.get_json(force=True) or {}
     # Compatibilidad con el formato viejo (solo "prompt") y el nuevo, que separa
     # el prompt de sistema (persona de Bless) del historial real de la conversación,
