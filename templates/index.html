@@ -1225,6 +1225,7 @@ CÓMO DEBES CONVERSAR:
 4. No conviertas automáticamente una frase en una tarea. Solo agenda cuando la persona realmente quiere programar algo o da una hora. Si dice “quiero empezar a correr”, conversa sobre la meta; no preguntes “¿a qué hora?”.
 5. Si hace una pregunta, contéstala. Después, si aporta valor, haz UNA pregunta concreta para continuar.
 6. Si expresa una emoción, primero acompaña y demuestra que entendiste; no saltes inmediatamente a consejos.
+6b. Si cuenta algo personal o doloroso (una ruptura, una pérdida, una pelea, un mal día), en esa respuesta NO menciones sus hábitos, horarios ni tareas, y no propongas agendar nada. Solo acompaña como lo haría una amiga cercana: valida lo que siente, muestra interés genuino por lo que pasó y, si encaja, pregunta cómo está o qué necesita. Los hábitos pueden esperar.
 7. Si pide consejo, ofrece una recomendación concreta y personalizada, no una lista genérica de hábitos.
 8. Si hay varias posibilidades, elige la más razonable y explica brevemente por qué. No devuelvas “puedo ayudarte con A/B/C” como menú.
 9. Mantén continuidad. La conversación debe sentirse como una sola charla, no como mensajes aislados.
@@ -4048,14 +4049,19 @@ async function handleUserMessage(text) {
   // sentimiento, un saludo) en vez del nombre corto de una tarea/hábito, no
   // arranquemos el flujo de "¿a qué hora lo hacemos?" — eso es justo lo que hacía
   // que el chat se sintiera como un robot de formulario ante cualquier comentario.
-  if (looksLikeConversationalStatement(text) || looksLikeGoalOrAdvice(text)) {
+  // Ante la duda, Bless CONVERSA: solo se pregunta "¿a qué hora?" si el mensaje
+  // de verdad parece el nombre de una tarea ("correr", "leer 20 min", "ir al
+  // gym"). Antes era al revés y "terminé con mi novio" acababa en "¿a qué hora
+  // quieres practicar tu instrumento?".
+  if (looksLikeConversationalStatement(text) || looksLikeGoalOrAdvice(text) || !looksLikeTaskName(text)) {
     const nudge = proactiveNudge();
     // Si suena a que está pasando por un momento difícil, Bless valida lo que
     // siente y le recuerda con calidez que tiene el diario como espacio seguro
     // — con un aviso tocable que abre el compositor directo desde el chat,
     // sin que tenga que ir a buscar la pestaña.
     if (looksLikeDifficultyMention(text)) {
-      await say(chatScroll, text, t('diaryDifficultyFallback') + nudge.extraFallback, undefined, undefined, nudge.extraInstruction);
+      // Sin el empujón "proactivo" hacia hábitos: en un momento difícil solo se acompaña.
+      await say(chatScroll, text, t('diaryDifficultyFallback'), undefined, undefined, 'La persona está pasando por un momento difícil. Acompáñala con calidez y curiosidad genuina por lo que le pasó; no menciones hábitos ni tareas.');
       addNote(chatScroll, t('diaryPromptFromChatDifficulty'), 'agenda-note', () => openDiaryComposer(todayStr()));
       return;
     }
@@ -4100,6 +4106,21 @@ function looksLikeConversationalStatement(text) {
   if (wordCount >= 6 && /\b(yo|me|mi|mis|i|my)\b/i.test(l)) return true;
   return false;
 }
+// ¿Parece el nombre corto de una tarea/hábito para agendar? Frase corta que
+// empieza con un verbo en infinitivo ("correr", "ir al gym", "estudiar
+// inglés"), o que coincide con un hábito conocido. Todo lo demás es charla.
+const TASK_INFINITIVE_START = /^(ir|ver|leer|correr|caminar|estudiar|meditar|practicar|tomar|hacer|llamar|escribir|cocinar|limpiar|ordenar|comprar|pagar|entrenar|nadar|dormir|descansar|trabajar|terminar|empezar|revisar|preparar|repasar|orar|rezar|journaling|go|read|run|walk|study|meditate|practice|drink|do|call|write|cook|clean|buy|pay|train|swim|sleep|work|finish|start|review|prepare|pray)\b|^[a-záéíóúñ]+(ar|er|ir)(me|te|se|lo|la)?\b/i;
+function looksLikeTaskName(text) {
+  const l = text.trim().toLowerCase();
+  if (!l) return false;
+  const words = l.split(/\s+/).filter(Boolean);
+  if (words.length > 6) return false;
+  if (/^(ayer|mujer|lugar|hogar|mar|bar|par|placer|poder|deber|ser|estar|tener|haber|amanecer|atardecer|anochecer|taller|super|mejor|peor|primer|hacer nada)\b/.test(l)) return false;
+  if (/\b(con mi|con mis|mi novi[oa]|mi pareja|mi mam[aá]|mi pap[aá]|me dej[oó]|rompimos|termin[eé]|pele[eé]|discut[ií])\b/.test(l)) return false;
+  if (TASK_INFINITIVE_START.test(l)) return true;
+  return pickHabitKey(l) !== 'general';
+}
+
 // Detecta si el comentario conversacional suena a que la persona está pasando por
 // un momento difícil (estrés, tristeza, agobio, cansancio emocional) — no es una
 // clasificación clínica, solo una señal suave para ofrecerle el diario como espacio
@@ -4107,7 +4128,7 @@ function looksLikeConversationalStatement(text) {
 const DIFFICULTY_MENTION_PATTERN = /\b(dif[ií]cil|muy duro|muy pesado|se me hace pesado|cuesta mucho|no puedo m[aá]s|mal d[ií]a|d[ií]a horrible|triste|deprimid[oa]|estresad[oa]|agobiad[oa]|abrumad[oa]|cansad[oa] de todo|agotad[oa]|frustrad[oa]|ansios[oa]|angustiad[oa]|hard day|rough day|struggling|stressed out|overwhelmed|i'?m tired|i'?m sad|i'?m anxious|feeling down|burnt out|burned out)\b/i;
 // Sin \b al inicio a propósito: así también reconoce frases pegadas por un
 // error de tipeo ("tuve unmal día", "unpésimo día").
-const DIFFICULTY_LOOSE_PATTERN = /(mal\s*d[ií]a|me fue mal|no me fue bien|fatal|p[eé]sim[oa]|horrible|terrible|llor(ar|é|o|ando)|me siento (mal|sol[oa]|vac[ií][oa])|preocupad[oa]|desanimad[oa]|bad\s*day|awful|terrible day|cried|crying)/i;
+const DIFFICULTY_LOOSE_PATTERN = /(termin[eé] con|rompimos|me dej[oó]|ruptura|me peleé|me pele[eé]|discut[ií] con|extra[nñ]o a|se muri[oó]|falleci[oó]|perd[ií] (mi|el) trabajo|me despidieron|broke up|dumped me|passed away|lost my job|mal\s*d[ií]a|me fue mal|no me fue bien|fatal|p[eé]sim[oa]|horrible|terrible|llor(ar|é|o|ando)|me siento (mal|sol[oa]|vac[ií][oa])|preocupad[oa]|desanimad[oa]|bad\s*day|awful|terrible day|cried|crying)/i;
 function looksLikeDifficultyMention(text) {
   const l = text.trim();
   if (!l) return false;
