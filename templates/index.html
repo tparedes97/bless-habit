@@ -532,8 +532,11 @@
 
   /* Horarios de hábitos en el onboarding */
   .habit-sched-list { display: flex; flex-direction: column; gap: 8px; max-height: 40vh; overflow-y: auto; padding-right: 2px; }
-  .habit-sched-row { display: flex; align-items: center; gap: 8px; background: var(--panel-2); border: 1px solid var(--border); border-radius: 12px; padding: 8px 10px; }
-  .habit-sched-row .hs-label { flex: 1; font-size: 13px; }
+  .habit-sched-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; background: var(--panel-2); border: 1px solid var(--border); border-radius: 12px; padding: 10px 12px; }
+  .habit-sched-row .hs-label { flex: 1 0 100%; font-size: 14px; font-weight: 700; }
+  .habit-sched-row .hs-field { display: flex; flex-direction: column; gap: 3px; font-size: 10.5px; color: var(--text-dim); }
+  .habit-sched-row select { padding: 8px; font-size: 12.5px; border-radius: 10px; border: 1px solid var(--border); background: var(--panel); color: var(--text); min-height: 38px; }
+  .habit-sched-row .hs-repeat { margin-left: auto; align-self: flex-end; padding-bottom: 8px; }
   .habit-sched-row input[type=time] { flex: 0 0 auto; width: 90px; padding: 8px; font-size: 12.5px; }
   .habit-sched-row .hs-repeat { display: flex; align-items: center; gap: 4px; font-size: 10px; color: var(--text-dim); white-space: nowrap; }
 
@@ -1447,7 +1450,8 @@ const I18N = {
     obAsk12: '¿Qué te mueve más para sostener algo en el tiempo?',
     obAsk13: 'Última pregunta difícil, y es importante: ¿hay días donde sabes que te sientes particularmente mal o desmotivada/o? Así nunca te voy a presionar igual esos días.',
     obAsk14: (p) => `Ya casi, ${p.nombre} 🎯. Elige los hábitos que quieres empezar a construir (puedes elegir varios, o agregar el tuyo).`,
-    obAsk15: 'Última cosa: dime a qué hora sueles hacer cada uno, y si quieres que te lo agende automáticamente toda la semana o solo por hoy.',
+    obAsk15: 'Última cosa: dime a qué hora y cuánto tiempo al día quieres dedicarle a cada uno. Ya te dejé una sugerencia, cámbiala si quieres 🌱',
+    hsTimeLabel: 'Hora', hsMinutesLabel: 'Tiempo al día', hsMinutesNone: 'Sin definir',
 
     diagLabel: 'Diagnóstico de Bless',
     diagnosingMsg: (n) => `Perfecto, ${n}. Con todo esto ya te entiendo mucho mejor 🧠. Dame un segundo para armar tu diagnóstico…`,
@@ -1786,7 +1790,8 @@ const I18N = {
     obAsk12: 'What motivates you most to stick with something over time?',
     obAsk13: "Last tough question, and it's important: are there days when you know you feel particularly low or unmotivated? That way I'll never push you the same on those days.",
     obAsk14: (p) => `Almost there, ${p.nombre} 🎯. Pick the habits you want to start building (you can choose several, or add your own).`,
-    obAsk15: "Last thing: tell me what time you usually do each one, and whether you want it scheduled automatically every day of the week or just for today.",
+    obAsk15: "Last thing: tell me what time and how much time per day you want to give each one. I left a suggestion — change it if you like 🌱",
+    hsTimeLabel: 'Time', hsMinutesLabel: 'Per day', hsMinutesNone: 'Not set',
 
     diagLabel: "Bless's diagnosis",
     diagnosingMsg: (n) => `Perfect, ${n}. With all this I already understand you much better 🧠. Give me a second to put together your diagnosis…`,
@@ -2601,6 +2606,9 @@ function renderHabitPicker() {
     };
   };
 }
+// Minutos al día sugeridos por tipo de hábito (la persona los puede cambiar);
+// null = hábitos donde no aplica un tiempo (tomar agua, dejar de fumar…).
+const HABIT_SUGGESTED_MINUTES = { ejercicio: 30, caminar: 20, lectura: 15, meditacion: 10, escritura: 10, estudio: 30, orden: 15, finanzas: 10, gratitud: 5, musica: 20, idioma: 15, familia: 30 };
 function renderHabitSchedule() {
   return () => {
     obControls.innerHTML = '';
@@ -2609,13 +2617,23 @@ function renderHabitSchedule() {
     state.profile.habitos.forEach(h => {
       const row = document.createElement('div'); row.className = 'habit-sched-row';
       const lbl = document.createElement('span'); lbl.className = 'hs-label'; lbl.textContent = `${h.icon} ${habitDisplayLabel(h)}`;
+      const timeField = document.createElement('label'); timeField.className = 'hs-field';
+      timeField.appendChild(document.createTextNode(t('hsTimeLabel')));
       const time = document.createElement('input'); time.type = 'time'; time.value = defaultTimeFor(h.key);
+      timeField.appendChild(time);
+      // ¿Cuánto tiempo al día? — con una sugerencia ya elegida según el hábito.
+      const minsField = document.createElement('label'); minsField.className = 'hs-field';
+      minsField.appendChild(document.createTextNode(t('hsMinutesLabel')));
+      const mins = document.createElement('select');
+      const suggested = HABIT_SUGGESTED_MINUTES[h.key] || null;
+      mins.innerHTML = `<option value="">${t('hsMinutesNone')}</option>` + HE_MINUTE_OPTIONS.map(m => `<option value="${m}"${m === suggested ? ' selected' : ''}>${minutesLabel(m)}</option>`).join('');
+      minsField.appendChild(mins);
       const repWrap = document.createElement('label'); repWrap.className = 'hs-repeat';
       const rep = document.createElement('input'); rep.type = 'checkbox'; rep.checked = true;
       repWrap.appendChild(rep); repWrap.appendChild(document.createTextNode(t('todaSemana')));
-      row.appendChild(lbl); row.appendChild(time); row.appendChild(repWrap);
+      row.appendChild(lbl); row.appendChild(timeField); row.appendChild(minsField); row.appendChild(repWrap);
       list.appendChild(row);
-      rows.push({ h, time, rep });
+      rows.push({ h, time, rep, mins });
     });
     obControls.appendChild(list);
     const continueBtn = document.createElement('button'); continueBtn.className = 'send-btn'; continueBtn.style.width = '100%'; continueBtn.style.marginTop = '4px'; continueBtn.textContent = t('guardarHorarios');
@@ -2629,9 +2647,10 @@ function renderHabitSchedule() {
         r.h.sameTimeEveryday = true;
         r.h.timesByDay = {};
         r.h.durationWeeks = null;
+        r.h.minutesPerDay = parseInt(r.mins.value, 10) || null;
         r.h.createdAt = todayStr;
       });
-      addBubble(ob, rows.map(r => t('horarioResumen', r.h.icon, r.h.time, r.h.repeatWeekly)).join('   '), 'user');
+      addBubble(ob, rows.map(r => t('horarioResumen', r.h.icon, r.h.time + (r.h.minutesPerDay ? ' · ' + minutesLabel(r.h.minutesPerDay) : ''), r.h.repeatWeekly)).join('   '), 'user');
       advanceOnboarding();
     };
   };
@@ -4081,6 +4100,7 @@ async function handleUserMessage(text) {
           key: pickHabitKey(label), icon: pickIcon(label), label,
           repeatDays: [0,1,2,3,4,5,6], sameTimeEveryday: true, time: pending.time,
           timesByDay: {}, durationWeeks: null, createdAt: ymd(new Date()),
+          minutesPerDay: HABIT_SUGGESTED_MINUTES[pickHabitKey(label)] || null,
           repeatWeekly: true, suggestedByBless: true,
         };
         state.profile.habitos.push(entry);
@@ -5699,6 +5719,7 @@ function addManualHabit({ key, icon, label, repeatDays, sameTimeEveryday, time, 
     time: time || defaultTimeFor(key),
     timesByDay: timesByDay || {},
     durationWeeks: durationWeeks || null,
+    minutesPerDay: HABIT_SUGGESTED_MINUTES[key] || null,
     createdAt: ymd(new Date()),
   };
   entry.repeatWeekly = entry.repeatDays.length === 7; // compatibilidad con lecturas antiguas
