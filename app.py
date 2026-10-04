@@ -45,6 +45,9 @@ def get_client():
     api_key = os.environ.get("OPENAI_API_KEY")
     if not api_key:
         return None
+    # Ojo: openai<1.55 se rompía al crear el cliente con httpx>=0.28 ("unexpected
+    # keyword argument 'proxies'") y Bless nunca llegaba a usar la IA. Por eso
+    # requirements.txt fija una versión más nueva.
     return OpenAI(api_key=api_key)
 
 
@@ -958,10 +961,10 @@ def check_ai():
     para ver si la IA responde y, si no, el motivo exacto (key, saldo, modelo)."""
     if not session.get("user_id"):
         return jsonify({"ok": False, "error": "Inicia sesión en la app primero y vuelve a abrir esta página."}), 401
-    client = get_client()
-    if client is None:
-        return jsonify({"ok": False, "model": OPENAI_MODEL, "error": "Falta OPENAI_API_KEY en Render → Environment."})
     try:
+        client = get_client()
+        if client is None:
+            return jsonify({"ok": False, "model": OPENAI_MODEL, "error": "Falta OPENAI_API_KEY en Render → Environment."})
         resp = client.chat.completions.create(
             model=OPENAI_MODEL,
             messages=[{"role": "user", "content": "Responde solo: funciona"}],
@@ -987,7 +990,11 @@ def bless_reply():
     history = data.get("history") or []
     prompt = (data.get("prompt") or "").strip()
 
-    client = get_client()
+    try:
+        client = get_client()
+    except Exception as e:
+        print(f"[openai] no se pudo crear el cliente: {e}")
+        return jsonify({"ok": False, "reply": None, "error": str(e)}), 500
     if client is None:
         return jsonify({
             "ok": False,
