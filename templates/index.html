@@ -260,6 +260,52 @@
   .diary-look-add-btn:hover { border-color: var(--accent); color: var(--accent); }
   /* Fase 4 del diario — experiencia (24 ago 2026): pregunta del día, notita de
      Bless, favoritas/etiquetas y filtro de la lista por ellas. */
+  /* ---- Compositor del diario (rediseño) ---- */
+  .dc-overlay { position: fixed; inset: 0; z-index: 86; background: rgba(20,16,40,.45); display: flex; justify-content: center; }
+  .dc-sheet { width: 100%; max-width: 480px; height: 100%; background: var(--bg); display: flex; flex-direction: column; box-shadow: 0 0 40px rgba(20,16,40,.2); }
+  .dc-header { display: flex; align-items: center; gap: 8px; padding: 10px 12px; background: var(--panel); border-bottom: 1px solid var(--border); flex-shrink: 0; }
+  .dc-head-title { flex: 1; text-align: center; min-width: 0; }
+  #diary-composer-title { font-size: 15px; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .dc-head-date { font-size: 12px; color: var(--text-dim); margin-top: 1px; }
+  .dc-head-btn { background: none; border: none; color: var(--text-dim); font-size: 15px; font-weight: 600; padding: 10px 8px; cursor: pointer; min-width: 76px; text-align: left; }
+  .dc-head-save { background: linear-gradient(135deg, var(--accent), var(--accent-2)); color: var(--on-accent); border: none; border-radius: 12px; font-size: 15px; font-weight: 800; padding: 10px 16px; min-width: 76px; cursor: pointer; }
+  .dc-head-save:disabled { opacity: .6; }
+  .dc-body { flex: 1; overflow-y: auto; padding: 14px 16px 32px; -webkit-overflow-scrolling: touch; }
+  .dc-label { font-size: 12.5px; font-weight: 700; color: var(--text-dim); margin: 14px 0 8px; }
+  .dc-body > .dc-label:first-child { margin-top: 2px; }
+  .dc-mood-row { display: flex; gap: 8px; overflow-x: auto; padding: 2px 2px 8px; margin: 0 -16px; padding-left: 16px; padding-right: 16px; scrollbar-width: none; }
+  .dc-mood-row::-webkit-scrollbar { display: none; }
+  .dc-mood-row .qr-btn { flex-shrink: 0; font-size: 24px; width: 48px; height: 48px; padding: 0; display: flex; align-items: center; justify-content: center; border-radius: 14px; }
+  .dc-mood-row .qr-btn.selected { transform: scale(1.08); box-shadow: 0 0 0 2px var(--accent); }
+  .dc-page { margin-top: 8px; background: var(--panel); border: 1px solid var(--border); border-radius: 18px; padding: 14px; box-shadow: var(--shadow-sm); transition: background .2s, color .2s; }
+  .dc-page .diary-prompt-card { background: rgba(255,255,255,.45); color: inherit; }
+  .dc-textarea, html[data-theme] .dc-textarea { width: 100%; box-sizing: border-box; min-height: 150px; background: transparent !important; border: none !important; box-shadow: none !important; outline: none; color: inherit; font-family: inherit; font-size: 16px; line-height: 1.6; resize: none; padding: 4px 2px; }
+  .dc-textarea::placeholder { color: inherit; opacity: .55; }
+  .dc-page .diary-preview-canvas { margin-top: 8px; background: transparent; }
+  .dc-page .diary-preview-canvas.hidden { display: none; }
+  .dc-stage-hint { font-size: 11px; opacity: .7; text-align: center; margin-top: 6px; display: none; }
+  .dc-stage-hint.show { display: block; }
+  .dc-page .diary-tags-row:not(:empty) { margin-top: 10px; }
+  .dc-photo-action { position: absolute; top: 8px; background: rgba(0,0,0,.6); color: #fff; border-radius: 999px; width: 30px; height: 30px; display: none; align-items: center; justify-content: center; cursor: pointer; font-size: 14px; z-index: 5; }
+  .dc-tools { display: flex; gap: 6px; margin-top: 14px; padding: 6px; background: var(--panel); border: 1px solid var(--border); border-radius: 16px; position: sticky; top: -14px; z-index: 6; }
+  .dc-tool { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px; background: none; border: none; border-radius: 12px; padding: 8px 2px; font-size: 11.5px; font-weight: 700; color: var(--text-dim); cursor: pointer; min-height: 52px; }
+  .dc-tool .dc-tool-ic { font-size: 20px; line-height: 1; }
+  .dc-tool.active { background: var(--panel-2); color: var(--accent); }
+  .dc-tool.fav-on { color: #d9a400; }
+  .dc-panel { display: none; margin-top: 10px; padding: 4px 2px; animation: uiFade .15s ease-out; }
+  .dc-panel.open { display: block; }
+  .dc-panel > .dc-label:first-child { margin-top: 4px; }
+  .dc-wide-btn { width: 100%; background: linear-gradient(135deg, var(--panel-3), var(--panel-2)) !important; color: var(--text) !important; }
+  .dc-scroll-row { flex-wrap: nowrap !important; overflow-x: auto; padding-bottom: 6px; scrollbar-width: none; }
+  .dc-scroll-row::-webkit-scrollbar { display: none; }
+  .dc-scroll-row .diary-theme-swatch { flex-shrink: 0; }
+  .dc-more { margin-top: 14px; border-top: 1px solid var(--border); padding-top: 6px; }
+  .dc-more summary { cursor: pointer; font-size: 13.5px; font-weight: 700; color: var(--accent); padding: 8px 0; list-style: none; }
+  .dc-more summary::-webkit-details-marker { display: none; }
+  .dc-more summary::after { content: ' ▾'; }
+  .dc-more[open] summary::after { content: ' ▴'; }
+  .dc-note { font-size: 11.5px; color: var(--text-dim); margin-top: 6px; }
+  .dc-note:empty { display: none; }
   .diary-favorite-toggle { cursor: pointer; font-size: 20px; line-height: 1; flex-shrink: 0; transition: .15s; }
   .diary-favorite-toggle.active { filter: drop-shadow(0 0 3px rgba(255,196,60,.65)); }
   .diary-bless-note { display: flex; align-items: flex-start; gap: 8px; background: linear-gradient(135deg, var(--panel-3), var(--panel-2)); border: 1px solid var(--border); border-radius: 12px; padding: 10px 12px; margin: 10px 0 12px; font-size: 12.5px; line-height: 1.45; color: var(--text-dim); }
@@ -989,52 +1035,85 @@
        state.diaryComposerDate (por defecto hoy), con ánimo + texto libre + foto
        opcional. La foto se comprime a data URL en el navegador antes de guardarse
        (ver resizeImageFile()), para no inflar demasiado el blob de estado. -->
-  <div id="diary-composer-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:86;align-items:center;justify-content:center;padding:16px;">
-    <div class="profile-card" style="max-width:420px;width:100%;max-height:90vh;overflow-y:auto;margin:0;">
-      <div style="display:flex;align-items:center;gap:8px;">
-        <h4 id="diary-composer-title" style="flex:1;margin:0;" data-i18n="diaryComposerTitleNew">¿Cómo te fue hoy?</h4>
-        <span class="diary-favorite-toggle" id="diary-favorite-toggle" data-i18n-title="diaryFavoriteToggleTitle" title="Marcar como favorita">☆</span>
+  <!-- Compositor del diario (rediseño oct 2026): barra fija arriba con
+       Cancelar · fecha · Guardar; caritas en una fila; una "hoja" donde se
+       escribe y se ve en vivo el estilo, la foto y los stickers; y una barra de
+       herramientas que abre UNA opción a la vez (antes era una sola columna de
+       ~1900px con todas las opciones abiertas y Guardar al fondo). -->
+  <div id="diary-composer-overlay" class="dc-overlay" style="display:none;">
+    <div class="dc-sheet">
+      <div class="dc-header">
+        <button type="button" class="dc-head-btn" id="diary-composer-cancel-btn" data-i18n="cancelBtn">Cancelar</button>
+        <div class="dc-head-title">
+          <div id="diary-composer-title" data-i18n="diaryComposerTitleNew">¿Cómo te fue hoy?</div>
+          <div class="dc-head-date" id="diary-composer-date"></div>
+        </div>
+        <button type="button" class="dc-head-save" id="diary-save-btn" data-i18n="dialogSave">Guardar</button>
       </div>
-      <div class="diary-bless-note" id="diary-bless-note"></div>
-      <div class="quick-replies" id="diary-mood-picker" style="margin-bottom:12px;"></div>
-      <div class="diary-prompt-card" id="diary-prompt-card"></div>
-      <textarea id="diary-text" rows="5" style="width:100%;background:var(--panel-3);border:1px solid var(--border);border-radius:10px;color:var(--text);padding:10px;font-family:inherit;font-size:14px;resize:vertical;" data-i18n-ph="diaryTextPh" placeholder="Escribe lo que quieras recordar de hoy…"></textarea>
-      <div style="font-size:12px;color:var(--text-dim);margin:12px 0 6px;" data-i18n="diaryTagsLabel">Etiquetas</div>
-      <div class="diary-tags-row" id="diary-tags-row"></div>
-      <input type="text" id="diary-tag-input" class="diary-tag-input" data-i18n-ph="diaryTagInputPh" placeholder="Agregar etiqueta y presiona Enter…">
-      <div style="font-size:12px;color:var(--text-dim);margin:14px 0 6px;" data-i18n="diaryFrameLabel">Marco de la foto</div>
-      <div class="diary-theme-picker" id="diary-frame-picker"></div>
-      <div style="font-size:12px;color:var(--text-dim);margin:14px 0 6px;" data-i18n="diaryThemeLabel">Color de la página</div>
-      <div class="diary-theme-picker" id="diary-theme-picker"></div>
-      <div style="font-size:12px;color:var(--text-dim);margin:14px 0 6px;" data-i18n="diaryTextureLabel">Textura</div>
-      <div class="diary-theme-picker" id="diary-texture-picker"></div>
-      <div style="font-size:12px;color:var(--text-dim);margin:14px 0 6px;" data-i18n="diaryFontLabel">Letra del texto</div>
-      <div class="diary-theme-picker" id="diary-font-picker"></div>
-      <div style="font-size:12px;color:var(--text-dim);margin:14px 0 6px;" data-i18n="diarySeparatorLabel">Separador</div>
-      <div class="diary-theme-picker" id="diary-separator-picker"></div>
-      <div style="font-size:12px;color:var(--text-dim);margin:14px 0 6px;" data-i18n="diaryLooksLabel">Mis estilos</div>
-      <div class="diary-looks-row" id="diary-looks-row"></div>
-      <!-- Corrección 24 ago 2026: la foto y los stickers ahora comparten un solo
-           "lienzo" (#diary-preview-canvas) — ya no hay una foto arriba y un
-           cuadro de stickers vacío y separado más abajo. Si no hay foto, el
-           lienzo muestra el fondo de página (tema/textura) elegido, para que
-           siempre haya algo sobre lo que pegar los stickers. -->
-      <div style="font-size:12px;color:var(--text-dim);margin:14px 0 6px;" data-i18n="diaryStickersLabel">Stickers</div>
-      <div class="diary-preview-canvas" id="diary-preview-canvas">
-        <img id="diary-photo-img" style="width:100%;max-height:240px;object-fit:cover;display:none;" />
-        <span id="diary-photo-edit" data-i18n-title="diaryPhotoEditIconTitle" title="Editar foto" style="position:absolute;top:6px;right:38px;background:rgba(0,0,0,.6);color:#fff;border-radius:999px;width:26px;height:26px;display:none;align-items:center;justify-content:center;cursor:pointer;font-size:13px;z-index:5;">✏️</span>
-        <span id="diary-photo-remove" style="position:absolute;top:6px;right:6px;background:rgba(0,0,0,.6);color:#fff;border-radius:999px;width:26px;height:26px;display:none;align-items:center;justify-content:center;cursor:pointer;font-size:14px;z-index:5;">✕</span>
-        <div id="diary-sticker-stage"></div>
+      <div class="dc-body" id="diary-composer-body">
+        <div class="dc-label" data-i18n="diaryMoodQ">¿Cómo te sientes?</div>
+        <div class="dc-mood-row" id="diary-mood-picker"></div>
+
+        <div class="dc-page" id="diary-page">
+          <div class="diary-prompt-card" id="diary-prompt-card"></div>
+          <textarea id="diary-text" class="dc-textarea" rows="6" data-i18n-ph="diaryTextPh" placeholder="Escribe lo que quieras recordar de hoy…"></textarea>
+          <div class="diary-preview-canvas" id="diary-preview-canvas">
+            <img id="diary-photo-img" style="width:100%;max-height:260px;object-fit:cover;display:none;" />
+            <span id="diary-photo-edit" class="dc-photo-action" style="right:44px;" data-i18n-title="diaryPhotoEditIconTitle" title="Editar foto">✏️</span>
+            <span id="diary-photo-remove" class="dc-photo-action" style="right:8px;">✕</span>
+            <div id="diary-sticker-stage"></div>
+          </div>
+          <div class="dc-stage-hint" id="diary-stage-hint" data-i18n="diaryStickerStageHint">Arrastra un sticker para moverlo · toca la esquina para agrandarlo y rotarlo</div>
+          <div class="diary-tags-row" id="diary-tags-row"></div>
+        </div>
+
+        <div class="diary-bless-note" id="diary-bless-note"></div>
+
+        <div class="dc-tools" role="tablist">
+          <button type="button" class="dc-tool" data-panel="photo"><span class="dc-tool-ic">📷</span><span data-i18n="diaryToolPhoto">Foto</span></button>
+          <button type="button" class="dc-tool" data-panel="style"><span class="dc-tool-ic">🎨</span><span data-i18n="diaryToolStyle">Estilo</span></button>
+          <button type="button" class="dc-tool" data-panel="stickers"><span class="dc-tool-ic">🌸</span><span data-i18n="diaryToolStickers">Stickers</span></button>
+          <button type="button" class="dc-tool" data-panel="tags"><span class="dc-tool-ic">🏷️</span><span data-i18n="diaryToolTags">Etiquetas</span></button>
+          <button type="button" class="dc-tool" id="diary-favorite-toggle" data-i18n-title="diaryFavoriteToggleTitle" title="Marcar como favorita"><span class="dc-tool-ic" id="diary-favorite-icon">☆</span><span data-i18n="diaryToolFavorite">Favorita</span></button>
+        </div>
+
+        <div class="dc-panel" data-panel="photo">
+          <input type="file" id="diary-photo-input" accept="image/*" style="display:none;">
+          <button class="send-btn dc-wide-btn" id="diary-photo-btn" data-i18n="diaryAddPhotoBtn">📷 Agregar foto</button>
+          <div id="diary-frame-section">
+            <div class="dc-label" data-i18n="diaryFrameLabel">Marco de la foto</div>
+            <div class="diary-theme-picker dc-scroll-row" id="diary-frame-picker"></div>
+          </div>
+        </div>
+
+        <div class="dc-panel" data-panel="style">
+          <div class="dc-label" data-i18n="diaryThemeLabel">Color de la página</div>
+          <div class="diary-theme-picker" id="diary-theme-picker"></div>
+          <div class="dc-label" data-i18n="diaryFontLabel">Letra del texto</div>
+          <div class="diary-theme-picker dc-scroll-row" id="diary-font-picker"></div>
+          <details class="dc-more">
+            <summary data-i18n="diaryMoreStyle">Más opciones</summary>
+            <div class="dc-label" data-i18n="diaryTextureLabel">Textura</div>
+            <div class="diary-theme-picker dc-scroll-row" id="diary-texture-picker"></div>
+            <div class="dc-label" data-i18n="diarySeparatorLabel">Separador</div>
+            <div class="diary-theme-picker dc-scroll-row" id="diary-separator-picker"></div>
+            <div class="dc-label" data-i18n="diaryLooksLabel">Mis estilos</div>
+            <div class="diary-looks-row" id="diary-looks-row"></div>
+          </details>
+        </div>
+
+        <div class="dc-panel" data-panel="stickers">
+          <div class="diary-sticker-cat-tabs" id="diary-sticker-cat-tabs"></div>
+          <div class="diary-sticker-picker" id="diary-sticker-picker"></div>
+          <div id="diary-sticker-note" class="dc-note"></div>
+        </div>
+
+        <div class="dc-panel" data-panel="tags">
+          <input type="text" id="diary-tag-input" class="diary-tag-input" data-i18n-ph="diaryTagInputPh" placeholder="Agregar etiqueta y presiona Enter…">
+        </div>
+
+        <div id="diary-composer-status" class="dc-note"></div>
       </div>
-      <div style="font-size:11px;color:var(--text-dim);margin:4px 0 8px;text-align:center;" data-i18n="diaryStickerStageHint">Arrastra un sticker para moverlo · toca la esquina para agrandarlo y rotarlo</div>
-      <input type="file" id="diary-photo-input" accept="image/*" style="display:none;">
-      <button class="send-btn" id="diary-photo-btn" style="width:100%;margin-bottom:12px;background:linear-gradient(135deg, var(--panel-3), var(--panel-2)); color:var(--text);" data-i18n="diaryAddPhotoBtn">📷 Agregar foto</button>
-      <div class="diary-sticker-cat-tabs" id="diary-sticker-cat-tabs"></div>
-      <div class="diary-sticker-picker" id="diary-sticker-picker"></div>
-      <div id="diary-sticker-note" style="font-size:11px;color:var(--text-dim);margin-top:4px;"></div>
-      <div id="diary-composer-status" style="font-size:12px;color:var(--text-dim);margin-top:8px;min-height:14px;"></div>
-      <button class="send-btn" id="diary-save-btn" style="width:100%;margin-top:10px;" data-i18n="diarySaveBtn">Guardar entrada</button>
-      <div style="text-align:center;margin-top:10px;"><span class="logout-link" id="diary-composer-cancel-btn" data-i18n="cancelBtn">Cancelar</span></div>
     </div>
   </div>
 
@@ -1233,7 +1312,7 @@ CÓMO DEBES CONVERSAR:
 11. Evita muletillas repetidas como “te escucho”, “qué buena noticia”, “¿hay algo en lo que pueda ayudarte?” y “cuéntame más” salvo que realmente encajen.
 12. No fuerces una pregunta al final de cada respuesta.
 13. Responde normalmente en 2-5 frases cortas cuando el tema lo necesite; sé breve en confirmaciones.
-14. Máximo 2 emojis y solo si aportan personalidad.
+14. Usa emojis con naturalidad, como en un chat entre amigas: normalmente 1 a 3 por mensaje (🤍 🌱 ✨ 🫂 😊 🙌 💪 🌙 ☕ 😅…), elegidos según la emoción. En momentos tristes usa emojis suaves (🤍 🫂 🌧️), nunca festivos.
 
 REGLA DE ORO: si la respuesta puede sonar igual para cualquier usuario, todavía no es una buena respuesta de Bless. Hazla específica a esta persona y a lo que acaba de pasar.
 
@@ -1567,6 +1646,8 @@ const I18N = {
     diaryEmptyText: 'Sin nota escrita para este día.',
     diaryPhotoTooLarge: 'No se pudo procesar esa imagen — intenta con otra foto.',
     nativeLoginFailed: 'No se pudo completar el inicio de sesión. Intenta de nuevo.',
+    crisisFallback: 'Me importa mucho lo que me cuentas 🤍. No tienes que pasar por esto en soledad. Por favor, habla ahora con alguien de confianza. En Perú puedes llamar gratis a la Línea 113, opción 5 (salud mental), a cualquier hora; si estás en otro país, llama al número de emergencias local. ¿Estás a salvo en este momento?',
+    diaryMoodQ: '¿Cómo te sientes?', diaryToolPhoto: 'Foto', diaryToolStyle: 'Estilo', diaryToolStickers: 'Stickers', diaryToolTags: 'Etiquetas', diaryToolFavorite: 'Favorita', diaryMoreStyle: 'Más opciones', diaryTodayPrefix: 'Hoy · ',
     addHabitTitle: 'Agregar un hábito nuevo',
     addHabitDesc: 'No hace falta esperar a otro onboarding — puedes sumar hábitos nuevos cuando quieras, y configurar cada uno a tu manera (qué días, a qué hora, por cuánto tiempo).',
     configureCustomBtn: '✏️ Configurar uno personalizado',
@@ -1899,6 +1980,8 @@ const I18N = {
     diaryEmptyText: 'No note written for this day.',
     diaryPhotoTooLarge: "Couldn't process that image — try another photo.",
     nativeLoginFailed: "Couldn't finish signing in. Please try again.",
+    crisisFallback: "What you're telling me matters so much to me 🤍. You don't have to go through this alone. Please reach out to someone you trust right now, or call your local emergency number or a crisis line in your country. Are you safe right now?",
+    diaryMoodQ: 'How are you feeling?', diaryToolPhoto: 'Photo', diaryToolStyle: 'Style', diaryToolStickers: 'Stickers', diaryToolTags: 'Tags', diaryToolFavorite: 'Favorite', diaryMoreStyle: 'More options', diaryTodayPrefix: 'Today · ',
     addHabitTitle: 'Add a new habit',
     addHabitDesc: "No need to wait for another onboarding — you can add new habits whenever you want, and configure each one your way (which days, what time, for how long).",
     configureCustomBtn: '✏️ Configure a custom one',
@@ -2945,7 +3028,7 @@ function adBannerHtml() {
   if (ADSENSE_CLIENT_ID && ADSENSE_SLOT_ID) {
     return `<div class="ad-slot"><ins class="adsbygoogle" style="display:block;width:100%;" data-ad-client="${ADSENSE_CLIENT_ID}" data-ad-slot="${ADSENSE_SLOT_ID}" data-ad-format="auto" data-full-width-responsive="true"></ins></div>`;
   }
-  return `<div class="ad-slot"><span class="ad-fallback-label">${t('adFallbackLabel')}</span></div>`;
+  return ''; // sin AdSense configurado no se muestra nada (antes salía un rótulo técnico a los usuarios)
 }
 function pushAdsenseSlots() {
   if (isPremium || IS_NATIVE_APP || !ADSENSE_CLIENT_ID || !ADSENSE_SLOT_ID) return;
@@ -3996,13 +4079,15 @@ async function handleUserMessage(text) {
 
   if (state.pending && state.pending.type === 'needsTime') {
     // Mismo cuidado acá: "foundTime", no "t" (ver comentario de arriba).
-    const foundTime = extractTime(text);
+    const nowWords = /\b(ahora|ya mismo|ahorita|en este momento|now|right now)\b/i.test(collapseRepeatedLetters(text.toLowerCase()));
+    const foundTime = extractTime(text) || (nowWords ? minutesToTime(Math.ceil((new Date().getHours() * 60 + new Date().getMinutes() + 1) / 5) * 5) : null);
     if (foundTime) {
       const task = state.pending.task; state.pending = null;
       if (overlapsWork(foundTime)) { const alt = minutesToTime(findFreeSlotNear(timeToMinutes(foundTime))); state.pending = { type: 'confirmAlt', task, altTime: alt }; await say(chatScroll, `Quiere agendar "${task}" a las ${foundTime}, pero eso choca con su horario fijo de trabajo. Sugiérele amablemente las ${alt} como alternativa cercana.`, PHRASES.conflict(alt)); return; }
       addAgendaItem(foundTime, task); await say(chatScroll, `Se confirmó "${task}" a las ${foundTime}. Celebra brevemente y pregunta si quiere algo más para hoy.`, PHRASES.confirmed(task, foundTime)); return;
     }
-    await agentSay(chatScroll, t('needsTimeDropFallback', state.pending.task), 250);
+    // Sin hora: se suelta la pregunta en silencio y el mensaje se responde
+    // normalmente (antes decía "Dejo pendiente la hora de…" y además respondía).
     state.pending = null;
   }
 
@@ -4053,16 +4138,24 @@ async function handleUserMessage(text) {
   // de verdad parece el nombre de una tarea ("correr", "leer 20 min", "ir al
   // gym"). Antes era al revés y "terminé con mi novio" acababa en "¿a qué hora
   // quieres practicar tu instrumento?".
-  if (looksLikeConversationalStatement(text) || looksLikeGoalOrAdvice(text) || !looksLikeTaskName(text)) {
+  const inDifficultMoment = state.recentDifficultyAt && (Date.now() - state.recentDifficultyAt < 20 * 60 * 1000);
+  if (inDifficultMoment || looksLikeConversationalStatement(text) || looksLikeGoalOrAdvice(text) || !looksLikeTaskName(text)) {
     const nudge = proactiveNudge();
     // Si suena a que está pasando por un momento difícil, Bless valida lo que
     // siente y le recuerda con calidez que tiene el diario como espacio seguro
     // — con un aviso tocable que abre el compositor directo desde el chat,
     // sin que tenga que ir a buscar la pestaña.
-    if (looksLikeDifficultyMention(text)) {
+    if (looksLikeCrisisMention(text)) {
+      state.recentDifficultyAt = Date.now();
+      await say(chatScroll, text, t('crisisFallback'), undefined, undefined, 'La persona podría estar pensando en hacerse daño o en no querer vivir. Responde con muchísimo cuidado y calidez, sin juzgar ni minimizar. Dile que importa y que no tiene que pasar por esto en soledad. Anímala a hablar ahora con alguien de confianza y comparte que en Perú puede llamar gratis a la Línea 113, opción 5 (salud mental), o al número de emergencias de su país. Pregúntale si está a salvo en este momento. No menciones hábitos.');
+      return;
+    }
+    if (inDifficultMoment || looksLikeDifficultyMention(text)) {
+      const showDiaryChip = !inDifficultMoment; // el atajo al diario, una sola vez por momento difícil
+      state.recentDifficultyAt = Date.now();
       // Sin el empujón "proactivo" hacia hábitos: en un momento difícil solo se acompaña.
       await say(chatScroll, text, t('diaryDifficultyFallback'), undefined, undefined, 'La persona está pasando por un momento difícil. Acompáñala con calidez y curiosidad genuina por lo que le pasó; no menciones hábitos ni tareas.');
-      addNote(chatScroll, t('diaryPromptFromChatDifficulty'), 'agenda-note', () => openDiaryComposer(todayStr()));
+      if (showDiaryChip) addNote(chatScroll, t('diaryPromptFromChatDifficulty'), 'agenda-note', () => openDiaryComposer(todayStr()));
       return;
     }
     await say(chatScroll, text, t('conversationalReplyFallback') + nudge.extraFallback, undefined, undefined, nudge.extraInstruction);
@@ -4116,6 +4209,7 @@ function looksLikeTaskName(text) {
   const words = l.split(/\s+/).filter(Boolean);
   if (words.length > 6) return false;
   if (/^(ayer|mujer|lugar|hogar|mar|bar|par|placer|poder|deber|ser|estar|tener|haber|amanecer|atardecer|anochecer|taller|super|mejor|peor|primer|hacer nada)\b/.test(l)) return false;
+  if (/^(llorar|gritar|desahogar|morir|rendir|desaparecer|escapar|huir|olvidar|extra[nñ]ar|sufrir|cry|scream|die|give up|disappear)/.test(l)) return false;
   if (/\b(con mi|con mis|mi novi[oa]|mi pareja|mi mam[aá]|mi pap[aá]|me dej[oó]|rompimos|termin[eé]|pele[eé]|discut[ií])\b/.test(l)) return false;
   if (TASK_INFINITIVE_START.test(l)) return true;
   return pickHabitKey(l) !== 'general';
@@ -4129,6 +4223,9 @@ const DIFFICULTY_MENTION_PATTERN = /\b(dif[ií]cil|muy duro|muy pesado|se me hac
 // Sin \b al inicio a propósito: así también reconoce frases pegadas por un
 // error de tipeo ("tuve unmal día", "unpésimo día").
 const DIFFICULTY_LOOSE_PATTERN = /(termin[eé] con|rompimos|me dej[oó]|ruptura|me peleé|me pele[eé]|discut[ií] con|extra[nñ]o a|se muri[oó]|falleci[oó]|perd[ií] (mi|el) trabajo|me despidieron|broke up|dumped me|passed away|lost my job|mal\s*d[ií]a|me fue mal|no me fue bien|fatal|p[eé]sim[oa]|horrible|terrible|llor(ar|é|o|ando)|me siento (mal|sol[oa]|vac[ií][oa])|preocupad[oa]|desanimad[oa]|bad\s*day|awful|terrible day|cried|crying)/i;
+// Señales de crisis (ideas de hacerse daño): respuesta con cuidado y una línea de ayuda.
+const CRISIS_PATTERN = /(suicid|matarme|quitarme la vida|no quiero vivir|quiero morir|me quiero morir|hacerme da[nñ]o|cortarme|desaparecer para siempre|kill myself|want to die|end my life|hurt myself|self[- ]harm)/i;
+function looksLikeCrisisMention(text) { return CRISIS_PATTERN.test(text || ''); }
 function looksLikeDifficultyMention(text) {
   const l = text.trim();
   if (!l) return false;
@@ -4760,7 +4857,7 @@ function renderDiary() {
       <div class="diary-entry-head">
         <span class="diary-entry-mood">${en.mood || '📔'}</span>
         ${en.favorite ? `<span class="diary-entry-fav" title="${t('diaryFavoriteToggleTitle')}">⭐</span>` : ''}
-        <span class="diary-entry-date">${en.date === today ? t('diaryTodayLabel') + ' · ' : ''}${en.date}</span>
+        <span class="diary-entry-date">${en.date === today ? t('diaryTodayLabel') + ' · ' : ''}${new Date(en.date + 'T00:00:00').toLocaleDateString(currentLang() === 'en' ? 'en-US' : 'es-PE', { day: 'numeric', month: 'short', year: en.date.slice(0, 4) === today.slice(0, 4) ? undefined : 'numeric' })}</span>
         <span class="diary-entry-actions">
           <span class="diary-edit-entry-btn" data-date="${en.date}" title="${t('diaryEditIconTitle')}">✏️</span>
           <span class="diary-delete-entry-btn" data-date="${en.date}" title="${t('diaryDeleteIconTitle')}">🗑️</span>
@@ -4900,9 +4997,27 @@ function openDiaryComposer(dateStr) {
   // título desde arriba. Tiene que ir DESPUÉS de mostrar el overlay: asignar
   // scrollTop mientras el elemento todavía tiene display:none no tiene efecto
   // (no existe una caja de scroll que ajustar hasta que esté visible).
-  const composerCard = document.querySelector('#diary-composer-overlay .profile-card');
-  if (composerCard) composerCard.scrollTop = 0;
+  const composerBody = document.getElementById('diary-composer-body');
+  if (composerBody) composerBody.scrollTop = 0;
+  openDiaryToolPanel(null);
+  const d = new Date(dateStr + 'T00:00:00');
+  const dateLabel = d.toLocaleDateString(currentLang() === 'en' ? 'en-US' : 'es-PE', { weekday: 'long', day: 'numeric', month: 'long' });
+  document.getElementById('diary-composer-date').textContent = (dateStr === todayStr() ? t('diaryTodayPrefix') : '') + dateLabel;
 }
+// Barra de herramientas del compositor: abre una sola opción a la vez; tocar la
+// que ya está abierta la cierra.
+function openDiaryToolPanel(name) {
+  document.querySelectorAll('#diary-composer-overlay .dc-tool[data-panel]').forEach(b => b.classList.toggle('active', b.dataset.panel === name));
+  document.querySelectorAll('#diary-composer-overlay .dc-panel').forEach(p => p.classList.toggle('open', p.dataset.panel === name));
+  if (name === 'tags') setTimeout(() => { const i = document.getElementById('diary-tag-input'); if (i) i.focus(); }, 50);
+  if (name) {
+    const panel = document.querySelector(`#diary-composer-overlay .dc-panel[data-panel="${name}"]`);
+    if (panel) setTimeout(() => panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 30);
+  }
+}
+document.querySelectorAll('#diary-composer-overlay .dc-tool[data-panel]').forEach(btn => {
+  btn.onclick = () => openDiaryToolPanel(btn.classList.contains('active') ? null : btn.dataset.panel);
+});
 // Cada picker de estilo (tema/textura/marco/fuente/separador) es una función
 // aparte — no solo código inline en openDiaryComposer() — para poder
 // redibujarlos individualmente cuando se aplica un "look" guardado (Fase 3,
@@ -5020,8 +5135,8 @@ function deleteDiaryLook(id) {
 // ---- Favoritas y etiquetas (Fase 4, 24 ago 2026) ----
 function refreshDiaryFavoriteToggle() {
   const btn = document.getElementById('diary-favorite-toggle');
-  btn.textContent = diaryComposerFavorite ? '⭐' : '☆';
-  btn.classList.toggle('active', diaryComposerFavorite);
+  document.getElementById('diary-favorite-icon').textContent = diaryComposerFavorite ? '⭐' : '☆';
+  btn.classList.toggle('fav-on', diaryComposerFavorite);
   btn.title = t('diaryFavoriteToggleTitle');
 }
 function refreshDiaryTagsRow() {
@@ -5128,11 +5243,16 @@ function refreshDiaryStickerStage() {
   // foto — #diary-sticker-stage vuelve a ser solo la capa transparente donde
   // se dibujan los stickers encima, para que ambos (foto y stickers) se vean
   // como un único lienzo en vez de una foto y luego un cuadro vacío aparte.
+  // Rediseño: el color/textura se pinta en toda la "hoja" (#diary-page), así se
+  // ve en vivo mientras se escribe. El lienzo de foto+stickers solo aparece
+  // cuando hay algo que mostrar (antes era un cuadro vacío que confundía).
   const bgCss = diaryPageBackgroundCss(diaryComposerTheme, diaryComposerTexture);
-  canvas.setAttribute('style', bgCss || '');
+  document.getElementById('diary-page').setAttribute('style', bgCss || '');
   canvas.classList.toggle('empty-page', !diaryComposerPhoto);
+  canvas.classList.toggle('hidden', !diaryComposerPhoto && !diaryComposerStickers.length);
+  document.getElementById('diary-stage-hint').classList.toggle('show', diaryComposerStickers.length > 0);
   if (!diaryComposerStickers.length) {
-    stage.innerHTML = `<div class="diary-sticker-stage-empty-hint">${t('diaryStickerStageEmpty')}</div>`;
+    stage.innerHTML = '';
     return;
   }
   stage.innerHTML = diaryComposerStickers.map(s => `
@@ -5226,7 +5346,9 @@ function refreshDiaryPhotoPreview() {
     editBtn.style.display = 'flex';
     removeBtn.style.display = 'flex';
     photoBtn.textContent = t('diaryChangePhotoBtn');
+    document.getElementById('diary-frame-section').style.display = '';
   } else {
+    document.getElementById('diary-frame-section').style.display = 'none';
     img.style.display = 'none';
     editBtn.style.display = 'none';
     removeBtn.style.display = 'none';
