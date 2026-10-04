@@ -260,6 +260,8 @@
   .diary-look-add-btn:hover { border-color: var(--accent); color: var(--accent); }
   /* Fase 4 del diario — experiencia (24 ago 2026): pregunta del día, notita de
      Bless, favoritas/etiquetas y filtro de la lista por ellas. */
+  .he-minutes .qr-btn { min-width: 58px; }
+  .time .mins { font-weight: 600; opacity: .75; }
   /* ---- Compositor del diario (rediseño) ---- */
   .dc-overlay { position: fixed; inset: 0; z-index: 86; background: rgba(20,16,40,.45); display: flex; justify-content: center; }
   .dc-sheet { width: 100%; max-width: 480px; height: 100%; background: var(--bg); display: flex; flex-direction: column; box-shadow: 0 0 40px rgba(20,16,40,.2); }
@@ -994,7 +996,12 @@
         <input type="time" id="he-time" value="18:00">
       </div>
       <div id="he-per-day-times" style="display:none;"></div>
-      <div style="font-size:12px;color:var(--text-dim);margin:12px 0 6px;" data-i18n="heDurationQ">¿Por cuánto tiempo?</div>
+      <div style="font-size:12px;color:var(--text-dim);margin:14px 0 6px;" data-i18n="heMinutesQ">¿Cuánto tiempo al día?</div>
+      <div class="quick-replies he-minutes" id="he-minutes"></div>
+      <div class="row-input" id="he-minutes-custom-row" style="display:none;margin-top:6px;align-items:center;gap:8px;">
+        <input type="number" id="he-minutes-custom" min="1" max="600" inputmode="numeric" style="max-width:110px;"> <span style="font-size:13px;color:var(--text-dim);" data-i18n="heMinutesUnit">minutos</span>
+      </div>
+      <div style="font-size:12px;color:var(--text-dim);margin:14px 0 6px;" data-i18n="heDurationQ">¿Hasta cuándo?</div>
       <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:13px;color:var(--text-dim);">
         <label style="display:flex;align-items:center;gap:4px;"><input type="radio" name="he-duration" id="he-duration-indef" checked> <span data-i18n="heIndef">Indefinido</span></label>
         <label style="display:flex;align-items:center;gap:4px;"><input type="radio" name="he-duration" id="he-duration-weeks"> <span data-i18n="heForLabel">Por</span> <input type="number" id="he-weeks" min="1" value="4" style="width:52px;" disabled> <span data-i18n="heWeeksLabel">semanas</span></label>
@@ -1293,7 +1300,7 @@ PERFIL:
 - Motivación: ${p.motivacion || 'no definido'}
 - Energía: ${p.energia || 'no definido'}
 - Tiempo libre: ${p.tiempoLibre || 'no definido'}
-- Hábitos: ${(p.habitos||[]).map(h=>h.label).filter(Boolean).join(', ') || 'ninguno'}
+- Hábitos: ${(p.habitos||[]).map(h => h.label + (h.minutesPerDay ? ` (${minutesLabel(h.minutesPerDay)} al día)` : '')).filter(Boolean).join(', ') || 'ninguno'}
 
 ${blessContextSnapshot()}
 
@@ -1398,8 +1405,9 @@ const I18N = {
     heLabelPh: 'Nombre del hábito',
     heDaysQ: '¿Qué días de la semana?',
     heSameTime: 'Mismo horario todos los días',
-    heDurationQ: '¿Por cuánto tiempo?',
-    heIndef: 'Indefinido',
+    heDurationQ: '¿Hasta cuándo?',
+    heMinutesQ: '¿Cuánto tiempo al día?', heMinutesOther: 'Otro', heMinutesUnit: 'minutos',
+    heIndef: 'Siempre',
     heForLabel: 'Por', heWeeksLabel: 'semanas',
     heSaveBtn: 'Guardar hábito', heDeleteBtn: 'Eliminar hábito',
     cancelBtn: 'Cancelar',
@@ -1736,8 +1744,9 @@ const I18N = {
     heLabelPh: 'Habit name',
     heDaysQ: 'Which days of the week?',
     heSameTime: 'Same time every day',
-    heDurationQ: 'For how long?',
-    heIndef: 'Indefinite',
+    heDurationQ: 'Until when?',
+    heMinutesQ: 'How much time per day?', heMinutesOther: 'Other', heMinutesUnit: 'minutes',
+    heIndef: 'Always',
     heForLabel: 'For', heWeeksLabel: 'weeks',
     heSaveBtn: 'Save habit', heDeleteBtn: 'Delete habit',
     cancelBtn: 'Cancel',
@@ -2295,6 +2304,46 @@ function habitActiveOnDate(h, dateStr) {
   const start = new Date(h.createdAt + 'T00:00:00');
   const end = addDays(start, h.durationWeeks * 7);
   return new Date(dateStr + 'T00:00:00') <= end;
+}
+// Minutos al día de un hábito ("30 min", "1 h", "1 h 30 min"), o '' si no se definió.
+function minutesLabel(mins) {
+  mins = parseInt(mins, 10);
+  if (!mins || mins <= 0) return '';
+  if (mins < 60) return `${mins} min`;
+  const hrs = Math.floor(mins / 60), rest = mins % 60;
+  return rest ? `${hrs} h ${rest} min` : `${hrs} h`;
+}
+function habitMinutesLabel(h) { return h ? minutesLabel(h.minutesPerDay) : ''; }
+function habitForAgendaItem(habitKey, label) {
+  return (state.profile.habitos || []).find(h => h.key === habitKey && h.label === label) || null;
+}
+const HE_MINUTE_OPTIONS = [5, 10, 15, 20, 30, 45, 60, 90];
+let heSelectedMinutes = null; // número, 'custom' o null (sin definir)
+function renderHabitMinutesPicker(current) {
+  const wrap = document.getElementById('he-minutes');
+  const customRow = document.getElementById('he-minutes-custom-row');
+  const customInput = document.getElementById('he-minutes-custom');
+  heSelectedMinutes = current ? (HE_MINUTE_OPTIONS.includes(current) ? current : 'custom') : null;
+  customInput.value = heSelectedMinutes === 'custom' ? current : '';
+  const opts = [...HE_MINUTE_OPTIONS.map(m => ({ v: m, label: minutesLabel(m) })), { v: 'custom', label: t('heMinutesOther') }];
+  wrap.innerHTML = opts.map(o => `<button type="button" class="qr-btn${heSelectedMinutes === o.v ? ' selected' : ''}" data-v="${o.v}">${o.label}</button>`).join('');
+  customRow.style.display = heSelectedMinutes === 'custom' ? 'flex' : 'none';
+  wrap.querySelectorAll('.qr-btn').forEach(b => {
+    b.onclick = () => {
+      const v = b.dataset.v === 'custom' ? 'custom' : parseInt(b.dataset.v, 10);
+      heSelectedMinutes = heSelectedMinutes === v ? null : v; // tocar de nuevo = quitar
+      wrap.querySelectorAll('.qr-btn').forEach(x => x.classList.toggle('selected', heSelectedMinutes !== null && String(heSelectedMinutes) === x.dataset.v));
+      customRow.style.display = heSelectedMinutes === 'custom' ? 'flex' : 'none';
+      if (heSelectedMinutes === 'custom') setTimeout(() => customInput.focus(), 30);
+    };
+  });
+}
+function readHabitMinutesPicker() {
+  if (heSelectedMinutes === 'custom') {
+    const v = parseInt(document.getElementById('he-minutes-custom').value, 10);
+    return v > 0 ? Math.min(v, 600) : null;
+  }
+  return heSelectedMinutes || null;
 }
 function habitDurationLabel(h) {
   return h.durationWeeks ? t('porNSemanas', h.durationWeeks) : t('indefinido');
@@ -3207,7 +3256,7 @@ async function scheduleNativeReminders() {
         if (!Number.isFinite(hh)) return;
         notifications.push({
           id: id++,
-          title: `${h.icon || '🌱'} ${habitDisplayLabel(h)}`,
+          title: `${h.icon || '🌱'} ${habitDisplayLabel(h)}${habitMinutesLabel(h) ? ' · ' + habitMinutesLabel(h) : ''}`,
           body: tp('reminderBody'),
           schedule: { on: { weekday: dow + 1, hour: hh, minute: Number.isFinite(mm) ? mm : 0 }, allowWhileIdle: true },
         });
@@ -4272,7 +4321,7 @@ function renderProfile() {
   const el = document.getElementById('view-profile');
   const total = state.agenda.length, done = state.agenda.filter(a=>a.done).length;
   const weekSuffix = t('weekSuffix');
-  const habitsHtml = p.habitos.map((h, i) => `<span class="habit-chip">${h.icon} ${habitDisplayLabel(h)}<span class="streak">🔥 ${state.streaks[h.key]||0}</span><span style="font-size:11px;color:var(--text-dim);margin-left:6px;">${habitDaysCompact(h)}${h.durationWeeks ? ' · ' + h.durationWeeks + weekSuffix : ''}</span>${h.suggestedByBless ? `<span style="font-size:10px;font-weight:800;color:var(--on-accent);background:linear-gradient(135deg, var(--accent-2), var(--accent-3));padding:2px 7px;border-radius:999px;margin-left:6px;">${t('sugerenciaBless')}</span>` : ''}<span class="chip-edit-btn" data-idx="${i}" title="${t('editIconTitle')}">✏️</span></span>`).join('');
+  const habitsHtml = p.habitos.map((h, i) => `<span class="habit-chip">${h.icon} ${habitDisplayLabel(h)}<span class="streak">🔥 ${state.streaks[h.key]||0}</span><span style="font-size:11px;color:var(--text-dim);margin-left:6px;">${habitDaysCompact(h)}${habitMinutesLabel(h) ? ' · ' + habitMinutesLabel(h) : ''}${h.durationWeeks ? ' · ' + h.durationWeeks + weekSuffix : ''}</span>${h.suggestedByBless ? `<span style="font-size:10px;font-weight:800;color:var(--on-accent);background:linear-gradient(135deg, var(--accent-2), var(--accent-3));padding:2px 7px;border-radius:999px;margin-left:6px;">${t('sugerenciaBless')}</span>` : ''}<span class="chip-edit-btn" data-idx="${i}" title="${t('editIconTitle')}">✏️</span></span>`).join('');
   const lp = levelInfo(p.xp || 0);
   const lpNext = LEVELS.find(x => x.n === lp.n + 1);
   el.innerHTML = `
@@ -5790,6 +5839,8 @@ function openHabitEditor(index) {
   sameTimeCheckbox.onchange = () => renderPerDayTimeInputs(getSelectedEditorDays(), h);
   renderPerDayTimeInputs(days, h);
 
+  renderHabitMinutesPicker(h ? h.minutesPerDay : null);
+
   const hasWeeks = !!(h && h.durationWeeks);
   document.getElementById('he-duration-indef').checked = !hasWeeks;
   document.getElementById('he-duration-weeks').checked = hasWeeks;
@@ -5872,6 +5923,7 @@ function saveHabitEditor() {
     time,
     timesByDay,
     durationWeeks,
+    minutesPerDay: readHabitMinutesPicker(),
     createdAt: existing ? (existing.createdAt || ymd(new Date())) : ymd(new Date()),
   };
   entry.repeatWeekly = entry.repeatDays.length === 7;
@@ -6079,7 +6131,7 @@ function renderCalDay() {
     <div class="agenda-item ${it.done ? 'done' : ''}">
       <span class="check" ${isToday ? `onclick="toggleDoneFromCal(${idx})" style="cursor:pointer;"` : ''}>${it.done ? '✓' : ''}</span>
       <span class="icon">${it.icon}</span>
-      ${it.time ? `<span class="time">${it.time}</span>` : ''}
+      ${it.time ? `<span class="time">${it.time}${habitMinutesLabel(habitForAgendaItem(it.habitKey, it.label)) ? `<span class="mins"> · ${habitMinutesLabel(habitForAgendaItem(it.habitKey, it.label))}</span>` : ''}</span>` : ''}
       <span class="task">${itemDisplayLabel(it)}</span>
       <span class="edit" data-cal-edit="${idx}" title="${t('editRemoveTitle')}">✏️</span>
     </div>`).join('') : `<div style="font-size:12px;color:var(--text-dim);">${t('sinActividades')}</div>`;
