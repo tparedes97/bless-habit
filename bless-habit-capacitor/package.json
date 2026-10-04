@@ -1,0 +1,19 @@
+{
+  "name": "bless-habit-capacitor",
+  "version": "1.0.0",
+  "description": "Cascara Android (Capacitor) para la app web Bless Habit",
+  "private": true,
+  "scripts": {
+    "sync": "cap sync android",
+    "open:android": "cap open android"
+  },
+  "dependencies": {
+    "@capacitor/android": "^7.0.0",
+    "@capacitor/app": "^7.0.0",
+    "@capacitor/browser": "^7.0.0",
+    "@capacitor/core": "^7.0.0"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^7.0.0"
+  }
+}

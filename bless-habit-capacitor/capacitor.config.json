@@ -1,0 +1,12 @@
+{
+  "appId": "app.blesshabit.android",
+  "appName": "Bless Habit",
+  "webDir": "www",
+  "server": {
+    "url": "https://bless-habit.onrender.com",
+    "cleartext": false
+  },
+  "android": {
+    "allowMixedContent": false
+  }
+}

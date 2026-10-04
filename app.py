@@ -579,6 +579,65 @@ def api_cancel_subscription():
     return jsonify({"ok": True})
 
 
+# ============================================================
+# CHECKOUT DESDE LA APP NATIVA (Capacitor / Android) — el WebView de la app
+# no comparte la sesión con el navegador del sistema, así que el pago se
+# abre en el navegador del sistema con un token de un solo uso (mismo patrón
+# que el login nativo de arriba). Al pagar, la página vuelve a la app por
+# blesshabit://premium-done, y la app consulta /api/subscription-status.
+# Quien activa el Premium de verdad sigue siendo el webhook de Paddle.
+# ============================================================
+NATIVE_CHECKOUT_TOKENS = {}
+NATIVE_CHECKOUT_TOKEN_TTL_SECONDS = 120
+
+
+def _cleanup_native_checkout_tokens():
+    now = time.time()
+    expired = [t for t, (_, exp) in NATIVE_CHECKOUT_TOKENS.items() if exp < now]
+    for t in expired:
+        NATIVE_CHECKOUT_TOKENS.pop(t, None)
+
+
+@app.route("/api/native-checkout-token", methods=["POST"])
+def api_native_checkout_token():
+    user_id = session.get("user_id")
+    if not user_id:
+        return jsonify({"ok": False, "error": "No autenticado"}), 401
+    _cleanup_native_checkout_tokens()
+    token = secrets.token_urlsafe(32)
+    NATIVE_CHECKOUT_TOKENS[token] = (user_id, time.time() + NATIVE_CHECKOUT_TOKEN_TTL_SECONDS)
+    return jsonify({"ok": True, "url": url_for("native_checkout", token=token, _external=True)})
+
+
+@app.route("/premium/native-checkout")
+def native_checkout():
+    """Se abre en el navegador del sistema (no en el WebView de la app)."""
+    _cleanup_native_checkout_tokens()
+    entry = NATIVE_CHECKOUT_TOKENS.pop(request.args.get("token", ""), None)
+    error = None
+    user = None
+    if not entry:
+        error = "Este enlace de pago expiró. Vuelve a la app y toca de nuevo \"Hazte Premium\"."
+    else:
+        user = get_user(entry[0])
+        if not user:
+            error = "No encontramos tu cuenta. Vuelve a la app e inicia sesión de nuevo."
+        elif user["is_premium"]:
+            error = "Ya tienes Bless Habit Premium activo. ¡Gracias!"
+        elif not paddle_configured():
+            error = "El cobro con Paddle todavía no está configurado en el servidor."
+    return render_template(
+        "native_checkout.html",
+        error=error,
+        email=(user["email"] if user else "") or "",
+        client_token=PADDLE_CLIENT_TOKEN or "",
+        price_id=PADDLE_PRICE_ID or "",
+        paddle_env=PADDLE_ENV,
+        price_label=PADDLE_PRICE_LABEL,
+        return_url=f"{NATIVE_APP_URL_SCHEME}://premium-done",
+    )
+
+
 @app.route("/webhooks/paddle", methods=["POST"])
 def webhook_paddle():
     # Paddle notifica aquí cada evento del ciclo de vida de la suscripción.

@@ -1438,8 +1438,6 @@ const I18N = {
     scheduledEnergyFallback: (time, icon, hint) => `Agregado a las ${time} ${icon}. Como tienes más energía en ${hint}, si quieres puedo moverlo ahí para que te rinda más. ¿Lo dejamos así o lo cambio?`,
     offerRecurringFallback: (time, icon) => `Agregado a las ${time} ${icon} ✅. Oye, ¿quieres que te ayude a convertir esto en un hábito que repitamos? Así te acompaño a construirlo de verdad, no solo por hoy.`,
 
-    nativePremiumManageMsg: 'Para gestionar tu plan Premium, entra a blesshabit.app desde tu navegador.',
-    nativePremiumEntryMsg: 'Para hacerte Premium, entra a blesshabit.app desde tu navegador.',
     adFallbackLabel: 'Espacio de anuncios (AdSense) — configúralo en Secrets',
 
     pushNotSupported: 'Este navegador no soporta notificaciones.',
@@ -1744,8 +1742,6 @@ const I18N = {
     scheduledEnergyFallback: (time, icon, hint) => `Added at ${time} ${icon}. Since you have more energy in ${hint}, I can move it there if you want it to be more effective. Should we leave it as is or change it?`,
     offerRecurringFallback: (time, icon) => `Added at ${time} ${icon} ✅. Hey, want me to help turn this into a habit we repeat? That way I can really help you build it, not just for today.`,
 
-    nativePremiumManageMsg: 'To manage your Premium plan, go to blesshabit.app from your browser.',
-    nativePremiumEntryMsg: 'To go Premium, go to blesshabit.app from your browser.',
     adFallbackLabel: 'Ad space (AdSense) — configure it in Secrets',
 
     pushNotSupported: "This browser doesn't support notifications.",
@@ -2588,10 +2584,12 @@ const NATIVE_APP_URL_SCHEME = {{ native_app_url_scheme | tojson }};
    1) El login con Google no puede pasar por el WebView embebido (Google lo
       bloquea con "disallowed_useragent"): hay que abrir el navegador del
       sistema (plugin Browser) y volver a la app por un enlace personalizado.
-   2) Los botones de "Hazte Premium" se ocultan (patrón "consumption-only"):
-      así Google Play NO exige usar Google Play Billing (que se queda con
-      15%) porque la app nunca vende nada dentro de sí misma — el pago se
-      hace siempre desde la web (Paddle).
+   2) El checkout de Paddle se abre en el navegador del sistema (no dentro
+      del WebView) con un token de un solo uso — ver openNativePaddleCheckout().
+      Al pagar, el navegador vuelve a la app por blesshabit://premium-done.
+      OJO: Google Play exige Play Billing para suscripciones digitales salvo
+      en los países con programas de enlaces externos; revisar esa política
+      antes de publicar.
    ============================================================ */
 const IS_NATIVE_APP = !!(window.Capacitor && typeof window.Capacitor.isNativePlatform === 'function' && window.Capacitor.isNativePlatform());
 
@@ -2612,6 +2610,11 @@ function setupNativeAppUrlListener() {
     try {
       const url = new URL(data.url);
       if (url.protocol.replace(':', '') !== NATIVE_APP_URL_SCHEME) return;
+      if (url.hostname === 'premium-done' || url.pathname === '/premium-done') {
+        if (plugins.Browser) { try { await plugins.Browser.close(); } catch (e) {} }
+        if (!isPremium) pollPremiumStatus(10, 2000);
+        return;
+      }
       if (url.hostname !== 'auth-callback' && url.pathname !== '/auth-callback') return;
       const token = url.searchParams.get('token');
       if (!token) return;
@@ -2622,12 +2625,39 @@ function setupNativeAppUrlListener() {
   });
 }
 
-function hidePremiumButtonsIfNative() {
-  if (!IS_NATIVE_APP) return;
-  document.querySelectorAll('.premium-btn').forEach((btn) => {
-    if (btn.id === 'push-toggle-btn') return; // no es un botón de compra
-    btn.outerHTML = `<div style="font-size:13px;color:var(--text-dim);">${t('nativePremiumManageMsg')}</div>`;
+// Si el usuario cierra la pestaña del navegador sin volver por el enlace
+// blesshabit://premium-done (o el navegador no lo sigue solo), igual se
+// revisa si el pago ya activó el Premium.
+let nativeCheckoutPending = false;
+function setupNativeBrowserFinishedListener() {
+  const plugins = window.Capacitor && window.Capacitor.Plugins;
+  if (!plugins || !plugins.Browser) return;
+  plugins.Browser.addListener('browserFinished', () => {
+    if (!nativeCheckoutPending) return;
+    nativeCheckoutPending = false;
+    if (!isPremium) pollPremiumStatus(10, 2000);
   });
+}
+
+async function openNativePaddleCheckout() {
+  const plugins = window.Capacitor && window.Capacitor.Plugins;
+  let data;
+  try {
+    data = await (await fetch('/api/native-checkout-token', { method: 'POST' })).json();
+  } catch (e) {
+    alert(t('paddleConnFail'));
+    return;
+  }
+  if (!data.ok || !data.url) {
+    alert(t('paddleConnFail'));
+    return;
+  }
+  nativeCheckoutPending = true;
+  if (plugins && plugins.Browser) {
+    plugins.Browser.open({ url: data.url });
+  } else {
+    window.open(data.url, '_system');
+  }
 }
 
 /* ============================================================
@@ -2699,6 +2729,7 @@ if (IS_NATIVE_APP) {
     });
   }
   setupNativeAppUrlListener();
+  setupNativeBrowserFinishedListener();
 }
 bootstrapApp();
 
@@ -2755,6 +2786,7 @@ async function pollPremiumStatus(attempts = 6, delayMs = 1500) {
    Paddle es "Merchant of Record": cobra a cualquier país y se encarga de los
    impuestos locales — por eso se eligió sobre Culqi para una audiencia internacional. */
 async function openPaddleCheckout() {
+  if (IS_NATIVE_APP) return openNativePaddleCheckout();
   let cfg;
   try {
     cfg = await (await fetch('/api/paddle-config')).json();
@@ -3876,10 +3908,8 @@ function renderProfile() {
     <div class="profile-card">
       <h4>${t('planTitle')}</h4>
       ${isPremium
-        ? `<div class="premium-badge">${t('premiumBadge')}</div>${IS_NATIVE_APP ? '' : `<div style="margin-top:10px;"><span class="logout-link" id="cancel-premium-link">${t('cancelSubLink')}</span></div>`}`
-        : IS_NATIVE_APP
-          ? `<div style="font-size:13px;color:var(--text-dim);">${t('nativePremiumEntryMsg')}</div>`
-          : `<div style="font-size:13px;color:var(--text-dim);margin-bottom:10px;">${t('freePlanDesc')}</div><button class="premium-btn" id="profile-unlock-premium-btn">${t('becomePremiumBtn', PADDLE_PRICE_LABEL)}</button>`}
+        ? `<div class="premium-badge">${t('premiumBadge')}</div><div style="margin-top:10px;"><span class="logout-link" id="cancel-premium-link">${t('cancelSubLink')}</span></div>`
+        : `<div style="font-size:13px;color:var(--text-dim);margin-bottom:10px;">${t('freePlanDesc')}</div><button class="premium-btn" id="profile-unlock-premium-btn">${t('becomePremiumBtn', PADDLE_PRICE_LABEL)}</button>`}
     </div>
     <div class="profile-card">
       <h4>${t('notifTitle')}</h4>
@@ -5777,10 +5807,8 @@ function renderMetrics() {
       <div class="metrics-section premium-lock">
         <h4>${t('lockedTitle')}</h4>
         <div style="font-size:13px;color:var(--text-dim);line-height:1.5;">${t('lockedDesc')}</div>
-        ${IS_NATIVE_APP
-          ? `<div style="font-size:13px;color:var(--text-dim);">${t('nativePremiumEntryMsg')}</div>`
-          : `<button class="premium-btn" id="unlock-premium-btn">${t('becomePremiumBtn', PADDLE_PRICE_LABEL)}</button>
-        <div class="premium-note">${t('premiumNote')}</div>`}
+        <button class="premium-btn" id="unlock-premium-btn">${t('becomePremiumBtn', PADDLE_PRICE_LABEL)}</button>
+        <div class="premium-note">${t('premiumNote')}</div>
       </div>`;
 
   const emptyHistoryHtml = `
