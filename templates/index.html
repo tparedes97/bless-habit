@@ -1134,10 +1134,13 @@ async function callBlessAI(systemPrompt, situationPrompt) {
       body: JSON.stringify({ system: systemPrompt, history: recentHistoryFor(situationPrompt), prompt: situationPrompt }),
       signal: controller.signal,
     });
-    if (!res.ok) return null;
-    const data = await res.json();
-    return (data && data.ok && data.reply) ? data.reply.trim() : null;
-  } catch (e) { return null; }
+    const data = await res.json().catch(() => null);
+    if (!res.ok || !data || !data.ok) {
+      console.warn('[Bless IA] sin respuesta de la IA, se usa la frase de respaldo:', (data && data.error) || res.status);
+      return null;
+    }
+    return data.reply ? data.reply.trim() : null;
+  } catch (e) { console.warn('[Bless IA] error de conexión con la IA:', e); return null; }
   finally { clearTimeout(timeoutId); }
 }
 // 25 ago 2026: primera parte del rediseño "que Bless entienda como GPT" — en vez
@@ -1376,12 +1379,12 @@ const I18N = {
       (n) => `¡Hola de nuevo, ${n}! ¿Con qué empezamos el día? 🙂`,
     ],
     greetingAfternoon: [
-      (n) => `¡Hola de nuevo, ${n}! ¿Cómo va tu tarde? 🙂`,
-      (n) => `${n}, ¿con qué seguimos hoy? 🌱`,
+      (n) => `¡Hola de nuevo, ${n}! 🤍 ¿Cómo va tu tarde? ¿Cómo te sientes hoy?`,
+      (n) => `¡Qué gusto verte, ${n}! 🌱 ¿Cómo va tu día hasta ahora?`,
     ],
     greetingEvening: [
-      (n) => `Buenas noches, ${n}. ¿Cómo te fue hoy? 🌙`,
-      (n) => `¡Hola, ${n}! ¿Cerramos el día? 🌙`,
+      (n) => `Buenas noches, ${n} 🌙. ¿Cómo te fue hoy? Cuéntame, te leo.`,
+      (n) => `¡Hola, ${n}! Qué bueno verte por aquí antes de dormir 🌙. ¿Cómo estuvo tu día?`,
     ],
     dayArmedNote: 'Ya dejé tu día armado con los hábitos que elegiste — puedes marcarlos, moverlos o quitarlos cuando quieras. 🗓️',
     fabPrompt: ['¿Quieres agregar algo a tu día? Yo puedo ayudarte 💬', 'Cuéntame qué tienes en mente, yo puedo ayudarte a organizarlo 🙂'],
@@ -1451,8 +1454,16 @@ const I18N = {
     aspirationalAchievementFallback: ['Me encanta esa energía 🌱 ¿Qué te gustaría lograr específicamente? Así vemos juntas/os cómo armar un hábito que te acerque ahí.', '¡Vamos por eso! 🌟 Cuéntame más de qué se trata ese logro que quieres alcanzar, para pensar el primer paso.'],
     achievementNegatedFallback: ['Está bien no lograr todo siempre 🤍. No tienes que resolverlo hoy — ¿quieres contarme un poco más de cómo te sientes?', 'Te escucho 🤍. Los días así también cuentan. Estoy aquí si quieres hablar de eso.'],
     achievementManageFallback: ['¡Claro! Para eliminar un logro, ve a tu Perfil → 🏆 Tus logros, y toca el ícono 🗑️ junto al que quieras quitar.', 'Sí se puede — en tu Perfil, en la sección 🏆 Tus logros, cada uno tiene un ícono 🗑️ para eliminarlo cuando quieras.'],
-    conversationalReplyFallback: ['Te escucho 🤍. Cuéntame más, o si quieres, dime qué te gustaría lograr hoy.', 'Gracias por contarme 🌱. ¿Hay algo en lo que te pueda ayudar hoy?'],
-    diaryDifficultyFallback: ['Siento que estés pasando por esto 🤍. Tómate tu tiempo — y si te ayuda, sabes que tienes tu diario aquí mismo, es un espacio solo tuyo para escribir sin que nadie más lo vea.', 'Gracias por contarme, de verdad 🌱. No tienes que resolverlo todo ahora. Si quieres soltarlo por escrito, tu diario está ahí, como un espacio seguro solo para ti.'],
+    conversationalReplyFallback: [
+      'Aquí estoy, te leo con calma 🤍. ¿Cómo te sientes con eso? Cuéntame un poquito más.',
+      'Me alegra que me lo cuentes 🌱. ¿Qué fue lo que más te marcó de eso?',
+      'Gracias por compartirlo conmigo 🤍. Quiero entenderte bien: ¿cómo lo estás viviendo tú?',
+    ],
+    diaryDifficultyFallback: [
+      'Ay, lo siento mucho 🤍. Los días difíciles pesan, y está bien no estar bien. ¿Quieres contarme qué pasó? Aquí estoy para escucharte, sin apuro.',
+      'Gracias por contármelo, de verdad 🤍. No tienes que resolver nada ahora mismo. ¿Qué fue lo más pesado de hoy? Si prefieres soltarlo por escrito, tu diario es un espacio solo tuyo.',
+      'Qué pena que hayas tenido un día así 🫂. Ya hiciste algo valioso: ponerlo en palabras. ¿Te apetece contarme un poco más, o prefieres que hoy vayamos con calma?',
+    ],
     diaryPromptFromChatDifficulty: '📔 Escribir sobre esto en mi diario',
     proactiveNudgeFallback: [' Por cierto, ¿hay algún hábito nuevo que te gustaría empezar a construir? Cuéntame y lo armamos juntas/os.', ' Oye, ¿ya sabes qué te gustaría mejorar esta semana? Puedo sugerirte algo si quieres.'],
     habitRecommendationFallback: (names) => `¡Con gusto! 🌱 Podrías probar con ${names}. ¿Alguna te llama la atención, o prefieres agregar otra cosa?`,
@@ -1704,12 +1715,12 @@ const I18N = {
       (n) => `Hey again, ${n}! What should we start the day with? 🙂`,
     ],
     greetingAfternoon: [
-      (n) => `Hey again, ${n}! How's your afternoon going? 🙂`,
-      (n) => `${n}, what's next for today? 🌱`,
+      (n) => `Hey again, ${n}! 🤍 How's your afternoon? How are you feeling today?`,
+      (n) => `So good to see you, ${n}! 🌱 How's your day going so far?`,
     ],
     greetingEvening: [
-      (n) => `Good evening, ${n}. How did today go? 🌙`,
-      (n) => `Hey, ${n}! Shall we wrap up the day together? 🌙`,
+      (n) => `Good evening, ${n} 🌙. How did today go? Tell me, I'm listening.`,
+      (n) => `Hey, ${n}! So nice to see you before bed 🌙. How was your day?`,
     ],
     dayArmedNote: "I already set up your day with the habits you chose — you can check them off, move them, or remove them whenever you want. 🗓️",
     fabPrompt: ['Want to add something to your day? I can help 💬', 'Tell me what you have in mind, I can help you organize it 🙂'],
@@ -1775,8 +1786,16 @@ const I18N = {
     aspirationalAchievementFallback: ["I love that energy 🌱 What would you like to achieve, specifically? Let's figure out a habit that gets you there.", "Let's go for it 🌟 Tell me more about the achievement you're after, and we'll think through the first step."],
     achievementNegatedFallback: ["It's okay not to get everything done 🤍. You don't have to figure it out today — want to tell me a bit more about how you're feeling?", "I hear you 🤍. Days like this count too. I'm here if you want to talk about it."],
     achievementManageFallback: ['Sure! To delete an achievement, go to your Profile → 🏆 Your achievements, and tap the 🗑️ icon next to the one you want to remove.', "Yep, that's possible — in your Profile, under 🏆 Your achievements, each one has a 🗑️ icon to delete it whenever you want."],
-    conversationalReplyFallback: ["I hear you 🤍. Tell me more, or let me know what you'd like to get done today.", "Thanks for sharing 🌱. Is there anything I can help you with today?"],
-    diaryDifficultyFallback: ["I'm sorry you're going through this 🤍. Take your time — and if it helps, your diary is right here, a space just for you to write without anyone else seeing it.", "Thank you for telling me, really 🌱. You don't have to figure it all out right now. If it helps to get it out in writing, your diary is there, a safe space just for you."],
+    conversationalReplyFallback: [
+      "I'm here, reading you calmly 🤍. How do you feel about it? Tell me a little more.",
+      "I'm glad you told me 🌱. What stood out to you the most?",
+      "Thanks for sharing that with me 🤍. I want to really understand — how are you living it?",
+    ],
+    diaryDifficultyFallback: [
+      "Oh, I'm so sorry 🤍. Hard days are heavy, and it's okay not to be okay. Want to tell me what happened? I'm here to listen, no rush.",
+      "Thank you for telling me, really 🤍. You don't have to fix anything right now. What was the heaviest part of today? If you'd rather write it out, your diary is a space just for you.",
+      "I'm sorry you had a day like that 🫂. You already did something valuable: putting it into words. Want to tell me a bit more, or should we take it easy today?",
+    ],
     diaryPromptFromChatDifficulty: '📔 Write about this in my diary',
     proactiveNudgeFallback: [" By the way, is there a new habit you'd like to start building? Tell me and we'll set it up together.", " Hey, do you already know what you'd like to improve this week? I can suggest something if you want."],
     habitRecommendationFallback: (names) => `Happy to! 🌱 You could try ${names}. Does any of these catch your eye, or would you rather add something else?`,
@@ -4086,10 +4105,13 @@ function looksLikeConversationalStatement(text) {
 // clasificación clínica, solo una señal suave para ofrecerle el diario como espacio
 // seguro en vez de responder como si fuera charla neutra cualquiera.
 const DIFFICULTY_MENTION_PATTERN = /\b(dif[ií]cil|muy duro|muy pesado|se me hace pesado|cuesta mucho|no puedo m[aá]s|mal d[ií]a|d[ií]a horrible|triste|deprimid[oa]|estresad[oa]|agobiad[oa]|abrumad[oa]|cansad[oa] de todo|agotad[oa]|frustrad[oa]|ansios[oa]|angustiad[oa]|hard day|rough day|struggling|stressed out|overwhelmed|i'?m tired|i'?m sad|i'?m anxious|feeling down|burnt out|burned out)\b/i;
+// Sin \b al inicio a propósito: así también reconoce frases pegadas por un
+// error de tipeo ("tuve unmal día", "unpésimo día").
+const DIFFICULTY_LOOSE_PATTERN = /(mal\s*d[ií]a|me fue mal|no me fue bien|fatal|p[eé]sim[oa]|horrible|terrible|llor(ar|é|o|ando)|me siento (mal|sol[oa]|vac[ií][oa])|preocupad[oa]|desanimad[oa]|bad\s*day|awful|terrible day|cried|crying)/i;
 function looksLikeDifficultyMention(text) {
   const l = text.trim();
   if (!l) return false;
-  return DIFFICULTY_MENTION_PATTERN.test(l);
+  return DIFFICULTY_MENTION_PATTERN.test(l) || DIFFICULTY_LOOSE_PATTERN.test(l);
 }
 // Detecta si el mensaje es una pregunta genérica ("¿qué hago?", "how does this work?")
 // en vez de el nombre de una tarea/hábito que la persona quiere agendar. Antes solo

@@ -952,6 +952,26 @@ def status():
     })
 
 
+@app.route("/api/check-ai")
+def check_ai():
+    """Diagnóstico: abre /api/check-ai en el navegador (con sesión iniciada)
+    para ver si la IA responde y, si no, el motivo exacto (key, saldo, modelo)."""
+    if not session.get("user_id"):
+        return jsonify({"ok": False, "error": "Inicia sesión en la app primero y vuelve a abrir esta página."}), 401
+    client = get_client()
+    if client is None:
+        return jsonify({"ok": False, "model": OPENAI_MODEL, "error": "Falta OPENAI_API_KEY en Render → Environment."})
+    try:
+        resp = client.chat.completions.create(
+            model=OPENAI_MODEL,
+            messages=[{"role": "user", "content": "Responde solo: funciona"}],
+            max_tokens=5,
+        )
+        return jsonify({"ok": True, "model": OPENAI_MODEL, "reply": resp.choices[0].message.content})
+    except Exception as e:
+        return jsonify({"ok": False, "model": OPENAI_MODEL, "error": str(e)})
+
+
 @app.route("/api/bless-reply", methods=["POST"])
 def bless_reply():
     # Solo para usuarios con sesión: si no, cualquiera en internet podría usar
@@ -1005,6 +1025,8 @@ def bless_reply():
         reply = resp.choices[0].message.content
         return jsonify({"ok": True, "reply": reply.strip() if reply else None})
     except Exception as e:
+        # Visible en Render → Logs: así se ve si falla la key, el saldo o el modelo.
+        print(f"[openai] error en /api/bless-reply: {e}")
         return jsonify({"ok": False, "reply": None, "error": str(e)}), 500
 
 
