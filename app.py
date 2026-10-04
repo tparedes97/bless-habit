@@ -17,6 +17,7 @@ from openai import OpenAI
 from authlib.integrations.flask_client import OAuth
 from pywebpush import webpush, WebPushException
 from werkzeug.middleware.proxy_fix import ProxyFix
+from werkzeug.security import generate_password_hash, check_password_hash
 
 app = Flask(__name__)
 # Render (y la mayoría de hosts en la nube) reciben las peticiones por HTTPS en su
@@ -209,6 +210,7 @@ def init_db():
             paddle_customer_id TEXT,
             paddle_subscription_id TEXT,
             premium_since TEXT,
+            app_pin_hash TEXT,
             created_at TEXT DEFAULT (datetime('now'))
         )
     """)
@@ -263,6 +265,7 @@ def init_db():
         ("paddle_customer_id", "ALTER TABLE users ADD COLUMN paddle_customer_id TEXT"),
         ("paddle_subscription_id", "ALTER TABLE users ADD COLUMN paddle_subscription_id TEXT"),
         ("premium_since", "ALTER TABLE users ADD COLUMN premium_since TEXT"),
+        ("app_pin_hash", "ALTER TABLE users ADD COLUMN app_pin_hash TEXT"),
     ]:
         if col not in existing_cols:
             conn.execute(ddl)
@@ -408,6 +411,13 @@ def delete_unreferenced_diary_photos(user_id, referenced_ids, min_age_seconds=36
     conn.close()
 
 
+def set_app_pin_hash(user_id, pin_hash):
+    conn = get_db()
+    conn.execute("UPDATE users SET app_pin_hash = ? WHERE id = ?", (pin_hash, user_id))
+    conn.commit()
+    conn.close()
+
+
 def find_user_by_paddle_customer(customer_id):
     conn = get_db()
     cur = conn.execute("SELECT * FROM users WHERE paddle_customer_id = ?", (customer_id,))
@@ -538,6 +548,8 @@ def auth_login():
         )
     if request.args.get("native") == "1":
         session["native_login"] = True
+    if request.args.get("reset_pin") == "1":
+        session["reset_pin"] = True
     redirect_uri = url_for("auth_callback", _external=True)
     return google.authorize_redirect(redirect_uri)
 
@@ -565,6 +577,9 @@ def auth_callback():
     )
     session.permanent = True
     session["user_id"] = user_id
+    if session.pop("reset_pin", False):
+        # "¿Olvidaste tu PIN?": volver a entrar con Google desactiva el bloqueo.
+        set_app_pin_hash(user_id, None)
     if session.pop("native_login", False):
         exchange_token = create_one_time_token(user_id, "login", NATIVE_TOKEN_TTL_SECONDS)
         return redirect(f"{NATIVE_APP_URL_SCHEME}://auth-callback?token={exchange_token}")
@@ -605,7 +620,104 @@ def api_me():
         "email": user["email"],
         "picture": user["picture"],
         "premium": bool(user["is_premium"]),
+        "appLock": bool(user.get("app_pin_hash")),
     })
+
+
+# ============================================================
+# BLOQUEO CON PIN (Premium) — la app pide un PIN de 4 dígitos al abrirse. El
+# PIN se guarda con hash (nunca en texto plano) y el servidor no entrega el
+# estado (chat, diario, recuerdos) hasta que se ingresa bien en esta sesión.
+# El desbloqueo dura mientras haya actividad (30 min desde el último uso); la
+# app además vuelve a bloquearse sola al volver tras 1 minuto fuera.
+# ============================================================
+APP_LOCK_IDLE_SECONDS = 30 * 60
+APP_LOCK_MAX_ATTEMPTS = 5
+APP_LOCK_WAIT_SECONDS = 60
+PIN_RE = re.compile(r"^\d{4}$")
+
+
+def app_lock_blocks(user_id):
+    """True si la cuenta tiene PIN y esta sesión no está desbloqueada."""
+    user = get_user(user_id)
+    if not user or not user.get("app_pin_hash"):
+        return False
+    unlocked_at = session.get("unlocked_at") or 0
+    if time.time() - unlocked_at > APP_LOCK_IDLE_SECONDS:
+        return True
+    session["unlocked_at"] = time.time()  # ventana deslizante mientras se usa
+    return False
+
+
+def locked_response():
+    return jsonify({"ok": False, "locked": True, "error": "La app está bloqueada con PIN"}), 423
+
+
+@app.route("/api/app-lock/verify", methods=["POST"])
+def api_app_lock_verify():
+    user_id = session.get("user_id")
+    if not user_id:
+        return jsonify({"ok": False, "error": "No autenticado"}), 401
+    wait_until = session.get("pin_wait_until") or 0
+    if time.time() < wait_until:
+        return jsonify({"ok": False, "wait": int(wait_until - time.time()) + 1}), 429
+    user = get_user(user_id)
+    pin = str((request.get_json(force=True) or {}).get("pin") or "")
+    if not user or not user.get("app_pin_hash"):
+        session["unlocked_at"] = time.time()
+        return jsonify({"ok": True})
+    if PIN_RE.match(pin) and check_password_hash(user["app_pin_hash"], pin):
+        session["unlocked_at"] = time.time()
+        session.pop("pin_attempts", None)
+        return jsonify({"ok": True})
+    attempts = (session.get("pin_attempts") or 0) + 1
+    session["pin_attempts"] = attempts
+    if attempts >= APP_LOCK_MAX_ATTEMPTS:
+        session["pin_attempts"] = 0
+        session["pin_wait_until"] = time.time() + APP_LOCK_WAIT_SECONDS
+        return jsonify({"ok": False, "wait": APP_LOCK_WAIT_SECONDS}), 429
+    return jsonify({"ok": False, "attemptsLeft": APP_LOCK_MAX_ATTEMPTS - attempts}), 401
+
+
+@app.route("/api/app-lock/lock", methods=["POST"])
+def api_app_lock_lock():
+    session.pop("unlocked_at", None)
+    return jsonify({"ok": True})
+
+
+@app.route("/api/app-lock/set", methods=["POST"])
+def api_app_lock_set():
+    """Activar o cambiar el PIN. Solo Premium. Para cambiarlo hace falta el actual."""
+    user_id = session.get("user_id")
+    if not user_id:
+        return jsonify({"ok": False, "error": "No autenticado"}), 401
+    user = get_user(user_id)
+    if not user["is_premium"]:
+        return jsonify({"ok": False, "error": "premium_required"}), 403
+    data = request.get_json(force=True) or {}
+    pin = str(data.get("pin") or "")
+    if not PIN_RE.match(pin):
+        return jsonify({"ok": False, "error": "El PIN debe tener 4 dígitos"}), 400
+    if user.get("app_pin_hash"):
+        current = str(data.get("currentPin") or "")
+        if not (PIN_RE.match(current) and check_password_hash(user["app_pin_hash"], current)):
+            return jsonify({"ok": False, "error": "wrong_pin"}), 401
+    set_app_pin_hash(user_id, generate_password_hash(pin))
+    session["unlocked_at"] = time.time()
+    return jsonify({"ok": True})
+
+
+@app.route("/api/app-lock/disable", methods=["POST"])
+def api_app_lock_disable():
+    user_id = session.get("user_id")
+    if not user_id:
+        return jsonify({"ok": False, "error": "No autenticado"}), 401
+    user = get_user(user_id)
+    pin = str((request.get_json(force=True) or {}).get("pin") or "")
+    if user.get("app_pin_hash") and not (PIN_RE.match(pin) and check_password_hash(user["app_pin_hash"], pin)):
+        return jsonify({"ok": False, "error": "wrong_pin"}), 401
+    set_app_pin_hash(user_id, None)
+    return jsonify({"ok": True})
 
 
 @app.route("/api/load-state")
@@ -613,6 +725,8 @@ def api_load_state():
     user_id = session.get("user_id")
     if not user_id:
         return jsonify({"ok": False, "error": "No autenticado"}), 401
+    if app_lock_blocks(user_id):
+        return locked_response()
     state = load_user_state(user_id)
     return jsonify({"ok": True, "state": state})
 
@@ -622,6 +736,8 @@ def api_save_state():
     user_id = session.get("user_id")
     if not user_id:
         return jsonify({"ok": False, "error": "No autenticado"}), 401
+    if app_lock_blocks(user_id):
+        return locked_response()
     data = request.get_json(force=True) or {}
     state = data.get("state")
     if state is None:
@@ -648,6 +764,8 @@ def api_upload_diary_photo():
     user_id = session.get("user_id")
     if not user_id:
         return jsonify({"ok": False, "error": "No autenticado"}), 401
+    if app_lock_blocks(user_id):
+        return locked_response()
     data_url = (request.get_json(force=True) or {}).get("dataUrl") or ""
     match = DIARY_PHOTO_DATA_URL_RE.match(data_url)
     if not match:
@@ -668,6 +786,8 @@ def api_get_diary_photo(photo_id):
     user_id = session.get("user_id")
     if not user_id:
         return "", 401
+    if app_lock_blocks(user_id):
+        return "", 423
     row = get_diary_photo(user_id, photo_id)
     if not row:
         return "", 404
@@ -981,6 +1101,8 @@ def bless_reply():
     # este endpoint y gastar tu saldo de OpenAI.
     if not session.get("user_id"):
         return jsonify({"ok": False, "reply": None, "error": "No autenticado"}), 401
+    if app_lock_blocks(session["user_id"]):
+        return locked_response()
     data = request.get_json(force=True) or {}
     # Compatibilidad con el formato viejo (solo "prompt") y el nuevo, que separa
     # el prompt de sistema (persona de Bless) del historial real de la conversación,
@@ -1050,6 +1172,8 @@ MAX_MEMORIES = 12
 def bless_memories():
     if not session.get("user_id"):
         return jsonify({"ok": False, "error": "No autenticado"}), 401
+    if app_lock_blocks(session["user_id"]):
+        return locked_response()
     data = request.get_json(force=True) or {}
     lang = "inglés" if data.get("language") == "en" else "español"
     date = str(data.get("date") or "")[:10]
