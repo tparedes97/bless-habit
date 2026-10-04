@@ -503,6 +503,22 @@
   #view-login .login-loading { font-size: 12.5px; color: var(--text-dim); }
   .logout-link { display: inline-block; margin-top: 6px; font-size: 12px; color: var(--text-dim); text-decoration: underline; cursor: pointer; }
 
+  /* Ventanas propias (reemplazan alert/confirm/prompt del navegador, que en la
+     app de Android se ven como un cuadro gris del sistema). Ver uiDialog(). */
+  .ui-dialog-overlay { position: fixed; inset: 0; z-index: 120; background: rgba(20,16,40,.55); display: flex; align-items: center; justify-content: center; padding: 16px; animation: uiFade .15s ease-out; }
+  .ui-dialog { width: 100%; max-width: 360px; background: var(--panel); color: var(--text); border: 1px solid var(--border); border-radius: 20px; padding: 22px 20px 18px; box-shadow: 0 18px 50px rgba(20,16,40,.28); animation: uiPop .18s ease-out; }
+  .ui-dialog-msg { font-size: 15px; line-height: 1.5; white-space: pre-line; margin-bottom: 16px; }
+  .ui-dialog-field { margin-bottom: 12px; }
+  .ui-dialog-field label { display: block; font-size: 12.5px; font-weight: 700; color: var(--text-dim); margin-bottom: 6px; }
+  .ui-dialog-field input { width: 100%; box-sizing: border-box; min-height: 46px; padding: 10px 12px; font-size: 16px; border-radius: 12px; border: 1px solid var(--border); background: var(--panel-2); color: var(--text); }
+  .ui-dialog-actions { display: flex; gap: 10px; margin-top: 6px; }
+  .ui-dialog-actions button { flex: 1; min-height: 46px; border-radius: 14px; border: none; font-size: 15px; font-weight: 800; cursor: pointer; }
+  .ui-dialog-cancel { background: var(--panel-2); color: var(--text); border: 1px solid var(--border) !important; }
+  .ui-dialog-ok { background: linear-gradient(135deg, var(--accent), var(--accent-2)); color: var(--on-accent); }
+  .ui-dialog-ok.danger { background: #e25c6a; color: #fff; }
+  @keyframes uiFade { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes uiPop { from { transform: scale(.96); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
   /* Plan Premium (Paddle Billing) + banda de anuncios (plan gratis) */
   .premium-lock { border-color: #3d4a8a; background: var(--diag-bg); }
   .premium-lock h4 { color: var(--accent-2); }
@@ -1163,12 +1179,14 @@ function blessContextSnapshot() {
     .map(x => `${x.done ? '✓' : '○'} ${x.time || ''} ${x.task || x.label || ''}`.trim()).join(' | ') || 'sin actividades agendadas';
   const streaks = state.streaks || {};
   const streakText = habits.map(h => `${h.label}: ${streaks[h.key] || 0} días`).join(' | ') || 'sin rachas registradas';
-  const level = getLevelInfo ? getLevelInfo(state.profile.xp || 0) : null;
+  // Antes llamaba a getLevelInfo(), que no existe: lanzaba un error y Bless no
+  // podía saludar ni responder con IA. La función real es levelInfo().
+  const level = levelInfo(state.profile.xp || 0);
   return `
 CONTEXTO ACTUAL DE LA PERSONA (úsalo solo para comprenderla, no lo recites como ficha):
 - Fecha: ${today}
 - Nombre: ${state.profile.nombre || 'sin nombre'}
-- Nivel: ${level ? `${level.level} · ${level.name}` : '1'} | XP: ${state.profile.xp || 0}
+- Nivel: ${level ? `${level.n} · ${t(level.nameKey)}` : '1'} | XP: ${state.profile.xp || 0}
 - Hábitos activos: ${habits.map(h=>h.label).filter(Boolean).join(', ') || 'ninguno'}
 - Hábitos cumplidos hoy: ${completed.join(', ') || 'ninguno'}
 - Hábitos pendientes hoy: ${pendingHabits.join(', ') || 'ninguno'}
@@ -1349,11 +1367,21 @@ const I18N = {
     themeDark: '🌙 Oscuro', themeLight: '☀️ Claro', themePremium: '✨ Dorado Premium',
 
     headerSubHello: (n) => `Bless · hola, ${n}`,
-    greetingFallback: [
+    greetingFirstTime: [
+      (n) => `¡Listo, ${n}! Ya te conozco un poco más. ¿Qué quieres lograr hoy? 🌱`,
+      (n) => `¡Hola, ${n}! ¿Ya sabes qué quieres hacer hoy, o quieres que te sugiera algo? 🌱`,
+    ],
+    greetingMorning: [
       (n) => `Buenos días, ${n}. ¿Qué quieres lograr hoy? ☀️`,
       (n) => `¡Hola de nuevo, ${n}! ¿Con qué empezamos el día? 🙂`,
-      (n) => `${n}, cuéntame qué tienes en mente para hoy.`,
-      (n) => `¡Hola, ${n}! ¿Ya sabes qué quieres hacer hoy, o quieres que te sugiera algo? 🌱`,
+    ],
+    greetingAfternoon: [
+      (n) => `¡Hola de nuevo, ${n}! ¿Cómo va tu tarde? 🙂`,
+      (n) => `${n}, ¿con qué seguimos hoy? 🌱`,
+    ],
+    greetingEvening: [
+      (n) => `Buenas noches, ${n}. ¿Cómo te fue hoy? 🌙`,
+      (n) => `¡Hola, ${n}! ¿Cerramos el día? 🌙`,
     ],
     dayArmedNote: 'Ya dejé tu día armado con los hábitos que elegiste — puedes marcarlos, moverlos o quitarlos cuando quieras. 🗓️',
     fabPrompt: ['¿Quieres agregar algo a tu día? Yo puedo ayudarte 💬', 'Cuéntame qué tienes en mente, yo puedo ayudarte a organizarlo 🙂'],
@@ -1457,6 +1485,13 @@ const I18N = {
     cancelConfirm: '¿Seguro que quieres cancelar tu suscripción Premium? Seguirás con Premium hasta el final del periodo que ya pagaste.',
     cancelScheduled: 'Listo. Tu suscripción no se renovará y conservas Premium hasta el final del periodo que ya pagaste.',
     cancelFail: 'No se pudo cancelar tu suscripción. Revisa tu conexión e intenta de nuevo.',
+    dialogOk: 'Aceptar', dialogCancel: 'Cancelar', dialogSave: 'Guardar', dialogDelete: 'Eliminar',
+    nativeRemindersOnText: 'Activados — Bless te avisa a la hora de cada hábito, y te escribe si pasas unos días sin abrir la app.',
+    nativeRemindersOffText: 'Desactivados. Actívalos para que Bless te avise a la hora de cada hábito.',
+    nativeRemindersOffer: '¿Quieres que te avise a la hora de cada hábito? 🔔 Puedes cambiarlo cuando quieras en Perfil.',
+    nativeRemindersDenied: 'Las notificaciones están bloqueadas. Actívalas para Bless Habit en los ajustes de tu teléfono (Ajustes → Apps → Bless Habit → Notificaciones).',
+    reminderBody: ['Es un buen momento para esto 🌱', 'Tu yo de mañana te lo agradece 🤍', 'Un pasito más hoy ✨', 'Cuando quieras, aquí estoy 🌱'],
+    reengageBody: ['Hola de nuevo 🤍. No te sientas culpable — siempre se puede comenzar de nuevo. ¿Retomamos hoy, aunque sea con algo pequeño?', 'Te extrañé 🤍. Esto no se trata de ser perfecto, se trata de volver. ¿Empezamos de nuevo, sin presión?'],
 
     tareasHoy: 'Tareas hoy', habitosActivos: 'Hábitos activos', rachaTotal: 'Racha total 🔥',
 
@@ -1519,6 +1554,7 @@ const I18N = {
     diaryDeleteConfirm: '¿Eliminar esta entrada del diario? No se puede deshacer.',
     diaryEmptyText: 'Sin nota escrita para este día.',
     diaryPhotoTooLarge: 'No se pudo procesar esa imagen — intenta con otra foto.',
+    nativeLoginFailed: 'No se pudo completar el inicio de sesión. Intenta de nuevo.',
     addHabitTitle: 'Agregar un hábito nuevo',
     addHabitDesc: 'No hace falta esperar a otro onboarding — puedes sumar hábitos nuevos cuando quieras, y configurar cada uno a tu manera (qué días, a qué hora, por cuánto tiempo).',
     configureCustomBtn: '✏️ Configurar uno personalizado',
@@ -1659,11 +1695,21 @@ const I18N = {
     themeDark: '🌙 Dark', themeLight: '☀️ Light', themePremium: '✨ Premium Gold',
 
     headerSubHello: (n) => `Bless · hi, ${n}`,
-    greetingFallback: [
+    greetingFirstTime: [
+      (n) => `All set, ${n}! I know you a little better now. What do you want to accomplish today? 🌱`,
+      (n) => `Hey, ${n}! Do you already know what you want to do today, or want me to suggest something? 🌱`,
+    ],
+    greetingMorning: [
       (n) => `Good morning, ${n}. What do you want to accomplish today? ☀️`,
       (n) => `Hey again, ${n}! What should we start the day with? 🙂`,
-      (n) => `${n}, tell me what you have in mind for today.`,
-      (n) => `Hey, ${n}! Do you already know what you want to do today, or want me to suggest something? 🌱`,
+    ],
+    greetingAfternoon: [
+      (n) => `Hey again, ${n}! How's your afternoon going? 🙂`,
+      (n) => `${n}, what's next for today? 🌱`,
+    ],
+    greetingEvening: [
+      (n) => `Good evening, ${n}. How did today go? 🌙`,
+      (n) => `Hey, ${n}! Shall we wrap up the day together? 🌙`,
     ],
     dayArmedNote: "I already set up your day with the habits you chose — you can check them off, move them, or remove them whenever you want. 🗓️",
     fabPrompt: ['Want to add something to your day? I can help 💬', 'Tell me what you have in mind, I can help you organize it 🙂'],
@@ -1763,6 +1809,13 @@ const I18N = {
     cancelConfirm: 'Are you sure you want to cancel your Premium subscription? You keep Premium until the end of the period you already paid for.',
     cancelScheduled: 'Done. Your subscription will not renew and you keep Premium until the end of the period you already paid for.',
     cancelFail: 'Could not cancel your subscription. Check your connection and try again.',
+    dialogOk: 'OK', dialogCancel: 'Cancel', dialogSave: 'Save', dialogDelete: 'Delete',
+    nativeRemindersOnText: 'On — Bless reminds you at each habit\'s time, and checks in if you go a few days without opening the app.',
+    nativeRemindersOffText: 'Off. Turn them on so Bless reminds you at each habit\'s time.',
+    nativeRemindersOffer: 'Want me to remind you at each habit\'s time? 🔔 You can change this anytime in Profile.',
+    nativeRemindersDenied: 'Notifications are blocked. Turn them on for Bless Habit in your phone settings (Settings → Apps → Bless Habit → Notifications).',
+    reminderBody: ['Good time for this 🌱', 'Future you says thanks 🤍', 'One more small step today ✨', "Whenever you're ready, I'm here 🌱"],
+    reengageBody: ["Hi again 🤍. Don't feel guilty — you can always start over. Shall we pick it back up today, even with something small?", "Missed you 🤍. This isn't about being perfect, it's about coming back. Start again, no pressure?"],
 
     tareasHoy: "Today's tasks", habitosActivos: 'Active habits', rachaTotal: 'Total streak 🔥',
 
@@ -1825,6 +1878,7 @@ const I18N = {
     diaryDeleteConfirm: 'Delete this journal entry? This cannot be undone.',
     diaryEmptyText: 'No note written for this day.',
     diaryPhotoTooLarge: "Couldn't process that image — try another photo.",
+    nativeLoginFailed: "Couldn't finish signing in. Please try again.",
     addHabitTitle: 'Add a new habit',
     addHabitDesc: "No need to wait for another onboarding — you can add new habits whenever you want, and configure each one your way (which days, what time, for how long).",
     configureCustomBtn: '✏️ Configure a custom one',
@@ -2005,6 +2059,78 @@ function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
 // Escapa texto libre de la persona antes de insertarlo como HTML (usado en el
 // diario, donde el texto se pinta con innerHTML) — evita que algo como "<script>"
 // escrito en una entrada se interprete como marcado en vez de mostrarse tal cual.
+/* ============================================================
+   VENTANAS PROPIAS — reemplazan alert()/confirm()/prompt() del navegador.
+   Devuelven una Promise:
+     await uiAlert(texto)
+     await uiConfirm(texto, { okText, danger }) → true/false
+     await uiPrompt(texto, valorInicial, { type, inputmode }) → string o null (canceló)
+     await uiForm(texto, [{ label, value, type }]) → array de strings o null
+   El botón "atrás" de Android cierra la que esté abierta (= Cancelar).
+   ============================================================ */
+let uiDialogClose = null; // función para cerrar la ventana abierta (la usa el botón atrás)
+function uiDialog({ message, fields = [], okText, cancelText, danger = false }) {
+  if (uiDialogClose) uiDialogClose(null);
+  return new Promise((resolve) => {
+    const overlay = document.createElement('div');
+    overlay.className = 'ui-dialog-overlay';
+    overlay.innerHTML = `
+      <div class="ui-dialog" role="dialog" aria-modal="true">
+        <div class="ui-dialog-msg"></div>
+        ${fields.map((f, i) => `<div class="ui-dialog-field">${f.label ? `<label for="ui-dialog-f${i}"></label>` : ''}<input id="ui-dialog-f${i}"></div>`).join('')}
+        <div class="ui-dialog-actions">
+          ${cancelText ? '<button type="button" class="ui-dialog-cancel"></button>' : ''}
+          <button type="button" class="ui-dialog-ok${danger ? ' danger' : ''}"></button>
+        </div>
+      </div>`;
+    // textContent (no innerHTML) para que el texto del usuario nunca se interprete como HTML.
+    const msgEl = overlay.querySelector('.ui-dialog-msg');
+    msgEl.textContent = message || '';
+    if (!message) msgEl.style.display = 'none';
+    fields.forEach((f, i) => {
+      const input = overlay.querySelector('#ui-dialog-f' + i);
+      input.type = f.type || 'text';
+      if (f.inputmode) input.inputMode = f.inputmode;
+      input.value = f.value == null ? '' : String(f.value);
+      const label = overlay.querySelector(`label[for="ui-dialog-f${i}"]`);
+      if (label) label.textContent = f.label;
+    });
+    const okBtn = overlay.querySelector('.ui-dialog-ok');
+    okBtn.textContent = okText || t('dialogOk');
+    const cancelBtn = overlay.querySelector('.ui-dialog-cancel');
+    if (cancelBtn) cancelBtn.textContent = cancelText;
+    const finish = (value) => {
+      if (!overlay.isConnected) return;
+      overlay.remove();
+      uiDialogClose = null;
+      resolve(value);
+    };
+    const submit = () => finish(fields.length ? fields.map((_, i) => overlay.querySelector('#ui-dialog-f' + i).value) : true);
+    uiDialogClose = () => finish(fields.length ? null : false);
+    okBtn.onclick = submit;
+    if (cancelBtn) cancelBtn.onclick = () => uiDialogClose();
+    overlay.addEventListener('click', (e) => { if (e.target === overlay && cancelBtn) uiDialogClose(); });
+    overlay.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && e.target.tagName === 'INPUT') { e.preventDefault(); submit(); }
+      if (e.key === 'Escape' && cancelBtn) uiDialogClose();
+    });
+    document.body.appendChild(overlay);
+    const first = overlay.querySelector('input') || okBtn;
+    setTimeout(() => { try { first.focus(); if (first.select) first.select(); } catch (e) {} }, 50);
+  });
+}
+function uiAlert(message) { return uiDialog({ message }); }
+function uiConfirm(message, opts = {}) {
+  return uiDialog({ message, okText: opts.okText || t('dialogOk'), cancelText: t('dialogCancel'), danger: !!opts.danger });
+}
+async function uiPrompt(message, value, opts = {}) {
+  const res = await uiDialog({ message, fields: [{ value, type: opts.type, inputmode: opts.inputmode }], okText: t('dialogSave'), cancelText: t('dialogCancel') });
+  return res ? res[0] : null;
+}
+function uiForm(message, fields) {
+  return uiDialog({ message, fields, okText: t('dialogSave'), cancelText: t('dialogCancel') });
+}
+
 function escapeHtml(str) {
   const div = document.createElement('div');
   div.textContent = str;
@@ -2469,7 +2595,7 @@ async function finishOnboarding() {
   await new Promise(r => setTimeout(r, 700));
   await agentSay(ob, t('afterDiagMsg'), 700);
   addNote(ob, t('evalCompleteNote'));
-  setTimeout(startChat, 900);
+  setTimeout(() => startChat(true), 900);
 }
 
 function beginOnboarding() {
@@ -2625,6 +2751,7 @@ function setupNativeBackButton() {
   const plugins = window.Capacitor && window.Capacitor.Plugins;
   if (!plugins || !plugins.App) return;
   plugins.App.addListener('backButton', () => {
+    if (uiDialogClose) { uiDialogClose(); return; }
     for (const [id, close] of NATIVE_BACK_OVERLAYS) {
       const el = document.getElementById(id);
       if (el && el.style.display && el.style.display !== 'none') { close(); return; }
@@ -2657,6 +2784,7 @@ function setupNativeAppUrlListener() {
       if (!token) return; // login cancelado: se vuelve a la pantalla de login
       const res = await fetch('/auth/native-exchange?token=' + encodeURIComponent(token));
       if (res.ok) window.location.reload();
+      else uiAlert(t('nativeLoginFailed'));
     } catch (e) { /* enlace no reconocido, se ignora */ }
   });
 }
@@ -2681,11 +2809,11 @@ async function openNativePaddleCheckout() {
   try {
     data = await (await fetch('/api/native-checkout-token', { method: 'POST' })).json();
   } catch (e) {
-    alert(t('paddleConnFail'));
+    uiAlert(t('paddleConnFail'));
     return;
   }
   if (!data.ok || !data.url) {
-    alert(t('paddleConnFail'));
+    uiAlert(t('paddleConnFail'));
     return;
   }
   nativeCheckoutPending = true;
@@ -2700,6 +2828,7 @@ async function openNativePaddleCheckout() {
    LOGIN (Google) + RESTAURAR SESIÓN GUARDADA
    ============================================================ */
 async function saveStateToServer() {
+  scheduleNativeRemindersSoon(); // los recordatorios siguen a los hábitos y horarios actuales
   try {
     await fetch('/api/save-state', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ state }) });
   } catch (e) { /* no es crítico si falla — el estado sigue en memoria */ }
@@ -2730,11 +2859,13 @@ async function bootstrapApp() {
       state.chatMemory = Array.isArray(state.chatMemory) ? state.chatMemory.slice(-16) : [];
       chatMemory = state.chatMemory.slice(-16);
       rolloverDayIfNeeded();
+      scheduleNativeRemindersSoon(); // reprograma el "te extrañé" a 3 días desde hoy
+      migrateDiaryPhotos();
       applyTheme(state.settings.theme);
       refreshLocaleArrays();
       applyStaticI18n();
       document.getElementById('view-login').classList.remove('active');
-      startChat();
+      startChat(false);
     } else if (stateData.ok && stateData.state && stateData.state.settings && stateData.state.settings.language) {
       Object.assign(state, stateData.state);
       applyTheme(state.settings.theme);
@@ -2843,15 +2974,15 @@ async function openPaddleCheckout() {
   try {
     cfg = await (await fetch('/api/paddle-config')).json();
   } catch (e) {
-    alert(t('paddleConnFail'));
+    uiAlert(t('paddleConnFail'));
     return;
   }
   if (!cfg.configured || !cfg.clientToken || !cfg.priceId) {
-    alert(t('paddleNotConfigured'));
+    uiAlert(t('paddleNotConfigured'));
     return;
   }
   if (typeof Paddle === 'undefined') {
-    alert(t('paddleWidgetFail'));
+    uiAlert(t('paddleWidgetFail'));
     return;
   }
   if (cfg.environment !== 'production') Paddle.Environment.set('sandbox');
@@ -2862,7 +2993,7 @@ async function openPaddleCheckout() {
       // webhook del servidor. Ver pollPremiumStatus().
       if (event.name === 'checkout.completed') {
         Paddle.Checkout.close();
-        alert(t('paddleThanks'));
+        uiAlert(t('paddleThanks'));
         pollPremiumStatus();
       }
     },
@@ -2875,13 +3006,13 @@ async function openPaddleCheckout() {
 }
 
 async function cancelPremium() {
-  if (!confirm(t('cancelConfirm'))) return;
+  if (!(await uiConfirm(t('cancelConfirm'), { danger: true, okText: t('cancelSubLink') }))) return;
   let data = null;
   try {
     data = await (await fetch('/api/cancel-subscription', { method: 'POST' })).json();
   } catch (e) { /* se avisa abajo */ }
-  if (!data || !data.ok) { alert(t('cancelFail')); return; }
-  if (data.endsAtPeriodEnd) { alert(t('cancelScheduled')); return; }
+  if (!data || !data.ok) { uiAlert(t('cancelFail')); return; }
+  if (data.endsAtPeriodEnd) { uiAlert(t('cancelScheduled')); return; }
   isPremium = !!data.premium;
   renderMetrics();
   renderProfile();
@@ -2921,10 +3052,9 @@ async function refreshPushUI() {
   const textEl = document.getElementById('push-status-text');
   const btnEl = document.getElementById('push-toggle-btn');
   if (!textEl || !btnEl) return;
+  // En la app de Android no existe Web Push: ahí se usan recordatorios locales del teléfono.
+  if (IS_NATIVE_APP) { refreshNativeRemindersUI(textEl, btnEl); return; }
   if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
-    // El WebView de la app de Android no soporta Web Push: en vez de un
-    // "no soportado" confuso, se oculta la tarjeta entera.
-    if (IS_NATIVE_APP) { const card = textEl.closest('.profile-card'); if (card) card.style.display = 'none'; return; }
     textEl.textContent = t('pushNotSupported');
     btnEl.style.display = 'none';
     return;
@@ -2941,20 +3071,98 @@ async function refreshPushUI() {
   }
 }
 
+/* ============================================================
+   RECORDATORIOS EN LA APP DE ANDROID — notificaciones locales (plugin
+   @capacitor/local-notifications): el propio teléfono avisa a la hora de cada
+   hábito, sin servidor ni Firebase, y funcionan aunque Render esté dormido o
+   no haya internet. Además deja programado un "te extrañé" para dentro de 3
+   días, que se vuelve a correr cada vez que la persona usa la app (así solo
+   llega si de verdad dejó de abrirla).
+   ============================================================ */
+function nativeNotifications() {
+  return IS_NATIVE_APP && window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.LocalNotifications;
+}
+const NATIVE_REENGAGE_ID = 900000;
+async function scheduleNativeReminders() {
+  const LN = nativeNotifications();
+  if (!LN || !state.profile || !state.profile.nombre) return;
+  try {
+    const pending = await LN.getPending();
+    if (pending.notifications && pending.notifications.length) {
+      await LN.cancel({ notifications: pending.notifications.map(n => ({ id: n.id })) });
+    }
+    if (!(state.settings && state.settings.nativeReminders)) return;
+    const perm = await LN.checkPermissions();
+    if (perm.display !== 'granted') return;
+    const today = ymd(new Date());
+    const notifications = [];
+    let id = 1;
+    (state.profile.habitos || []).forEach(h => {
+      if (h.durationWeeks && h.createdAt && ymd(addDays(new Date(h.createdAt + 'T00:00:00'), h.durationWeeks * 7)) < today) return; // ya terminó
+      habitRepeatDays(h).forEach(dow => {
+        const [hh, mm] = String(habitTimeForDay(h, dow) || '').split(':').map(Number);
+        if (!Number.isFinite(hh)) return;
+        notifications.push({
+          id: id++,
+          title: `${h.icon || '🌱'} ${habitDisplayLabel(h)}`,
+          body: tp('reminderBody'),
+          schedule: { on: { weekday: dow + 1, hour: hh, minute: Number.isFinite(mm) ? mm : 0 }, allowWhileIdle: true },
+        });
+      });
+    });
+    const comeBack = addDays(new Date(), 3);
+    comeBack.setHours(19, 0, 0, 0);
+    notifications.push({ id: NATIVE_REENGAGE_ID, title: 'Bless Habit 🤍', body: tp('reengageBody'), schedule: { at: comeBack, allowWhileIdle: true } });
+    await LN.schedule({ notifications });
+  } catch (e) { /* sin recordatorios no se rompe nada más */ }
+}
+let scheduleNativeRemindersTimer = null;
+function scheduleNativeRemindersSoon() {
+  if (!nativeNotifications()) return;
+  clearTimeout(scheduleNativeRemindersTimer);
+  scheduleNativeRemindersTimer = setTimeout(scheduleNativeReminders, 1500);
+}
+async function enableNativeReminders() {
+  const LN = nativeNotifications();
+  if (!LN) return false;
+  let perm = await LN.checkPermissions();
+  if (perm.display !== 'granted') perm = await LN.requestPermissions();
+  if (perm.display !== 'granted') { uiAlert(t('nativeRemindersDenied')); return false; }
+  state.settings.nativeReminders = true;
+  saveStateToServer();
+  await scheduleNativeReminders();
+  return true;
+}
+async function disableNativeReminders() {
+  state.settings.nativeReminders = false;
+  saveStateToServer();
+  await scheduleNativeReminders(); // con el ajuste apagado, solo cancela las pendientes
+}
+function refreshNativeRemindersUI(textEl, btnEl) {
+  const on = !!(state.settings && state.settings.nativeReminders);
+  textEl.textContent = on ? t('nativeRemindersOnText') : t('nativeRemindersOffText');
+  btnEl.style.display = '';
+  btnEl.textContent = on ? t('pushDisableBtn') : t('pushEnableBtn');
+  btnEl.onclick = async () => {
+    if (on) await disableNativeReminders(); else await enableNativeReminders();
+    refreshPushUI();
+  };
+}
+
 async function enablePush() {
   try {
     const cfg = await (await fetch('/api/push/vapid-public-key')).json();
     if (!cfg.configured || !cfg.publicKey) {
-      alert(t('pushNotConfigured'));
+      uiAlert(t('pushNotConfigured'));
       return;
     }
     const permission = await Notification.requestPermission();
     if (permission !== 'granted') {
-      alert(t('pushPermissionDenied'));
+      uiAlert(t('pushPermissionDenied'));
       return;
     }
     const reg = await registerServiceWorkerIfNeeded();
-    if (!reg) { alert(t('pushSwFail')); return; }
+    if (!reg) { uiAlert(t('pushSwFail')); return; }
     const sub = await reg.pushManager.subscribe({
       userVisibleOnly: true,
       applicationServerKey: urlBase64ToUint8Array(cfg.publicKey),
@@ -2966,7 +3174,7 @@ async function enablePush() {
     });
     refreshPushUI();
   } catch (e) {
-    alert(t('pushEnableFail'));
+    uiAlert(t('pushEnableFail'));
   }
 }
 
@@ -2988,7 +3196,10 @@ async function disablePush() {
 /* ============================================================
    CHAT DIARIO
    ============================================================ */
-function startChat() {
+// firstTime = true solo justo después de la evaluación inicial; al volver a
+// abrir la app Bless saluda como a alguien que ya conoce (según la hora y cómo
+// va su día), no como si fuera la primera vez.
+function startChat(firstTime) {
   document.getElementById('view-onboarding').classList.remove('active');
   document.getElementById('view-chat').classList.add('active');
   document.getElementById('tabbar').style.display = 'flex';
@@ -2997,12 +3208,28 @@ function startChat() {
   document.getElementById('header-right').innerHTML = '';
   renderAgenda();
   renderChatAdSlot();
-  say(chatScroll, `La persona acaba de terminar su evaluación inicial y entra al chat por primera vez hoy. Salúdala usando su nombre y pregúntale qué quiere lograr hoy.`, tp('greetingFallback', state.profile.nombre), 300).then(() => {
+  const now = new Date();
+  const hour = now.getHours();
+  const doneToday = (state.agenda || []).filter(a => a.done).length;
+  const totalToday = (state.agenda || []).length;
+  const situation = firstTime
+    ? `La persona acaba de terminar su evaluación inicial y entra al chat por primera vez. Salúdala usando su nombre y pregúntale qué quiere lograr hoy.`
+    : `La persona vuelve a abrir la app (ya se conocen, NO es su primera vez ni acaba de hacer ninguna evaluación). Son las ${String(hour).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')} y hoy lleva ${doneToday} de ${totalToday} hábitos hechos. Salúdala breve y con calidez por su nombre, acorde a la hora, y pregúntale con qué sigue.`;
+  const fallbackKey = firstTime ? 'greetingFirstTime' : (hour < 12 ? 'greetingMorning' : (hour < 19 ? 'greetingAfternoon' : 'greetingEvening'));
+  say(chatScroll, situation, tp(fallbackKey, state.profile.nombre), 300).then(() => {
     // Deja la puerta abierta a una sugerencia proactiva: si la persona responde con
     // un simple "sí"/"dale" al saludo, Bless le propone algo concreto en vez de
     // quedarse sin saber qué contestar — esto es lo que la mantiene conversando
     // dentro de la app en vez de cerrarla sin hacer nada.
     state.pending = { type: 'offerSuggestion' };
+    if (firstTime && nativeNotifications()) {
+      setTimeout(async () => {
+        if (await uiConfirm(t('nativeRemindersOffer'), { okText: t('pushEnableBtn') })) {
+          await enableNativeReminders();
+          addNote(chatScroll, t('nativeRemindersOnText'));
+        }
+      }, 1200);
+    }
   });
 }
 function renderHeaderRing() {
@@ -4021,10 +4248,10 @@ function renderProfile() {
 // navegador para evitar borrados accidentales, siguiendo el mismo patrón simple
 // ya usado para otras confirmaciones destructivas en la app (ej. quitar un
 // hábito de un día vs. de toda la serie).
-function deleteLogro(idx) {
+async function deleteLogro(idx) {
   const logro = state.profile.logros && state.profile.logros[idx];
   if (!logro) return;
-  if (!confirm(t('confirmDeleteLogro', logro.text))) return;
+  if (!(await uiConfirm(t('confirmDeleteLogro', logro.text), { danger: true, okText: t('dialogDelete') }))) return;
   state.profile.logros.splice(idx, 1);
   saveStateToServer();
   renderProfile();
@@ -4730,8 +4957,8 @@ function applyDiaryLook(id) {
   refreshDiaryComposerTextFont();
   refreshDiaryStickerStage();
 }
-function saveCurrentAsDiaryLook() {
-  const name = (prompt(t('diaryLookNamePrompt')) || '').trim();
+async function saveCurrentAsDiaryLook() {
+  const name = ((await uiPrompt(t('diaryLookNamePrompt'), '')) || '').trim();
   if (!name) return;
   if (!state.diaryLooks) state.diaryLooks = [];
   state.diaryLooks.push({
@@ -5048,8 +5275,43 @@ function closeDiaryComposer() {
   diaryComposerTags = [];
   diaryComposerPromptOffset = 0;
 }
-function saveDiaryEntry() {
-  if (!diaryComposerDate) return;
+/* Sube una foto (data URL) al servidor y devuelve su URL corta; así el estado
+   guarda "/api/diary-photo/<id>" en vez de la imagen entera. Si falla (sin
+   internet, etc.) devuelve la misma data URL y la foto se guarda como antes. */
+async function uploadDiaryPhoto(dataUrl) {
+  if (!dataUrl || !dataUrl.startsWith('data:')) return dataUrl;
+  try {
+    const res = await fetch('/api/diary-photo', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ dataUrl }) });
+    const data = await res.json();
+    return (data.ok && data.url) ? data.url : dataUrl;
+  } catch (e) { return dataUrl; }
+}
+// Una sola vez por cuenta: pasa las fotos viejas (guardadas dentro del estado)
+// al almacenamiento de fotos.
+async function migrateDiaryPhotos() {
+  const entries = (state.journal || []).filter(e => e.photo && e.photo.startsWith('data:'));
+  if (!entries.length) return;
+  let changed = false;
+  for (const e of entries) {
+    const url = await uploadDiaryPhoto(e.photo);
+    if (url !== e.photo) { e.photo = url; changed = true; }
+  }
+  if (changed) saveStateToServer();
+}
+
+let diarySaving = false;
+async function saveDiaryEntry() {
+  if (!diaryComposerDate || diarySaving) return;
+  diarySaving = true;
+  const saveBtn = document.getElementById('diary-save-btn');
+  if (saveBtn) saveBtn.disabled = true;
+  try {
+    diaryComposerPhoto = await uploadDiaryPhoto(diaryComposerPhoto);
+  } finally {
+    diarySaving = false;
+    if (saveBtn) saveBtn.disabled = false;
+  }
+  if (!diaryComposerDate) return; // se cerró el compositor mientras subía
   const text = document.getElementById('diary-text').value.trim();
   const moodBtn = document.querySelector('#diary-mood-picker .qr-btn.selected');
   const mood = moodBtn ? moodBtn.dataset.mood : '';
@@ -5071,8 +5333,8 @@ function saveDiaryEntry() {
   closeDiaryComposer();
   renderDiary();
 }
-function deleteDiaryEntry(dateStr) {
-  if (!confirm(t('diaryDeleteConfirm'))) return;
+async function deleteDiaryEntry(dateStr) {
+  if (!(await uiConfirm(t('diaryDeleteConfirm'), { danger: true, okText: t('dialogDelete') }))) return;
   state.journal = (state.journal || []).filter(e => e.date !== dateStr);
   saveStateToServer();
   renderDiary();
@@ -5147,9 +5409,9 @@ document.getElementById('diary-photo-editor-overlay').addEventListener('click', 
   }, { passive: false });
 })();
 
-function editProfileField(field, labelKey, numeric) {
+async function editProfileField(field, labelKey, numeric) {
   const current = state.profile[field] || '';
-  const val = prompt(t('editFieldPrompt', t(labelKey)), current);
+  const val = await uiPrompt(t('editFieldPrompt', t(labelKey)), current, numeric ? { inputmode: 'decimal' } : {});
   if (val === null) return; // canceló
   const trimmed = val.trim();
   state.profile[field] = trimmed ? (numeric ? (Number(trimmed) || trimmed) : trimmed) : null;
@@ -5300,11 +5562,14 @@ document.getElementById('option-picker-cancel-btn').onclick = closeOptionPicker;
 
 // Editar un par de horas (horario fijo, o despertar/dormir) — mismo patrón simple
 // de prompt() ya usado para nombre/edad/peso/talla, aplicado ahora también aquí.
-function editProfileTimePair(field1, field2, label1Key, label2Key) {
-  const v1 = prompt(t('editFieldPrompt', t(label1Key)), state.profile[field1] || '');
-  if (v1 === null) return;
-  const v2 = prompt(t('editFieldPrompt', t(label2Key)), state.profile[field2] || '');
-  if (v2 === null) return;
+async function editProfileTimePair(field1, field2, label1Key, label2Key) {
+  // Una sola ventana con los dos relojes, en vez de dos cuadros de texto seguidos.
+  const res = await uiForm('', [
+    { label: t(label1Key), value: state.profile[field1] || '', type: 'time' },
+    { label: t(label2Key), value: state.profile[field2] || '', type: 'time' },
+  ]);
+  if (!res) return;
+  const [v1, v2] = res;
   state.profile[field1] = v1.trim() || null;
   state.profile[field2] = v2.trim() || null;
   saveStateToServer();

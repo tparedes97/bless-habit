@@ -47,9 +47,13 @@ en el navegador.
 - **`server.url`** en `capacitor.config.json` ya apunta a tu app en producción
   (`https://bless-habit.onrender.com`). Si alguna vez cambias de dominio, ese es el
   único lugar que hay que editar (y volver a correr `npx cap sync android`).
-- **Ícono de la app**: todavía tiene el ícono por defecto de Capacitor. Genera el
-  tuyo (puedes usar el generador de íconos de Android Studio: clic derecho en
-  `android/app/src/main/res` → New → Image Asset) y reemplaza los `mipmap/ic_launcher*`.
+- **Ícono y pantalla de inicio**: ya tienen un brote blanco sobre lavanda. El arte
+  fuente está en `assets/` (`icon-only.png`, `icon-foreground.png`,
+  `icon-background.png`, `splash.png`, `splash-dark.png`). Si quieres cambiarlo,
+  reemplaza esos PNG (1024×1024 los íconos, 2732×2732 los splash) y corre:
+  ```
+  npx @capacitor/assets generate --android --iconBackgroundColor '#7C6CF0' --splashBackgroundColor '#F7F6FD' --splashBackgroundColorDark '#1b1830'
+  ```
 - **Firmar el `.aab`**: Android Studio → Build → Generate Signed Bundle / APK →
   Android App Bundle. Necesitas crear un keystore la primera vez (guárdalo en un
   lugar seguro, lo necesitas para cada actualización futura).
@@ -70,16 +74,35 @@ en el navegador.
 - **Política de Privacidad y Términos**: Play Console te va a pedir URLs públicas
   de ambos documentos (ver `bless-habit-legal/` si ya los tienes).
 
+## Pantalla de carga y "sin conexión"
+
+- Mientras llega la app desde el servidor se ve el logo con una ruedita
+  (`res/layout/loading_overlay.xml`, la quita `MainActivity.java` al cargar). Si
+  tarda más de 5 s aparece "Despertando a Bless…" — pasa cuando Render está dormido.
+- Sin internet se muestra `www/error.html` (configurado en `server.errorPath`), que
+  reintenta solo al volver la conexión. **Si cambias `server.url`, cambia también
+  `SERVER_URL` dentro de `www/error.html`.**
+- Para que Render casi nunca esté dormido: crea una cuenta gratis en
+  https://cron-job.org y agrega un trabajo que visite
+  `https://bless-habit.onrender.com/healthz` cada 10 minutos.
+
+## Recordatorios
+
+Usan `@capacitor/local-notifications`: el propio teléfono avisa a la hora de cada
+hábito (sin Firebase ni servidor). Se activan al terminar la evaluación inicial o
+desde Perfil → Notificaciones, y se reprograman solos cada vez que cambian los
+hábitos. El ícono de la barra de estado es `res/drawable-*/ic_stat_bless.png`.
+
 ## Estructura de este proyecto
 
 - `capacitor.config.json` — configuración central (appId, nombre, URL del servidor).
 - `android/` — el proyecto nativo de Android ya generado y sincronizado. Es lo que
   abres en Android Studio.
-- `www/` — carpeta placeholder vacía (Capacitor la pide, pero no se usa de verdad
-  porque `server.url` hace que la app cargue tu web en vivo en vez de archivos
-  locales empaquetados).
+- `www/` — casi vacía: la app carga tu web en vivo desde `server.url`. Solo tiene
+  `error.html`, la pantalla de "sin conexión".
 - `package.json` — dependencias de Capacitor (`@capacitor/core`, `@capacitor/android`,
-  `@capacitor/app`, `@capacitor/browser`).
+  `@capacitor/app`, `@capacitor/browser`, `@capacitor/local-notifications`).
+- `assets/` — arte fuente del ícono y la pantalla de inicio.
 
 ## Si necesitas regenerar o actualizar este proyecto
 

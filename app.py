@@ -1,5 +1,7 @@
 import os
+import re
 import json
+import base64
 import sqlite3
 import hmac
 import hashlib
@@ -226,6 +228,28 @@ def init_db():
             FOREIGN KEY(user_id) REFERENCES users(id)
         )
     """)
+    # Códigos de un solo uso (login y pago desde la app de Android). Viven en
+    # la base y no en memoria: si Render se duerme o reinicia justo entre
+    # abrir el navegador y volver a la app, el código sigue sirviendo.
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS one_time_tokens (
+            token TEXT PRIMARY KEY,
+            user_id INTEGER NOT NULL,
+            kind TEXT NOT NULL,
+            expires_at REAL NOT NULL
+        )
+    """)
+    # Fotos del diario: aparte del estado, para que cada guardado no reenvíe
+    # todas las fotos (el estado completo se manda en cada cambio).
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS diary_photos (
+            id TEXT PRIMARY KEY,
+            user_id INTEGER NOT NULL,
+            mime TEXT NOT NULL,
+            data_b64 TEXT NOT NULL,
+            created_at REAL NOT NULL
+        )
+    """)
     # Migración suave: agrega columnas nuevas si la base ya existía sin ellas
     # (por ejemplo una base creada antes de Premium, o todavía con las
     # columnas viejas de Culqi de una versión anterior de este archivo).
@@ -311,6 +335,73 @@ def set_user_premium(user_id, is_premium, customer_id=None, subscription_id=None
         WHERE id = ?
     """, (1 if is_premium else 0, customer_id, subscription_id, 1 if is_premium else 0, user_id))
     conn.commit()
+    conn.close()
+
+
+def create_one_time_token(user_id, kind, ttl_seconds):
+    token = secrets.token_urlsafe(32)
+    conn = get_db()
+    conn.execute("DELETE FROM one_time_tokens WHERE expires_at < ?", (time.time(),))
+    conn.execute(
+        "INSERT INTO one_time_tokens (token, user_id, kind, expires_at) VALUES (?, ?, ?, ?)",
+        (token, user_id, kind, time.time() + ttl_seconds),
+    )
+    conn.commit()
+    conn.close()
+    return token
+
+
+def consume_one_time_token(token, kind):
+    """Devuelve el user_id y borra el token (sirve una sola vez), o None si no
+    existe, es de otro tipo o ya expiró."""
+    if not token:
+        return None
+    conn = get_db()
+    cur = conn.execute("SELECT user_id, kind, expires_at FROM one_time_tokens WHERE token = ?", (token,))
+    row = _row_to_dict(cur, cur.fetchone())
+    if row:
+        conn.execute("DELETE FROM one_time_tokens WHERE token = ?", (token,))
+        conn.commit()
+    conn.close()
+    if not row or row["kind"] != kind or row["expires_at"] < time.time():
+        return None
+    return row["user_id"]
+
+
+def save_diary_photo(user_id, mime, data_b64):
+    photo_id = secrets.token_urlsafe(16)
+    conn = get_db()
+    conn.execute(
+        "INSERT INTO diary_photos (id, user_id, mime, data_b64, created_at) VALUES (?, ?, ?, ?, ?)",
+        (photo_id, user_id, mime, data_b64, time.time()),
+    )
+    conn.commit()
+    conn.close()
+    return photo_id
+
+
+def get_diary_photo(user_id, photo_id):
+    conn = get_db()
+    cur = conn.execute("SELECT mime, data_b64 FROM diary_photos WHERE id = ? AND user_id = ?", (photo_id, user_id))
+    row = _row_to_dict(cur, cur.fetchone())
+    conn.close()
+    return row
+
+
+def delete_unreferenced_diary_photos(user_id, referenced_ids, min_age_seconds=3600):
+    """Borra las fotos del usuario que ya no usa ninguna entrada del diario.
+    Solo las de más de 1 hora: una recién subida puede no estar guardada aún
+    en el estado."""
+    conn = get_db()
+    cur = conn.execute(
+        "SELECT id FROM diary_photos WHERE user_id = ? AND created_at < ?",
+        (user_id, time.time() - min_age_seconds),
+    )
+    stale = [r["id"] for r in _rows_to_dicts(cur, cur.fetchall()) if r["id"] not in referenced_ids]
+    for photo_id in stale:
+        conn.execute("DELETE FROM diary_photos WHERE id = ?", (photo_id,))
+    if stale:
+        conn.commit()
     conn.close()
 
 
@@ -427,18 +518,11 @@ google = oauth.register(
 # personalizado (blesshabit://auth-callback?token=...), la app nativa
 # intercepta ese enlace y llama a /auth/native-exchange desde SU PROPIO
 # WebView para completar el login ahí también.
-# En memoria alcanza: son tokens de un solo uso que expiran en 2 minutos.
+# Los tokens se guardan en la base (ver create_one_time_token) y expiran en
+# 5 minutos.
 # ============================================================
-NATIVE_LOGIN_TOKENS = {}
-NATIVE_LOGIN_TOKEN_TTL_SECONDS = 120
+NATIVE_TOKEN_TTL_SECONDS = 300
 NATIVE_APP_URL_SCHEME = os.environ.get("NATIVE_APP_URL_SCHEME", "blesshabit")
-
-
-def _cleanup_native_login_tokens():
-    now = time.time()
-    expired = [t for t, (_, exp) in NATIVE_LOGIN_TOKENS.items() if exp < now]
-    for t in expired:
-        NATIVE_LOGIN_TOKENS.pop(t, None)
 
 
 @app.route("/auth/login")
@@ -479,9 +563,7 @@ def auth_callback():
     session.permanent = True
     session["user_id"] = user_id
     if session.pop("native_login", False):
-        _cleanup_native_login_tokens()
-        exchange_token = secrets.token_urlsafe(32)
-        NATIVE_LOGIN_TOKENS[exchange_token] = (user_id, time.time() + NATIVE_LOGIN_TOKEN_TTL_SECONDS)
+        exchange_token = create_one_time_token(user_id, "login", NATIVE_TOKEN_TTL_SECONDS)
         return redirect(f"{NATIVE_APP_URL_SCHEME}://auth-callback?token={exchange_token}")
     return redirect("/")
 
@@ -491,14 +573,9 @@ def auth_native_exchange():
     """La app nativa llama esto DESDE SU PROPIO WebView (no desde el navegador
     del sistema) con el token que recibió por el enlace personalizado, para
     obtener su propia cookie de sesión."""
-    _cleanup_native_login_tokens()
-    token = request.args.get("token", "")
-    entry = NATIVE_LOGIN_TOKENS.pop(token, None)
-    if not entry:
+    user_id = consume_one_time_token(request.args.get("token", ""), "login")
+    if not user_id:
         return "Enlace de acceso inválido o expirado. Intenta iniciar sesión de nuevo.", 400
-    user_id, expires_at = entry
-    if expires_at < time.time():
-        return "El enlace de acceso expiró. Intenta iniciar sesión de nuevo.", 400
     session.permanent = True
     session["user_id"] = user_id
     return redirect("/")
@@ -547,7 +624,54 @@ def api_save_state():
     if state is None:
         return jsonify({"ok": False, "error": "Falta el state"}), 400
     save_user_state(user_id, state)
+    try:
+        referenced = set(DIARY_PHOTO_URL_RE.findall(json.dumps(state)))
+        delete_unreferenced_diary_photos(user_id, referenced)
+    except Exception as e:
+        print(f"[diario] no se pudieron limpiar fotos viejas: {e}")
     return jsonify({"ok": True})
+
+
+# ============================================================
+# FOTOS DEL DIARIO — se suben una vez y el estado solo guarda su URL.
+# ============================================================
+DIARY_PHOTO_URL_RE = re.compile(r"/api/diary-photo/([A-Za-z0-9_-]+)")
+DIARY_PHOTO_MAX_BYTES = 3 * 1024 * 1024
+DIARY_PHOTO_DATA_URL_RE = re.compile(r"^data:(image/(?:jpeg|png|webp));base64,([A-Za-z0-9+/=]+)$")
+
+
+@app.route("/api/diary-photo", methods=["POST"])
+def api_upload_diary_photo():
+    user_id = session.get("user_id")
+    if not user_id:
+        return jsonify({"ok": False, "error": "No autenticado"}), 401
+    data_url = (request.get_json(force=True) or {}).get("dataUrl") or ""
+    match = DIARY_PHOTO_DATA_URL_RE.match(data_url)
+    if not match:
+        return jsonify({"ok": False, "error": "Imagen inválida"}), 400
+    mime, data_b64 = match.groups()
+    try:
+        size = len(base64.b64decode(data_b64, validate=True))
+    except Exception:
+        return jsonify({"ok": False, "error": "Imagen inválida"}), 400
+    if size > DIARY_PHOTO_MAX_BYTES:
+        return jsonify({"ok": False, "error": "Imagen demasiado grande"}), 413
+    photo_id = save_diary_photo(user_id, mime, data_b64)
+    return jsonify({"ok": True, "url": f"/api/diary-photo/{photo_id}"})
+
+
+@app.route("/api/diary-photo/<photo_id>")
+def api_get_diary_photo(photo_id):
+    user_id = session.get("user_id")
+    if not user_id:
+        return "", 401
+    row = get_diary_photo(user_id, photo_id)
+    if not row:
+        return "", 404
+    resp = Response(base64.b64decode(row["data_b64"]), mimetype=row["mime"])
+    # El id cambia si cambia la foto, así que se puede guardar en caché.
+    resp.headers["Cache-Control"] = "private, max-age=31536000, immutable"
+    return resp
 
 
 # ============================================================
@@ -613,39 +737,25 @@ def api_cancel_subscription():
 # blesshabit://premium-done, y la app consulta /api/subscription-status.
 # Quien activa el Premium de verdad sigue siendo el webhook de Paddle.
 # ============================================================
-NATIVE_CHECKOUT_TOKENS = {}
-NATIVE_CHECKOUT_TOKEN_TTL_SECONDS = 120
-
-
-def _cleanup_native_checkout_tokens():
-    now = time.time()
-    expired = [t for t, (_, exp) in NATIVE_CHECKOUT_TOKENS.items() if exp < now]
-    for t in expired:
-        NATIVE_CHECKOUT_TOKENS.pop(t, None)
-
-
 @app.route("/api/native-checkout-token", methods=["POST"])
 def api_native_checkout_token():
     user_id = session.get("user_id")
     if not user_id:
         return jsonify({"ok": False, "error": "No autenticado"}), 401
-    _cleanup_native_checkout_tokens()
-    token = secrets.token_urlsafe(32)
-    NATIVE_CHECKOUT_TOKENS[token] = (user_id, time.time() + NATIVE_CHECKOUT_TOKEN_TTL_SECONDS)
+    token = create_one_time_token(user_id, "checkout", NATIVE_TOKEN_TTL_SECONDS)
     return jsonify({"ok": True, "url": url_for("native_checkout", token=token, _external=True)})
 
 
 @app.route("/premium/native-checkout")
 def native_checkout():
     """Se abre en el navegador del sistema (no en el WebView de la app)."""
-    _cleanup_native_checkout_tokens()
-    entry = NATIVE_CHECKOUT_TOKENS.pop(request.args.get("token", ""), None)
+    checkout_user_id = consume_one_time_token(request.args.get("token", ""), "checkout")
     error = None
     user = None
-    if not entry:
+    if not checkout_user_id:
         error = "Este enlace de pago expiró. Vuelve a la app y toca de nuevo \"Hazte Premium\"."
     else:
-        user = get_user(entry[0])
+        user = get_user(checkout_user_id)
         if not user:
             error = "No encontramos tu cuenta. Vuelve a la app e inicia sesión de nuevo."
         elif user["is_premium"]:
@@ -823,6 +933,13 @@ def index():
         paddle_price_label=PADDLE_PRICE_LABEL,
         native_app_url_scheme=NATIVE_APP_URL_SCHEME,
     )
+
+
+@app.route("/healthz")
+def healthz():
+    # Para un servicio externo gratis (ej. cron-job.org) que lo visite cada 10
+    # minutos y así Render no "duerma" el servidor. No toca la base de datos.
+    return "ok"
 
 
 @app.route("/api/status")

@@ -4,9 +4,17 @@
   "webDir": "www",
   "server": {
     "url": "https://bless-habit.onrender.com",
-    "cleartext": false
+    "cleartext": false,
+    "errorPath": "error.html"
   },
   "android": {
-    "allowMixedContent": false
+    "allowMixedContent": false,
+    "backgroundColor": "#F7F6FD"
+  },
+  "plugins": {
+    "LocalNotifications": {
+      "smallIcon": "ic_stat_bless",
+      "iconColor": "#7C6CF0"
+    }
   }
 }

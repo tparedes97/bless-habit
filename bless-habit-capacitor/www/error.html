@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bless Habit</title>
+<!-- Se muestra (server.errorPath en capacitor.config.json) cuando la app no puede
+     cargar el servidor: sin internet, o el servidor caído. Aquí NO hay plugins de
+     Capacitor, solo HTML. Si cambias server.url, cambia también SERVER_URL abajo. -->
+<style>
+  html, body { margin: 0; height: 100%; }
+  body { display: flex; align-items: center; justify-content: center; background: #F7F6FD; color: #241f3a; font-family: system-ui, -apple-system, sans-serif; text-align: center; }
+  @media (prefers-color-scheme: dark) { body { background: #1b1830; color: #f1eefc; } p { color: #b9b3d6 !important; } }
+  .box { max-width: 320px; padding: 24px; }
+  .emoji { font-size: 56px; }
+  h1 { font-size: 20px; margin: 14px 0 8px; }
+  p { font-size: 15px; line-height: 1.5; color: #6b6585; margin: 0 0 22px; }
+  button { width: 100%; min-height: 48px; border: none; border-radius: 14px; font-size: 16px; font-weight: 800; color: #fff; background: linear-gradient(135deg, #7C6CF0, #A58CFF); }
+  button:disabled { opacity: .6; }
+</style>
+</head>
+<body>
+<div class="box">
+  <div class="emoji">🌱</div>
+  <h1 id="title">Sin conexión</h1>
+  <p id="desc">No pudimos conectar con Bless. Revisa tu internet e intenta de nuevo.</p>
+  <button id="retry">Reintentar</button>
+</div>
+<script>
+  var SERVER_URL = 'https://bless-habit.onrender.com';
+  if ((navigator.language || '').toLowerCase().indexOf('es') !== 0) {
+    document.documentElement.lang = 'en';
+    document.getElementById('title').textContent = 'No connection';
+    document.getElementById('desc').textContent = "We couldn't reach Bless. Check your internet and try again.";
+    document.getElementById('retry').textContent = 'Try again';
+  }
+  function retry() {
+    var btn = document.getElementById('retry');
+    btn.disabled = true;
+    window.location.href = SERVER_URL;
+  }
+  document.getElementById('retry').onclick = retry;
+  // Vuelve sola en cuanto el teléfono recupera la conexión.
+  window.addEventListener('online', retry);
+</script>
+</body>
+</html>

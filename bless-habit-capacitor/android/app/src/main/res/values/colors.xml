@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="bless_bg">#F7F6FD</color>
+    <color name="bless_accent">#7C6CF0</color>
+    <color name="bless_text_dim">#6B6585</color>
+</resources>
