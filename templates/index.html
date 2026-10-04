@@ -276,6 +276,9 @@
   .pin-key:active { transform: scale(.94); background: var(--panel-2); }
   .pin-key.blank { visibility: hidden; }
   .pin-key.del { font-size: 20px; border: none; background: none; box-shadow: none; }
+  .bio-toggle { display: flex; align-items: center; gap: 8px; font-size: 14px; margin: 0 0 12px; cursor: pointer; }
+  .bio-toggle input { width: 20px; height: 20px; accent-color: var(--accent); }
+  .pin-bio { margin-top: 16px; background: var(--panel); border: 1px solid var(--border); color: var(--accent); border-radius: 14px; padding: 12px 18px; font-size: 15px; font-weight: 700; cursor: pointer; min-height: 48px; }
   .pin-links { display: flex; justify-content: space-between; margin-top: 18px; }
   .pin-link { background: none; border: none; color: var(--accent); font-size: 14px; font-weight: 600; padding: 10px; cursor: pointer; }
   .pin-link:empty { visibility: hidden; }
@@ -910,6 +913,7 @@
     <div class="pin-dots" id="pin-dots"><span></span><span></span><span></span><span></span></div>
     <div class="pin-error" id="pin-error"></div>
     <div class="pin-pad" id="pin-pad"></div>
+    <button type="button" class="pin-bio" id="pin-bio" style="display:none;"></button>
     <div class="pin-links">
       <button type="button" class="pin-link" id="pin-cancel"></button>
       <button type="button" class="pin-link" id="pin-forgot"></button>
@@ -1701,6 +1705,10 @@ const I18N = {
     diaryPhotoTooLarge: 'No se pudo procesar esa imagen — intenta con otra foto.',
     nativeLoginFailed: 'No se pudo completar el inicio de sesión. Intenta de nuevo.',
     crisisFallback: 'Me importa mucho lo que me cuentas 🤍. No tienes que pasar por esto en soledad. Por favor, habla ahora con alguien de confianza. En Perú puedes llamar gratis a la Línea 113, opción 5 (salud mental), a cualquier hora; si estás en otro país, llama al número de emergencias local. ¿Estás a salvo en este momento?',
+    bioUseBtn: '👆 Usar huella o rostro', bioUsePin: 'Usar PIN', bioReason: 'Desbloquea Bless Habit',
+    bioOffer: '¿Quieres desbloquear Bless Habit también con tu huella o tu rostro? 👆 El PIN seguirá funcionando.',
+    bioOfferOk: 'Sí, activar', bioToggleLabel: 'Desbloquear con huella o rostro en este teléfono',
+    bioEnableFail: 'No se pudo activar la huella o el rostro. Puedes seguir usando tu PIN.',
     pinCardTitle: '🔒 Bloqueo con PIN',
     pinCardOff: 'Pide un PIN de 4 dígitos cada vez que abres Bless Habit, para que nadie más lea tu chat, tu diario ni tus recuerdos.',
     pinCardFree: 'Protege tu chat, tu diario y tus recuerdos con un PIN de 4 dígitos. Disponible con Bless Habit Premium.',
@@ -2055,6 +2063,10 @@ const I18N = {
     diaryPhotoTooLarge: "Couldn't process that image — try another photo.",
     nativeLoginFailed: "Couldn't finish signing in. Please try again.",
     crisisFallback: "What you're telling me matters so much to me 🤍. You don't have to go through this alone. Please reach out to someone you trust right now, or call your local emergency number or a crisis line in your country. Are you safe right now?",
+    bioUseBtn: '👆 Use fingerprint or face', bioUsePin: 'Use PIN', bioReason: 'Unlock Bless Habit',
+    bioOffer: 'Want to unlock Bless Habit with your fingerprint or face too? 👆 Your PIN will keep working.',
+    bioOfferOk: 'Yes, turn on', bioToggleLabel: 'Unlock with fingerprint or face on this phone',
+    bioEnableFail: "Couldn't turn on fingerprint or face. You can keep using your PIN.",
     pinCardTitle: '🔒 PIN lock',
     pinCardOff: 'Ask for a 4-digit PIN every time you open Bless Habit, so nobody else reads your chat, journal or memories.',
     pinCardFree: 'Protect your chat, journal and memories with a 4-digit PIN. Available with Bless Habit Premium.',
@@ -3098,7 +3110,7 @@ async function saveStateToServer() {
    ============================================================ */
 let appLockEnabled = false;
 let appUnlocking = null; // Promise en curso, para no abrir dos pantallas de PIN
-function pinPad({ title, sub = '', cancellable = false, forgot = false }) {
+function pinPad({ title, sub = '', cancellable = false, forgot = false, biometric = null }) {
   return new Promise((resolve) => {
     const overlay = document.getElementById('pin-lock-screen');
     const dots = document.getElementById('pin-dots');
@@ -3124,6 +3136,12 @@ function pinPad({ title, sub = '', cancellable = false, forgot = false }) {
     const cancelBtn = document.getElementById('pin-cancel');
     cancelBtn.textContent = cancellable ? t('dialogCancel') : '';
     cancelBtn.onclick = () => finish(null);
+    // Botón "Usar huella o rostro": si el teléfono lo confirma, se cierra el
+    // teclado con el valor especial BIO_OK (ver requireAppUnlock).
+    const bioBtn = document.getElementById('pin-bio');
+    bioBtn.style.display = biometric ? '' : 'none';
+    bioBtn.textContent = t('bioUseBtn');
+    bioBtn.onclick = async () => { if (biometric && await biometric()) finish(BIO_OK); };
     const forgotBtn = document.getElementById('pin-forgot');
     forgotBtn.textContent = forgot ? t('pinForgot') : '';
     forgotBtn.onclick = async () => {
@@ -3142,15 +3160,73 @@ function pinPadError(msg) {
   dots.classList.remove('shake'); void dots.offsetWidth; dots.classList.add('shake');
   return msg;
 }
+/* ---- Huella / rostro (solo app de Android, plugin NativeBiometric) ----
+   El teléfono guarda una llave secreta del servidor en el almacén seguro de
+   Android (setCredentials). Para desbloquear, Android pide la huella o el
+   rostro y recién ahí se lee la llave y se manda al servidor. Que esté
+   activado se recuerda por teléfono (localStorage): es un ajuste del aparato. */
+const BIO_OK = '__bio_ok__';
+const BIO_SERVER = 'app.blesshabit.applock';
+function nativeBiometric() {
+  return IS_NATIVE_APP && window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.NativeBiometric;
+}
+function bioEnabledHere() { try { return localStorage.getItem('blessBioUnlock') === '1'; } catch (e) { return false; } }
+function setBioEnabledHere(on) { try { if (on) localStorage.setItem('blessBioUnlock', '1'); else localStorage.removeItem('blessBioUnlock'); } catch (e) {} }
+async function biometricAvailable() {
+  const NB = nativeBiometric();
+  if (!NB) return false;
+  try { return !!(await NB.isAvailable({ useFallback: false })).isAvailable; } catch (e) { return false; }
+}
+async function biometricUnlock() {
+  const NB = nativeBiometric();
+  if (!NB || !bioEnabledHere()) return false;
+  try {
+    await NB.verifyIdentity({ reason: t('bioReason'), title: 'Bless Habit', subtitle: t('bioReason'), negativeButtonText: t('bioUsePin') });
+    const cred = await NB.getCredentials({ server: BIO_SERVER });
+    const res = await fetch('/api/app-lock/biometric/verify', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ key: cred.password }) });
+    if (res.ok) return true;
+    if (res.status === 401) { setBioEnabledHere(false); try { await NB.deleteCredentials({ server: BIO_SERVER }); } catch (e) {} } // la llave ya no vale (PIN quitado o reseteado)
+  } catch (e) { /* canceló o falló: queda el PIN */ }
+  return false;
+}
+async function enableBiometricUnlock() {
+  const NB = nativeBiometric();
+  if (!NB) return false;
+  try {
+    await NB.verifyIdentity({ reason: t('bioReason'), title: 'Bless Habit', negativeButtonText: t('dialogCancel') });
+    const data = await (await fetch('/api/app-lock/biometric/enroll', { method: 'POST' })).json();
+    if (!data.ok || !data.key) throw new Error('enroll');
+    await NB.setCredentials({ username: 'bless', password: data.key, server: BIO_SERVER });
+    setBioEnabledHere(true);
+    return true;
+  } catch (e) { uiAlert(t('bioEnableFail')); return false; }
+}
+async function disableBiometricUnlock() {
+  const NB = nativeBiometric();
+  setBioEnabledHere(false);
+  if (NB) { try { await NB.deleteCredentials({ server: BIO_SERVER }); } catch (e) {} }
+}
+async function offerBiometricUnlock() {
+  if (bioEnabledHere() || !(await biometricAvailable())) return;
+  if (await uiConfirm(t('bioOffer'), { okText: t('bioOfferOk') })) {
+    if (await enableBiometricUnlock()) renderProfile();
+  }
+}
+
 async function requireAppUnlock() {
   if (!appLockEnabled) return;
   if (appUnlocking) return appUnlocking;
   appUnlocking = (async () => {
     let errorMsg = '';
+    let triedBio = false;
     while (true) {
-      const p = pinPad({ title: t('pinEnterTitle'), sub: '', forgot: true });
+      const bio = bioEnabledHere() && nativeBiometric() ? biometricUnlock : null;
+      const p = pinPad({ title: t('pinEnterTitle'), sub: '', forgot: true, biometric: bio });
       if (errorMsg) { document.getElementById('pin-error').textContent = errorMsg; pinPadError(); }
+      // Al abrir, se pide la huella/rostro de inmediato (una vez); si cancela, queda el teclado.
+      if (bio && !triedBio) { triedBio = true; setTimeout(() => document.getElementById('pin-bio').click(), 250); }
       const pin = await p;
+      if (pin === BIO_OK) return;
       let res, data;
       try {
         res = await fetch('/api/app-lock/verify', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ pin }) });
@@ -3183,8 +3259,9 @@ async function setupAppLock() {
   const res = await fetch('/api/app-lock/set', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ pin: first }) }).catch(() => null);
   if (!res || !res.ok) { uiAlert(t('pinSaveFail')); return; }
   appLockEnabled = true;
-  uiAlert(t('pinEnabledMsg'));
+  await uiAlert(t('pinEnabledMsg'));
   renderProfile();
+  offerBiometricUnlock();
 }
 async function changeAppLock() {
   const current = await pinPad({ title: t('pinCurrentTitle'), cancellable: true });
@@ -3204,6 +3281,7 @@ async function disableAppLock() {
   const res = await fetch('/api/app-lock/disable', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ pin: current }) }).catch(() => null);
   if (!res || !res.ok) { uiAlert(t('pinWrongSimple')); return; }
   appLockEnabled = false;
+  await disableBiometricUnlock();
   renderProfile();
 }
 function appLockCardHtml() {
@@ -3211,6 +3289,7 @@ function appLockCardHtml() {
   if (appLockEnabled) {
     return `<div class="profile-card">${title}
       <div style="font-size:13px;color:var(--text-dim);margin-bottom:10px;">${t('pinCardOn')}</div>
+      <div id="bio-row"></div>
       <div style="display:flex;gap:8px;"><button class="send-btn" id="pin-change-btn" style="flex:1;background:linear-gradient(135deg, var(--panel-3), var(--panel-2));color:var(--text);">${t('pinChangeBtn')}</button>
       <button class="send-btn" id="pin-disable-btn" style="flex:1;background:linear-gradient(135deg, var(--panel-3), var(--panel-2));color:var(--text);">${t('pinDisableBtn')}</button></div></div>`;
   }
@@ -3222,6 +3301,18 @@ function bindAppLockCard() {
   const en = document.getElementById('pin-enable-btn'); if (en) en.onclick = setupAppLock;
   const ch = document.getElementById('pin-change-btn'); if (ch) ch.onclick = changeAppLock;
   const di = document.getElementById('pin-disable-btn'); if (di) di.onclick = disableAppLock;
+  const bioRow = document.getElementById('bio-row');
+  if (bioRow && appLockEnabled) {
+    biometricAvailable().then(ok => {
+      if (!ok) return;
+      const on = bioEnabledHere();
+      bioRow.innerHTML = `<label class="bio-toggle"><input type="checkbox" id="bio-toggle"${on ? ' checked' : ''}> <span>${t('bioToggleLabel')}</span></label>`;
+      document.getElementById('bio-toggle').onchange = async (e) => {
+        if (e.target.checked) { if (!(await enableBiometricUnlock())) e.target.checked = false; }
+        else await disableBiometricUnlock();
+      };
+    });
+  }
 }
 
 async function bootstrapApp() {

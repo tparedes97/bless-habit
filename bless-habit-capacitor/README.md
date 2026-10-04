@@ -93,6 +93,15 @@ hábito (sin Firebase ni servidor). Se activan al terminar la evaluación inicia
 desde Perfil → Notificaciones, y se reprograman solos cada vez que cambian los
 hábitos. El ícono de la barra de estado es `res/drawable-*/ic_stat_bless.png`.
 
+## Bloqueo con PIN y huella/rostro
+
+El PIN (Premium) funciona igual en web y en la app. En Android, además, se puede
+desbloquear con huella o rostro (`@capgo/capacitor-native-biometric`, permiso
+`USE_BIOMETRIC` en el `AndroidManifest.xml`). El teléfono guarda una llave del
+servidor en el almacén seguro de Android y solo la entrega tras la huella/rostro.
+Pruébalo en un teléfono real con huella configurada: el emulador necesita una
+huella registrada en sus ajustes.
+
 ## Estructura de este proyecto
 
 - `capacitor.config.json` — configuración central (appId, nombre, URL del servidor).

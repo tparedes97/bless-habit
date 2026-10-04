@@ -255,6 +255,16 @@ def init_db():
             created_at REAL NOT NULL
         )
     """)
+    # Desbloqueo con huella/rostro (app de Android): cada teléfono guarda una
+    # llave secreta en el almacén seguro de Android; aquí solo su hash.
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS biometric_keys (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            key_hash TEXT NOT NULL,
+            created_at REAL NOT NULL
+        )
+    """)
     # Migración suave: agrega columnas nuevas si la base ya existía sin ellas
     # (por ejemplo una base creada antes de Premium, o todavía con las
     # columnas viejas de Culqi de una versión anterior de este archivo).
@@ -414,6 +424,9 @@ def delete_unreferenced_diary_photos(user_id, referenced_ids, min_age_seconds=36
 def set_app_pin_hash(user_id, pin_hash):
     conn = get_db()
     conn.execute("UPDATE users SET app_pin_hash = ? WHERE id = ?", (pin_hash, user_id))
+    if not pin_hash:
+        # Sin PIN no hay bloqueo: las llaves de huella/rostro dejan de servir.
+        conn.execute("DELETE FROM biometric_keys WHERE user_id = ?", (user_id,))
     conn.commit()
     conn.close()
 
@@ -677,6 +690,46 @@ def api_app_lock_verify():
         session["pin_wait_until"] = time.time() + APP_LOCK_WAIT_SECONDS
         return jsonify({"ok": False, "wait": APP_LOCK_WAIT_SECONDS}), 429
     return jsonify({"ok": False, "attemptsLeft": APP_LOCK_MAX_ATTEMPTS - attempts}), 401
+
+
+def _biometric_key_hash(key):
+    return hashlib.sha256(key.encode("utf-8")).hexdigest()
+
+
+@app.route("/api/app-lock/biometric/enroll", methods=["POST"])
+def api_biometric_enroll():
+    """Crea la llave del teléfono. Solo con el PIN activo y la sesión desbloqueada."""
+    user_id = session.get("user_id")
+    if not user_id:
+        return jsonify({"ok": False, "error": "No autenticado"}), 401
+    user = get_user(user_id)
+    if not user.get("app_pin_hash"):
+        return jsonify({"ok": False, "error": "Primero activa el PIN"}), 400
+    if app_lock_blocks(user_id):
+        return locked_response()
+    key = secrets.token_urlsafe(32)
+    conn = get_db()
+    conn.execute("INSERT INTO biometric_keys (user_id, key_hash, created_at) VALUES (?, ?, ?)",
+                 (user_id, _biometric_key_hash(key), time.time()))
+    conn.commit()
+    conn.close()
+    return jsonify({"ok": True, "key": key})
+
+
+@app.route("/api/app-lock/biometric/verify", methods=["POST"])
+def api_biometric_verify():
+    user_id = session.get("user_id")
+    if not user_id:
+        return jsonify({"ok": False, "error": "No autenticado"}), 401
+    key = str((request.get_json(force=True) or {}).get("key") or "")
+    conn = get_db()
+    cur = conn.execute("SELECT id FROM biometric_keys WHERE user_id = ? AND key_hash = ?", (user_id, _biometric_key_hash(key)))
+    row = cur.fetchone()
+    conn.close()
+    if not key or not row:
+        return jsonify({"ok": False, "error": "invalid_key"}), 401
+    session["unlocked_at"] = time.time()
+    return jsonify({"ok": True})
 
 
 @app.route("/api/app-lock/lock", methods=["POST"])

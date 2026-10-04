@@ -57,4 +57,6 @@
     <!-- Permissions -->
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Desbloqueo con huella o rostro (plugin @capgo/capacitor-native-biometric). -->
+    <uses-permission android:name="android.permission.USE_BIOMETRIC" />
 </manifest>
