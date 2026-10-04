@@ -1037,6 +1037,65 @@ def bless_reply():
         return jsonify({"ok": False, "reply": None, "error": str(e)}), 500
 
 
+# ============================================================
+# RECUERDOS DE BLESS — el chat visible dura un día; al empezar un día nuevo,
+# la conversación anterior se resume en unas pocas notas ("terminó con su
+# novio el 3 de oct", "quiere retomar la guitarra") y los mensajes completos
+# se descartan. La persona ve y borra esas notas en Perfil.
+# ============================================================
+MAX_MEMORIES = 12
+
+
+@app.route("/api/bless-memories", methods=["POST"])
+def bless_memories():
+    if not session.get("user_id"):
+        return jsonify({"ok": False, "error": "No autenticado"}), 401
+    data = request.get_json(force=True) or {}
+    lang = "inglés" if data.get("language") == "en" else "español"
+    date = str(data.get("date") or "")[:10]
+    existing = [str(m)[:200] for m in (data.get("memories") or []) if m][:MAX_MEMORIES]
+    messages = []
+    for m in (data.get("messages") or [])[-60:]:
+        if isinstance(m, dict) and m.get("text"):
+            who = "Persona" if m.get("who") == "user" else "Bless"
+            messages.append(f"{who}: {str(m['text'])[:600]}")
+    if not messages:
+        return jsonify({"ok": True, "memories": existing})
+    try:
+        client = get_client()
+    except Exception as e:
+        print(f"[openai] no se pudo crear el cliente: {e}")
+        client = None
+    if client is None:
+        return jsonify({"ok": False, "error": "IA no disponible"}), 503
+    instructions = (
+        f"Eres la memoria de Bless, una app de hábitos que acompaña como una amiga. "
+        f"Actualiza la lista de recuerdos sobre la persona a partir de la conversación del {date}. "
+        f"Guarda solo lo que sirva para acompañarla mejor en los próximos días: sucesos importantes de su vida "
+        f"(con la fecha escrita de forma natural si importa, por ejemplo 'el 2 de oct'), cómo se siente si es relevante, metas, gustos y lo que le funciona o no con sus hábitos. "
+        f"No guardes saludos, cosas triviales, ni datos sensibles innecesarios (números, direcciones, contraseñas, salud detallada). "
+        f"Une recuerdos repetidos, quita los que ya no apliquen y conserva los anteriores que sigan siendo útiles. "
+        f"Máximo {MAX_MEMORIES} recuerdos, cada uno de una frase corta (menos de 120 caracteres), en {lang}, en tercera persona. "
+        f'Responde SOLO con JSON: {{"memories": ["...", "..."]}}'
+    )
+    user_content = "Recuerdos actuales:\n" + ("\n".join(f"- {m}" for m in existing) or "(ninguno)") + \
+        "\n\nConversación:\n" + "\n".join(messages)
+    try:
+        resp = client.chat.completions.create(
+            model=OPENAI_MODEL,
+            messages=[{"role": "system", "content": instructions}, {"role": "user", "content": user_content}],
+            temperature=0.3,
+            max_tokens=600,
+            response_format={"type": "json_object"},
+        )
+        parsed = json.loads(resp.choices[0].message.content or "{}")
+        memories = [str(m).strip()[:200] for m in parsed.get("memories", []) if str(m).strip()][:MAX_MEMORIES]
+        return jsonify({"ok": True, "memories": memories})
+    except Exception as e:
+        print(f"[openai] error en /api/bless-memories: {e}")
+        return jsonify({"ok": False, "error": str(e)}), 500
+
+
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port)

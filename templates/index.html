@@ -260,6 +260,11 @@
   .diary-look-add-btn:hover { border-color: var(--accent); color: var(--accent); }
   /* Fase 4 del diario — experiencia (24 ago 2026): pregunta del día, notita de
      Bless, favoritas/etiquetas y filtro de la lista por ellas. */
+  .memory-list { display: flex; flex-direction: column; gap: 6px; }
+  .memory-item { display: flex; align-items: flex-start; gap: 8px; background: var(--panel-2); border: 1px solid var(--border); border-radius: 12px; padding: 9px 10px; font-size: 13.5px; line-height: 1.4; }
+  .memory-text { flex: 1; }
+  .memory-del { background: none; border: none; color: var(--text-dim); font-size: 14px; cursor: pointer; padding: 2px 6px; min-width: 32px; min-height: 32px; }
+  .memory-empty { font-size: 13px; color: var(--text-dim); background: var(--panel-2); border: 1px dashed var(--border); border-radius: 12px; padding: 12px; text-align: center; }
   .he-minutes .qr-btn { min-width: 58px; }
   .time .mins { font-weight: 600; opacity: .75; }
   /* ---- Compositor del diario (rediseño) ---- */
@@ -1286,6 +1291,7 @@ CONTEXTO ACTUAL DE LA PERSONA (úsalo solo para comprenderla, no lo recites como
 - Rachas: ${streakText}
 - Últimas notas del diario: ${recentDiaryText}
 - Logros recientes: ${(state.profile.logros||[]).slice(-5).map(x=>x.text).filter(Boolean).join(' | ') || 'ninguno'}
+- Lo que recuerdas de conversaciones de días anteriores (úsalo con tacto, como una amiga que se acuerda; si algo fue doloroso, pregunta cómo sigue sin forzar): ${(state.blessMemories||[]).map(m => m.text).join(' | ') || 'nada todavía'}
 `;
 }
 function blessSystemPrompt() {
@@ -1659,6 +1665,11 @@ const I18N = {
     diaryPhotoTooLarge: 'No se pudo procesar esa imagen — intenta con otra foto.',
     nativeLoginFailed: 'No se pudo completar el inicio de sesión. Intenta de nuevo.',
     crisisFallback: 'Me importa mucho lo que me cuentas 🤍. No tienes que pasar por esto en soledad. Por favor, habla ahora con alguien de confianza. En Perú puedes llamar gratis a la Línea 113, opción 5 (salud mental), a cualquier hora; si estás en otro país, llama al número de emergencias local. ¿Estás a salvo en este momento?',
+    memoriesTitle: '🧠 Lo que Bless recuerda de ti',
+    memoriesDesc: 'El chat empieza limpio cada día. Bless guarda aquí solo lo importante de sus conversaciones, para acompañarte mejor. Puedes borrar lo que quieras.',
+    memoriesEmpty: 'Todavía nada. Cuando conversen, aquí aparecerá lo que Bless quiera recordar de ti 🌱',
+    memoriesClearAll: 'Borrar todo', memoryDeleteTitle: 'Olvidar esto',
+    memoriesClearConfirm: '¿Quieres que Bless olvide todo lo que recuerda de ti?',
     diaryMoodQ: '¿Cómo te sientes?', diaryToolPhoto: 'Foto', diaryToolStyle: 'Estilo', diaryToolStickers: 'Stickers', diaryToolTags: 'Etiquetas', diaryToolFavorite: 'Favorita', diaryMoreStyle: 'Más opciones', diaryTodayPrefix: 'Hoy · ',
     addHabitTitle: 'Agregar un hábito nuevo',
     addHabitDesc: 'No hace falta esperar a otro onboarding — puedes sumar hábitos nuevos cuando quieras, y configurar cada uno a tu manera (qué días, a qué hora, por cuánto tiempo).',
@@ -1995,6 +2006,11 @@ const I18N = {
     diaryPhotoTooLarge: "Couldn't process that image — try another photo.",
     nativeLoginFailed: "Couldn't finish signing in. Please try again.",
     crisisFallback: "What you're telling me matters so much to me 🤍. You don't have to go through this alone. Please reach out to someone you trust right now, or call your local emergency number or a crisis line in your country. Are you safe right now?",
+    memoriesTitle: '🧠 What Bless remembers about you',
+    memoriesDesc: 'The chat starts fresh every day. Bless only keeps the important things from your conversations here, to support you better. You can delete anything.',
+    memoriesEmpty: "Nothing yet. As you talk, what Bless wants to remember about you will show up here 🌱",
+    memoriesClearAll: 'Delete all', memoryDeleteTitle: 'Forget this',
+    memoriesClearConfirm: 'Do you want Bless to forget everything it remembers about you?',
     diaryMoodQ: 'How are you feeling?', diaryToolPhoto: 'Photo', diaryToolStyle: 'Style', diaryToolStickers: 'Stickers', diaryToolTags: 'Tags', diaryToolFavorite: 'Favorite', diaryMoreStyle: 'More options', diaryTodayPrefix: 'Today · ',
     addHabitTitle: 'Add a new habit',
     addHabitDesc: "No need to wait for another onboarding — you can add new habits whenever you want, and configure each one your way (which days, what time, for how long).",
@@ -2399,6 +2415,7 @@ function setAvatarMood(mood, revertMs) {
 }
 
 function addBubble(container, text, who, reactionEmoji) {
+  if (container === chatScroll && !restoringChat && (who === 'user' || who === 'agent')) logChatBubble(who, text);
   const div = document.createElement('div'); div.className = 'bubble ' + who; div.textContent = text;
   container.appendChild(div);
   if (reactionEmoji) {
@@ -3027,8 +3044,7 @@ async function bootstrapApp() {
       // Cuentas guardadas antes del sistema de Niveles (2 sept 2026) no traen "xp" —
       // se normaliza acá mismo, igual que ya se hace arriba con "logros".
       state.profile.xp = state.profile.xp || 0;
-      state.chatMemory = Array.isArray(state.chatMemory) ? state.chatMemory.slice(-16) : [];
-      chatMemory = state.chatMemory.slice(-16);
+      prepareChatMemoryForToday();
       rolloverDayIfNeeded();
       scheduleNativeRemindersSoon(); // reprograma el "te extrañé" a 3 días desde hoy
       migrateDiaryPhotos();
@@ -3037,6 +3053,7 @@ async function bootstrapApp() {
       applyStaticI18n();
       document.getElementById('view-login').classList.remove('active');
       startChat(false);
+      setTimeout(summarizePendingChats, 4000); // resume conversaciones de días anteriores
     } else if (stateData.ok && stateData.state && stateData.state.settings && stateData.state.settings.language) {
       Object.assign(state, stateData.state);
       applyTheme(state.settings.theme);
@@ -3082,6 +3099,7 @@ document.addEventListener('visibilitychange', () => {
   rolloverDayIfNeeded();
   saveStateToServer();
   renderAgenda();
+  if (state.chatLog && state.chatLog.date !== ymd(new Date())) resetChatForNewDay();
   const activeTab = document.querySelector('.tab.active-tab');
   if (activeTab) switchTab(activeTab.dataset.tab);
 });
@@ -3367,6 +3385,95 @@ async function disablePush() {
 /* ============================================================
    CHAT DIARIO
    ============================================================ */
+/* ============================================================
+   CHAT DEL DÍA + RECUERDOS DE BLESS
+   - La conversación visible dura un día (state.chatLog): si cierras y vuelves a
+     abrir la app el mismo día, sigue ahí; al día siguiente el chat empieza limpio.
+   - Al cambiar de día, la conversación anterior se resume con la IA en unas
+     pocas notas (state.blessMemories) y los mensajes completos se descartan.
+     Si la IA no responde, se reintenta luego (máximo 7 días guardados).
+   - La persona ve y borra esas notas en Perfil → "Lo que Bless recuerda de ti".
+   ============================================================ */
+let restoringChat = false;
+let saveStateSoonTimer = null;
+function saveStateSoon() {
+  clearTimeout(saveStateSoonTimer);
+  saveStateSoonTimer = setTimeout(saveStateToServer, 1500);
+}
+function chatLogForToday() {
+  return (state.chatLog && state.chatLog.date === ymd(new Date())) ? state.chatLog : null;
+}
+// Pasa la conversación de un día ya terminado a la cola para resumir.
+function archiveChatLog(log) {
+  if (!log || !Array.isArray(log.messages) || !log.messages.some(m => m.who === 'user')) return;
+  state.chatPendingMemory = (state.chatPendingMemory || []).filter(p => p.date !== log.date);
+  state.chatPendingMemory.push({ date: log.date, messages: log.messages.slice(-60) });
+}
+function logChatBubble(who, text) {
+  const today = ymd(new Date());
+  if (!state.chatLog || state.chatLog.date !== today) {
+    archiveChatLog(state.chatLog);
+    state.chatLog = { date: today, messages: [] };
+  }
+  state.chatLog.messages.push({ who, text: String(text || '').slice(0, 2000) });
+  if (state.chatLog.messages.length > 200) state.chatLog.messages = state.chatLog.messages.slice(-200);
+  saveStateSoon();
+}
+// Al abrir la app: la memoria corta de la IA (chatMemory) es solo la de hoy.
+// Cuentas de antes de este cambio traen state.chatMemory con mensajes de días
+// pasados: se mandan a resumir una vez y se descartan.
+function prepareChatMemoryForToday() {
+  if (!state.chatLog && Array.isArray(state.chatMemory) && state.chatMemory.length) {
+    archiveChatLog({ date: state.lastActiveDate || ymd(addDays(new Date(), -1)), messages: state.chatMemory.map(m => ({ who: m.role === 'user' ? 'user' : 'agent', text: m.content })) });
+  }
+  const log = chatLogForToday();
+  if (!log) archiveChatLog(state.chatLog);
+  chatMemory = log ? log.messages.slice(-16).map(m => ({ role: m.who === 'user' ? 'user' : 'assistant', content: m.text })) : [];
+  state.chatMemory = chatMemory.slice();
+}
+let summarizingMemories = false;
+async function summarizePendingChats() {
+  if (summarizingMemories || !aiEnabled()) return;
+  const cutoff = ymd(addDays(new Date(), -7));
+  state.chatPendingMemory = (state.chatPendingMemory || []).filter(p => p.date >= cutoff);
+  if (!state.chatPendingMemory.length) return;
+  summarizingMemories = true;
+  try {
+    state.chatPendingMemory.sort((a, b) => a.date < b.date ? -1 : 1);
+    while (state.chatPendingMemory.length) {
+      const pending = state.chatPendingMemory[0];
+      const res = await fetch('/api/bless-memories', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ date: pending.date, language: currentLang(), memories: (state.blessMemories || []).map(m => m.text), messages: pending.messages }),
+      });
+      const data = await res.json().catch(() => null);
+      if (!res.ok || !data || !data.ok) break; // se reintenta la próxima vez
+      state.blessMemories = (data.memories || []).map((text, i) => ({ id: 'm' + Date.now().toString(36) + i, text }));
+      state.chatPendingMemory.shift();
+      saveStateToServer();
+    }
+  } catch (e) { /* se reintenta la próxima vez */ }
+  finally { summarizingMemories = false; }
+}
+function restoreTodayChat() {
+  const log = chatLogForToday();
+  if (!log || !log.messages.length) return false;
+  restoringChat = true;
+  try { log.messages.forEach(m => addBubble(chatScroll, m.text, m.who)); }
+  finally { restoringChat = false; }
+  return true;
+}
+// Día nuevo con la app abierta (o en segundo plano): chat limpio y saludo nuevo.
+function resetChatForNewDay() {
+  archiveChatLog(state.chatLog);
+  state.chatLog = null;
+  chatMemory = [];
+  state.chatMemory = [];
+  chatScroll.innerHTML = '';
+  startChat(false);
+  summarizePendingChats();
+}
+
 // firstTime = true solo justo después de la evaluación inicial; al volver a
 // abrir la app Bless saluda como a alguien que ya conoce (según la hora y cómo
 // va su día), no como si fuera la primera vez.
@@ -3379,6 +3486,7 @@ function startChat(firstTime) {
   document.getElementById('header-right').innerHTML = '';
   renderAgenda();
   renderChatAdSlot();
+  if (!firstTime && restoreTodayChat()) return; // ya conversaron hoy: se retoma ahí
   const now = new Date();
   const hour = now.getHours();
   const doneToday = (state.agenda || []).filter(a => a.done).length;
@@ -4406,6 +4514,14 @@ function renderProfile() {
         : `<div style="font-size:13px;color:var(--text-dim);margin-bottom:10px;">${t('freePlanDesc')}</div><button class="premium-btn" id="profile-unlock-premium-btn">${t('becomePremiumBtn', PADDLE_PRICE_LABEL)}</button>`}
     </div>
     <div class="profile-card">
+      <h4>${t('memoriesTitle')}</h4>
+      <div style="font-size:12.5px;color:var(--text-dim);line-height:1.5;margin-bottom:10px;">${t('memoriesDesc')}</div>
+      ${(state.blessMemories || []).length
+        ? `<div class="memory-list">${state.blessMemories.map(m => `<div class="memory-item"><span class="memory-text">${escapeHtml(m.text)}</span><button type="button" class="memory-del" data-id="${m.id}" title="${t('memoryDeleteTitle')}" aria-label="${t('memoryDeleteTitle')}">✕</button></div>`).join('')}</div>
+           <div style="text-align:right;margin-top:8px;"><span class="logout-link" id="memories-clear-all">${t('memoriesClearAll')}</span></div>`
+        : `<div class="memory-empty">${t('memoriesEmpty')}</div>`}
+    </div>
+    <div class="profile-card">
       <h4>${t('notifTitle')}</h4>
       <div style="font-size:13px;color:var(--text-dim);margin-bottom:10px;" id="push-status-text">${t('consultando')}</div>
       <button class="premium-btn" id="push-toggle-btn" style="background:linear-gradient(135deg, var(--panel-3), var(--panel-2)); color:var(--text);">${t('pushEnableBtn')}</button>
@@ -4421,6 +4537,20 @@ function renderProfile() {
     if (btn) btn.onclick = openPaddleCheckout;
     pushAdsenseSlots();
   }
+  document.querySelectorAll('.memory-del').forEach(btn => {
+    btn.onclick = () => {
+      state.blessMemories = (state.blessMemories || []).filter(m => m.id !== btn.dataset.id);
+      saveStateToServer();
+      renderProfile();
+    };
+  });
+  const clearAll = document.getElementById('memories-clear-all');
+  if (clearAll) clearAll.onclick = async () => {
+    if (!(await uiConfirm(t('memoriesClearConfirm'), { danger: true, okText: t('memoriesClearAll') }))) return;
+    state.blessMemories = [];
+    saveStateToServer();
+    renderProfile();
+  };
   refreshPushUI();
   renderAddHabitPresets();
   if (pendingAddHabitStatus) { setAddHabitStatus(pendingAddHabitStatus); pendingAddHabitStatus = ''; }
