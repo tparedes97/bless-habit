@@ -1463,7 +1463,7 @@ CÓMO DEBES CONVERSAR:
 SOBRE LA APP (úsalo solo si preguntan; nunca inventes menús, pantallas ni precios):
 - Secciones: Bless (chat), Calendario (día/semana/mes; cada día tiene Hábitos, Tareas con recordatorio y Notas del día), Métricas, Diario y Perfil.
 - La persona puede pedirte tareas o notas escribiendo "recuérdame…" o "anota…" (la app las guarda sola); si pregunta cómo, explícale eso.
-- NUNCA digas que agendaste, anotaste, guardaste o programaste algo: tú no puedes hacerlo, lo hace la app sola. Si la persona quiere guardar algo, dile que te lo pida empezando con "recuérdame…" o "anota…".
+- NUNCA digas que agendaste, anotaste, guardaste o programaste algo, ni "te recordaré" o "te aviso": tú no puedes hacerlo, lo hace la app sola y ella misma lo confirma. Si la persona quiere guardar algo, dile que te lo pida empezando con "recuérdame…" o "anota…".
 - Plan gratis de tareas y notas: hasta 5 tareas pendientes y 10 notas; Premium ilimitado.
 - Plan gratis: chat con Bless (límite diario de mensajes), hasta 3 hábitos, calendario, diario y recordatorios a la hora de cada hábito.
 - Bless Habit Premium incluye: chat ilimitado y memoria (Bless recuerda lo importante de días anteriores), hábitos ilimitados, resumen semanal escrito por Bless, análisis de ánimo, recordatorios personalizados (avisar 10, 15, 30 o 60 minutos antes), temas y stickers extra para el diario, exportar el diario a PDF y bloqueo con PIN o huella.
@@ -1927,6 +1927,7 @@ const I18N = {
     taskSavedNoTimeChat: (text, date) => `¡Anotado! ✅ «${text}» quedó en tus tareas de ${date}. Si quieres que te avise, dime a qué hora 🤍`,
     noteSavedChat: (date) => `Guardé tu nota en el día de ${date} 📝`,
     seeInCalendarNote: '📅 Ver en el calendario',
+    taskTimeNotUnderstood: 'Mmm, no entendí la hora 😅 Dímela así: "a las 5pm", "a las 17:30" o "en 10 minutos" ⏰',
     askTaskChat: '¡Claro! ¿Qué tarea agrego? Si quieres que te avise, dime también el día y la hora 😊 (por ejemplo: "pagar la luz el viernes a las 6")',
     remindAtTime: 'A la hora', remindBefore: (m) => m >= 60 ? '1 h antes' : `${m} min antes`,
     remindPremiumMsg: 'Con Premium eliges cuándo te aviso: 10, 15, 30 o 60 minutos antes ⏰✨',
@@ -2389,6 +2390,7 @@ const I18N = {
     taskSavedNoTimeChat: (text, date) => `Got it! ✅ "${text}" is in your tasks for ${date}. If you want a reminder, tell me what time 🤍`,
     noteSavedChat: (date) => `I saved your note on ${date} 📝`,
     seeInCalendarNote: '📅 See it in the calendar',
+    taskTimeNotUnderstood: 'Hmm, I didn\'t get the time 😅 Try: "at 5pm", "at 17:30" or "in 10 minutes" ⏰',
     askTaskChat: 'Sure! What task should I add? If you want a reminder, tell me the day and time too 😊 (e.g. "pay the bill Friday at 6")',
     remindAtTime: 'On time', remindBefore: (m) => m >= 60 ? '1 h before' : `${m} min before`,
     remindPremiumMsg: 'With Premium you choose when I remind you: 10, 15, 30 or 60 minutes before ⏰✨',
@@ -5204,6 +5206,14 @@ function parseWhenFromText(raw) {
   let date = null, time = null;
   const cut = (re) => { text = text.replace(re, ' '); };
   let m;
+  // Números en palabras → cifras ("en un minuto", "en media hora", "in two hours")
+  text = text
+    .replace(/\b(?:en|in|dentro de)\s+(?:media hora|half an hour)\b/gi, ' en 30 minutos ')
+    .replace(/\b(?:en|in|dentro de)\s+(?:un cuarto de hora|a quarter of an hour|quarter of an hour)\b/gi, ' en 15 minutos ')
+    .replace(/\b(en|in|dentro de)\s+(un|una|uno|one|a|an|un par de|a couple of|dos|two|tres|three|cuatro|four|cinco|five|seis|six|diez|ten|quince|fifteen|veinte|twenty|treinta|thirty|cuarenta|forty|cincuenta|fifty)\s+(minutos?|mins?|horas?|hours?|minutes?)\b/gi, (all, pre, w, unit) => {
+      const n = { un: 1, una: 1, uno: 1, one: 1, a: 1, an: 1, 'un par de': 2, 'a couple of': 2, dos: 2, two: 2, tres: 3, three: 3, cuatro: 4, four: 4, cinco: 5, five: 5, seis: 6, six: 6, diez: 10, ten: 10, quince: 15, fifteen: 15, veinte: 20, twenty: 20, treinta: 30, thirty: 30, cuarenta: 40, forty: 40, cincuenta: 50, fifty: 50 }[w.toLowerCase()];
+      return ` ${pre} ${n} ${unit} `;
+    });
   // "en 2 horas" / "en 30 minutos" / "in 2 hours"
   if ((m = text.match(/\b(?:en|in|dentro de)\s+(\d{1,3})\s*(horas?|hrs?|h|minutos?|mins?|min|hours?|minutes?)\b/i))) {
     const n = parseInt(m[1], 10), isH = /^h/i.test(m[2]);
@@ -5415,6 +5425,13 @@ async function handleUserMessageInner(text) {
       afterTasksOrNotesChanged();
       maybeEnableRemindersForTask();
       await agentSay(chatScroll, t('taskSavedChat', tk.text, friendlyDateLabel(tk.date), tk.time), 300, '⏰');
+      return;
+    }
+    // Parece una hora pero no se entendió: se vuelve a preguntar (sin pasar a la IA,
+    // que podría decir "te recordaré" sin que nada quede programado).
+    if (tk && text.split(/\s+/).length <= 7 && /\d|minuto|hora|tarde|noche|ma[ñn]ana|mediod|rat(?:o|ito)|luego|despu[eé]s|pronto|am\b|pm\b|minute|hour|evening|night|noon|later|soon/i.test(text)) {
+      state.pending = { type: 'taskTime', taskId: tk.id };
+      await agentSay(chatScroll, t('taskTimeNotUnderstood'), 300);
       return;
     }
   }
