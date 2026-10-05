@@ -1,0 +1,41 @@
+<!doctype html><html><head><meta charset="utf-8"><style>
+@font-face{font-family:P;font-weight:400;src:url(node_modules/@fontsource/poppins/files/poppins-latin-400-normal.woff2)}
+@font-face{font-family:P;font-weight:600;src:url(node_modules/@fontsource/poppins/files/poppins-latin-600-normal.woff2)}
+@font-face{font-family:P;font-weight:700;src:url(node_modules/@fontsource/poppins/files/poppins-latin-700-normal.woff2)}
+@font-face{font-family:P;font-weight:800;src:url(node_modules/@fontsource/poppins/files/poppins-latin-800-normal.woff2)}
+*{box-sizing:border-box;margin:0;padding:0}
+body{width:1024px;height:500px;overflow:hidden;font-family:P,sans-serif;position:relative;
+ background:linear-gradient(120deg,#F3EEFF 0%,#FBF9FF 45%,#E9FBF3 100%);}
+.blob{position:absolute;border-radius:50%;filter:blur(40px);opacity:.7}
+.b1{width:420px;height:420px;background:#D9CCFF;left:-120px;top:-160px}
+.b2{width:380px;height:380px;background:#C8F5E2;right:-60px;bottom:-200px}
+.b3{width:260px;height:260px;background:#FFE3EC;right:300px;top:-140px;opacity:.55}
+.left{position:absolute;left:60px;top:0;bottom:0;width:500px;display:flex;flex-direction:column;justify-content:center}
+.brand{display:flex;align-items:center;gap:16px;margin-bottom:22px}
+.brand img{width:68px;height:68px;border-radius:20px;box-shadow:0 10px 24px rgba(124,98,245,.30)}
+.brand span{font-weight:800;font-size:40px;color:#2A2350;letter-spacing:-.5px}
+h1{font-weight:800;font-size:40px;line-height:1.08;color:#2A2350;letter-spacing:-1px}
+h1 em{font-style:normal;background:linear-gradient(90deg,#7C62F5,#43B98C);-webkit-background-clip:text;color:transparent}
+.sub{margin-top:14px;font-size:17px;color:#5F5A7A;line-height:1.45;font-weight:400}
+.chips{display:flex;gap:8px;margin-top:22px;flex-wrap:wrap}
+.chip{background:#fff;border:1px solid #E6E0FA;border-radius:999px;padding:7px 13px;font-size:13.5px;font-weight:600;color:#4B3FB0;box-shadow:0 4px 10px rgba(80,60,170,.06)}
+.phone{position:absolute;right:118px;top:38px;width:246px;border-radius:38px;background:#1d1a2e;padding:9px;transform:rotate(-5deg);box-shadow:0 30px 60px rgba(60,40,140,.28)}
+.phone img{width:100%;height:auto;border-radius:30px;display:block}
+.notif{position:absolute;right:36px;top:150px;width:300px;background:rgba(255,255,255,.96);border-radius:20px;padding:13px 15px;box-shadow:0 18px 40px rgba(60,40,140,.22);display:flex;gap:11px;align-items:flex-start;transform:rotate(2deg)}
+.notif img{width:38px;height:38px;border-radius:11px;flex:0 0 38px}
+.n-app{font-size:11.5px;color:#8A85A3;font-weight:600}
+.n-title{font-size:15px;font-weight:700;color:#2A2350;margin-top:1px}
+.n-body{font-size:13px;color:#5F5A7A;margin-top:1px}
+.bubble{position:absolute;right:236px;bottom:34px;background:#7C62F5;color:#fff;font-size:13.5px;font-weight:600;border-radius:16px 16px 4px 16px;padding:9px 13px;box-shadow:0 12px 26px rgba(124,98,245,.35);transform:rotate(-3deg)}
+</style></head><body>
+<div class="blob b1"></div><div class="blob b2"></div><div class="blob b3"></div>
+<div class="left">
+  <div class="brand"><img src="icon.png"><span>Bless Habit</span></div>
+  <h1>Tu compañera de hábitos <em>que te escucha</em></h1>
+  <div class="sub">Le cuentas tu día y Bless organiza tus hábitos,<br>tareas y recordatorios contigo 🌱</div>
+  <div class="chips"><span class="chip">💬 Chat</span><span class="chip">✅ Tareas</span><span class="chip">⏰ Recordatorios</span><span class="chip">📔 Diario</span></div>
+</div>
+<div class="phone"><img src="shot.png"></div>
+<div class="notif"><img src="icon.png"><div><div class="n-app">Bless Habit · ahora</div><div class="n-title">🚶 Caminar · 20 min</div><div class="n-body">¿Le ganamos al tú de ayer? 🏆</div></div></div>
+<div class="bubble">recuérdame pagar la luz el viernes ⏰</div>
+</body></html>
