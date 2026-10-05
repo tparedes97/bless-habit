@@ -9,6 +9,12 @@ el login dentro de un WebView embebido genérico) y el esquema de enlace persona
 — chat, calendario, diario, Premium, etc. — es exactamente la misma web que ya usas
 en el navegador.
 
+## Versión
+
+Capacitor 8 (Android 16 / `targetSdk 36`, lo que Google Play exige para apps
+nuevas). Requiere **Node.js 22 o superior** y **Android Studio** reciente
+(con JDK 21, que ya trae incluido).
+
 ## Qué necesitas antes de empezar
 
 1. **Android Studio** instalado (incluye el SDK de Android) — https://developer.android.com/studio
