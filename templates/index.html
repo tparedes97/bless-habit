@@ -1899,6 +1899,15 @@ const I18N = {
     tomorrowWord: 'mañana', deleteWord: 'Eliminar',
     newTaskTitle: '✅ Nueva tarea', editTaskTitle: '✅ Editar tarea', taskTextPh: '¿Qué tienes que hacer?',
     taskFreeRemind: 'Te aviso a la hora de la tarea.', taskFreeRemindMore: '✨ Avisos antes con Premium',
+    bgPromptMsg: '🔔 Para que tus recordatorios lleguen aunque cierres Bless, tu teléfono tiene que dejarla funcionar en segundo plano.',
+    bgPromptOk: 'Abrir ajustes',
+    bgSettingsLink: '¿No te llegan los avisos? Permitir segundo plano',
+    bgHintHonor: 'En la pantalla que se abre, busca Bless Habit, desactiva "Gestionar automáticamente" y deja activados los 3 permisos (inicio automático, inicio secundario y ejecutar en segundo plano).',
+    bgHintXiaomi: 'Activa el "Inicio automático" de Bless Habit. Luego, en Ajustes → Batería → Ahorro de batería de la app, elige "Sin restricciones".',
+    bgHintOppo: 'Permite el inicio automático de Bless Habit y, en Batería, elige "Permitir actividad en segundo plano".',
+    bgHintVivo: 'Permite que Bless Habit se ejecute en segundo plano y, en Batería, desactiva la optimización para la app.',
+    bgHintSamsung: 'En Batería, elige "Sin restricciones" para Bless Habit (y sácala de "Aplicaciones en suspensión").',
+    bgHintGeneric: 'Busca Bless Habit y elige "Sin restricciones" o "No optimizar" la batería.',
     exactAlarmAsk: 'Para que tus recordatorios lleguen a la hora exacta, activa "Alarmas y recordatorios" para Bless Habit en la siguiente pantalla ⏰',
     taskDateLabel: 'Día', taskTimeLabel: 'Hora (para avisarte)', taskNoTimeHint: 'Sin hora, la tarea queda en el día pero no te aviso.',
     deleteTaskConfirm: '¿Eliminar esta tarea?', newNoteTitle: '📝 Nueva nota', editNoteTitle: '📝 Editar nota', noteTextPh: 'Escribe tu nota…',
@@ -2346,6 +2355,15 @@ const I18N = {
     tomorrowWord: 'tomorrow', deleteWord: 'Delete',
     newTaskTitle: '✅ New task', editTaskTitle: '✅ Edit task', taskTextPh: 'What do you need to do?',
     taskFreeRemind: "I'll remind you at the task time.", taskFreeRemindMore: '✨ Earlier reminders with Premium',
+    bgPromptMsg: '🔔 For your reminders to arrive even when Bless is closed, your phone has to let it run in the background.',
+    bgPromptOk: 'Open settings',
+    bgSettingsLink: 'Not getting reminders? Allow background',
+    bgHintHonor: 'On the next screen, find Bless Habit, turn off "Manage automatically" and leave all 3 options on (auto-launch, secondary launch and run in background).',
+    bgHintXiaomi: 'Turn on "Autostart" for Bless Habit. Then in Settings → Battery → App battery saver, choose "No restrictions".',
+    bgHintOppo: 'Allow auto-launch for Bless Habit and, in Battery, choose "Allow background activity".',
+    bgHintVivo: 'Allow Bless Habit to run in the background and, in Battery, turn off optimization for the app.',
+    bgHintSamsung: 'In Battery, choose "Unrestricted" for Bless Habit (and remove it from "Sleeping apps").',
+    bgHintGeneric: 'Find Bless Habit and choose "Unrestricted" or "Don\'t optimize" for battery.',
     exactAlarmAsk: 'So your reminders arrive right on time, turn on "Alarms & reminders" for Bless Habit on the next screen ⏰',
     taskDateLabel: 'Day', taskTimeLabel: 'Time (to remind you)', taskNoTimeHint: "Without a time, the task stays on the day but I won't remind you.",
     deleteTaskConfirm: 'Delete this task?', newNoteTitle: '📝 New note', editNoteTitle: '📝 Edit note', noteTextPh: 'Write your note…',
@@ -3769,8 +3787,10 @@ async function bootstrapApp() {
       state.profile.xp = state.profile.xp || 0;
       prepareChatMemoryForToday();
       rolloverDayIfNeeded();
+      migrateOneOffAgendaToTasks();
       scheduleNativeRemindersSoon(); // reprograma el "te extrañé" a 3 días desde hoy
       if (IS_NATIVE_APP && !isPremium) setTimeout(() => restoreGplayPurchases(true), 3000); // compras sin confirmar
+      if (IS_NATIVE_APP && state.settings.nativeReminders) setTimeout(() => maybePromptBackground(false), 5000);
       migrateDiaryPhotos();
       applyTheme(state.settings.theme);
       refreshLocaleArrays();
@@ -4310,7 +4330,41 @@ async function enableNativeReminders() {
   state.settings.nativeReminders = true;
   saveStateToServer();
   await scheduleNativeReminders();
+  setTimeout(() => maybePromptBackground(false), 600);
   return true;
+}
+/* ---- Segundo plano (app Android) ----
+   Honor, Huawei, Xiaomi, Oppo, Vivo, Samsung… cierran las apps en segundo
+   plano y con eso se pierden los recordatorios. Se explica qué activar según
+   la marca y se abre la pantalla correcta (plugin nativo BlessDevice). */
+function blessDevice() {
+  return IS_NATIVE_APP && window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.BlessDevice;
+}
+function backgroundHintFor(manufacturer) {
+  const m = String(manufacturer || '').toLowerCase();
+  if (/honor|huawei/.test(m)) return t('bgHintHonor');
+  if (/xiaomi|redmi|poco/.test(m)) return t('bgHintXiaomi');
+  if (/oppo|realme|oneplus/.test(m)) return t('bgHintOppo');
+  if (/vivo|iqoo/.test(m)) return t('bgHintVivo');
+  if (/samsung/.test(m)) return t('bgHintSamsung');
+  return t('bgHintGeneric');
+}
+async function maybePromptBackground(force) {
+  const BD = blessDevice();
+  if (!BD) return;
+  let st;
+  try { st = await BD.getBackgroundStatus(); } catch (e) { return; }
+  const aggressiveBrand = /honor|huawei|xiaomi|redmi|poco|oppo|realme|oneplus|vivo|iqoo|samsung/.test(st.manufacturer || '');
+  if (!force) {
+    if (st.ignoringBatteryOptimizations && !aggressiveBrand) return;
+    const last = (state.settings && state.settings.bgPromptedAt) || 0;
+    if (Date.now() - last < 7 * 86400000) return; // como mucho una vez por semana
+  }
+  state.settings.bgPromptedAt = Date.now();
+  saveStateToServer();
+  if (await uiConfirm(`${t('bgPromptMsg')}\n\n${backgroundHintFor(st.manufacturer)}`, { okText: t('bgPromptOk') })) {
+    try { await BD.openBackgroundSettings(); } catch (e) {}
+  }
 }
 async function disableNativeReminders() {
   state.settings.nativeReminders = false;
@@ -4320,6 +4374,15 @@ async function disableNativeReminders() {
 function refreshNativeRemindersUI(textEl, btnEl) {
   const on = !!(state.settings && state.settings.nativeReminders);
   textEl.textContent = on ? t('nativeRemindersOnText') : t('nativeRemindersOffText');
+  let bgLink = document.getElementById('bg-settings-link');
+  if (on && blessDevice() && !bgLink) {
+    bgLink = document.createElement('div');
+    bgLink.id = 'bg-settings-link';
+    bgLink.style.cssText = 'text-align:center;margin-top:10px;';
+    bgLink.innerHTML = `<span class="logout-link">${t('bgSettingsLink')}</span>`;
+    bgLink.onclick = () => maybePromptBackground(true);
+    btnEl.insertAdjacentElement('afterend', bgLink);
+  } else if (!on && bgLink) bgLink.remove();
   btnEl.style.display = '';
   btnEl.textContent = on ? t('pushDisableBtn') : t('pushEnableBtn');
   btnEl.onclick = async () => {
@@ -5055,8 +5118,8 @@ async function respondWithHabitSuggestions() {
    Reconoce pedidos explícitos ("recuérdame…", "agrega una tarea…", "anota…",
    "remind me…", "take a note…") y saca de la frase el día y la hora. Todo lo
    demás sigue al flujo normal de conversación. */
-const TASK_TRIGGER_RE = /^\s*(?:(?:oye|bless|porfa|por favor)[,\s]+)*(recu[eé]rdame|recordarme|ponme un recordatorio(?: para)?|crea(?:me)? un recordatorio(?: para)?|recordatorio(?: para)?\s*:?|ag[eé]ndame|agrega(?:me)? (?:una )?tarea|a[nñ]ade (?:una )?tarea|nueva tarea|tarea\s*:|remind me(?: to)?|add (?:a )?task|new task|task\s*:)\s*(?:de |que |a |to |:\s*)?/i;
-const NOTE_TRIGGER_RE = /^\s*(?:(?:oye|bless|porfa|por favor)[,\s]+)*(anota(?:me)?|apunta(?:me)?|toma nota(?: de)?|guarda (?:una |esta )?nota|agrega (?:una )?nota|nueva nota|nota\s*:|take a note|write down|add a note|jot down|note\s*:)\s*(?:que |de |:\s*|that )?/i;
+const TASK_TRIGGER_RE = /^\s*(?:(?:oye|bless|porfa|por favor|ok|okay|okey|vale|ya|y|tambi[eé]n|ahora|bueno|ah|hola|please|also|and|hey|hi)[,!.\s]+)*(recu[eé]rdame|recordarme|ponme un recordatorio(?: para)?|crea(?:me)? un recordatorio(?: para)?|recordatorio(?: para)?\s*:?|ag[eé]ndame|agrega(?:me)? (?:una )?tarea|a[nñ]ade (?:una )?tarea|nueva tarea|tarea\s*:|remind me(?: to)?|add (?:a )?task|new task|task\s*:)\s*(?:de |que |a |to |:\s*)?/i;
+const NOTE_TRIGGER_RE = /^\s*(?:(?:oye|bless|porfa|por favor|ok|okay|okey|vale|ya|y|tambi[eé]n|ahora|bueno|ah|hola|please|also|and|hey|hi)[,!.\s]+)*(anota(?:me)?|apunta(?:me)?|toma nota(?: de)?|guarda (?:una |esta )?nota|agrega (?:una )?nota|nueva nota|nota\s*:|take a note|write down|add a note|jot down|note\s*:)\s*(?:que |de |:\s*|that )?/i;
 const WEEKDAYS_ES = ['domingo','lunes','martes','mi[eé]rcoles','jueves','viernes','s[aá]bado'];
 const WEEKDAYS_EN = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'];
 const MONTHS_ES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
@@ -5181,6 +5244,23 @@ function openCalendarDay(dateStr) {
 }
 // Tarea agendada desde el flujo de chat de "X a las 5": va a Tareas (no a
 // Hábitos) con el texto limpio ("Trabajo a las 5pm" → "Trabajo").
+// Antes, "X a las 5pm" en el chat creaba una fila suelta entre los hábitos
+// del día. Ahora eso es una Tarea: se mueven las que quedaron de antes.
+function migrateOneOffAgendaToTasks() {
+  if (!Array.isArray(state.agenda)) return;
+  const today = ymd(new Date());
+  const keep = [];
+  let moved = 0;
+  state.agenda.forEach(a => {
+    const label = a.task || a.label || '';
+    const isHabit = a.recurring || (state.profile.habitos || []).some(h => h.label === label);
+    if (isHabit || !label) { keep.push(a); return; }
+    const when = parseWhenFromText(label);
+    tasksList().push({ id: newItemId(), text: cleanTaskText(when.rest) || label, date: today, time: a.time || null, done: !!a.done, reminderOffsets: [0], createdAt: Date.now() });
+    moved++;
+  });
+  if (moved) { state.agenda = keep; saveStateToServer(); }
+}
 function scheduleFromChat(time, rawText) {
   if (!canAddTask()) return null;
   const when = parseWhenFromText(rawText);

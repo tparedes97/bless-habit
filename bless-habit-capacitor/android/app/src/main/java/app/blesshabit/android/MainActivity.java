@@ -5,6 +5,7 @@ import android.os.Handler;
 import android.os.Looper;
 import android.view.View;
 import android.view.ViewGroup;
+import android.webkit.CookieManager;
 import android.webkit.WebView;
 
 import com.getcapacitor.BridgeActivity;
@@ -20,6 +21,7 @@ public class MainActivity extends BridgeActivity {
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
+        registerPlugin(BlessDevicePlugin.class);
         super.onCreate(savedInstanceState);
 
         // Pantalla de carga encima del WebView hasta que termine de cargar la
@@ -34,8 +36,24 @@ public class MainActivity extends BridgeActivity {
             @Override
             public void onPageLoaded(WebView webView) {
                 hideLoadingOverlay();
+                CookieManager.getInstance().flush();
             }
         });
+    }
+
+    // El WebView guarda las cookies (la sesión iniciada) en memoria y las pasa
+    // al disco cada cierto tiempo. Si la app se cierra antes, se pierde la
+    // sesión y hay que volver a iniciarla: por eso se guardan al salir.
+    @Override
+    public void onPause() {
+        super.onPause();
+        CookieManager.getInstance().flush();
+    }
+
+    @Override
+    public void onStop() {
+        super.onStop();
+        CookieManager.getInstance().flush();
     }
 
     private void hideLoadingOverlay() {
