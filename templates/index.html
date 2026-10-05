@@ -6014,7 +6014,7 @@ function renderProfile() {
     <div class="profile-card">
       <h4>${t('planTitle')}</h4>
       ${isPremium
-        ? `<div class="premium-badge">${t('premiumBadge')}</div><div style="margin-top:10px;"><span class="logout-link" id="cancel-premium-link">${premiumSource === 'gplay' ? t('gplayManageLink') : t('cancelSubLink')}</span></div>`
+        ? `<div class="premium-badge">${t('premiumBadge')}</div>${premiumSource === 'comp' ? '' : `<div style="margin-top:10px;"><span class="logout-link" id="cancel-premium-link">${premiumSource === 'gplay' ? t('gplayManageLink') : t('cancelSubLink')}</span></div>`}`
         : `<div style="font-size:13px;color:var(--text-dim);margin-bottom:10px;">${t('freePlanDesc')}</div>
            <ul class="premium-benefits">${(I18N[currentLang()].premiumBenefits || I18N.es.premiumBenefits).map(b => `<li>${b}</li>`).join('')}</ul>
            <button class="premium-btn" id="profile-unlock-premium-btn">${premiumCtaLabel()}</button>

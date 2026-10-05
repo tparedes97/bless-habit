@@ -391,15 +391,22 @@ def get_user(user_id):
     return _with_effective_premium(row)
 
 
+# Correos con Premium de cortesía (separados por comas en Render), por
+# ejemplo la cuenta de prueba que usa el equipo de revisión de Google Play.
+COMP_PREMIUM_EMAILS = {e.strip().lower() for e in os.environ.get("COMP_PREMIUM_EMAILS", "").split(",") if e.strip()}
+
+
 def _with_effective_premium(row):
-    """is_premium = Premium por Paddle (web) O suscripción vigente de Google Play.
-    paddle_premium y gplay_active quedan disponibles por separado."""
+    """is_premium = Premium por Paddle (web) O suscripción vigente de Google Play
+    O correo con Premium de cortesía. paddle_premium y gplay_active quedan
+    disponibles por separado."""
     if not row:
         return row
     row["paddle_premium"] = bool(row.get("is_premium"))
     row["gplay_active"] = bool(row.get("gplay_purchase_token")) and (row.get("gplay_expiry") or 0) > time.time()
-    row["is_premium"] = 1 if (row["paddle_premium"] or row["gplay_active"]) else 0
-    row["premium_source"] = "gplay" if row["gplay_active"] else ("paddle" if row["paddle_premium"] else None)
+    comp = (row.get("email") or "").lower() in COMP_PREMIUM_EMAILS
+    row["is_premium"] = 1 if (row["paddle_premium"] or row["gplay_active"] or comp) else 0
+    row["premium_source"] = "gplay" if row["gplay_active"] else ("paddle" if row["paddle_premium"] else ("comp" if comp else None))
     return row
 
 
