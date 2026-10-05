@@ -7,7 +7,7 @@
 <meta name="description" content="{{ title }} — Bless Habit">
 <!-- Páginas públicas que Paddle (y Google Play) piden para aprobar los cobros:
      precios, términos, privacidad y reembolsos. Los datos del vendedor salen de
-     variables de entorno (LEGAL_NAME, SUPPORT_EMAIL, LEGAL_COUNTRY, REFUND_DAYS)
+     variables de entorno (LEGAL_NAME, SUPPORT_EMAIL, LEGAL_COUNTRY, REFUND_HOURS)
      para poder cambiarlos en Render sin tocar código. -->
 <style>
   :root { --bg: #F7F6FD; --panel: #fff; --text: #241f3a; --dim: #6b6585; --accent: #7C6CF0; --border: #e8e6f3; }
@@ -196,27 +196,33 @@
   {% if lang == 'es' %}
   <h1>Política de reembolsos</h1>
   <div class="updated">Última actualización: {{ updated }}</div>
-  <p>Queremos que estés feliz con Bless Habit Premium.</p>
-  <h2>Garantía de {{ refund_days }} días</h2>
-  <p>Si no estás satisfecha o satisfecho, puedes pedir el reembolso completo de tu pago dentro de los <strong>{{ refund_days }} días</strong> posteriores a la compra o a la renovación, sin tener que dar explicaciones.</p>
+  <h2>Reembolso dentro de las {{ refund_hours }} horas</h2>
+  <p>Puedes pedir el reembolso completo de tu <strong>primer pago</strong> de Bless Habit Premium (plan mensual o anual) dentro de las <strong>{{ refund_hours }} horas</strong> siguientes a la suscripción. Pasado ese plazo, el pago no es reembolsable.</p>
+  <h2>Renovaciones</h2>
+  <p>Las renovaciones automáticas (mensuales o anuales) no son reembolsables. Si no quieres que tu plan se renueve, cancélalo antes de la fecha de renovación; conservarás Premium hasta el final del periodo que ya pagaste.</p>
   <h2>Cómo pedirlo</h2>
-  <p>Escríbenos a <a href="mailto:{{ support_email }}">{{ support_email }}</a> con el correo de tu cuenta, o responde al recibo de Paddle que te llegó al correo. Los pagos los procesa <strong>Paddle.com</strong> (Merchant of Record), que también puede gestionar tu reembolso directamente en <a href="https://paddle.net" rel="noopener">paddle.net</a>.</p>
+  <p>Escríbenos dentro del plazo a <a href="mailto:{{ support_email }}">{{ support_email }}</a> con el correo de tu cuenta, o responde al recibo de Paddle que te llegó al correo. Los pagos los procesa <strong>Paddle.com</strong> (Merchant of Record).</p>
   <h2>Cancelar la suscripción</h2>
-  <p>Puedes cancelar cuando quieras desde la app (Perfil → Plan → Cancelar suscripción). No se te volverá a cobrar y conservas Premium hasta el final del periodo pagado.</p>
-  <h2>Plazos</h2>
+  <p>Puedes cancelar cuando quieras desde la app (Perfil → Plan → Cancelar suscripción). No se te volverá a cobrar.</p>
+  <h2>Plazos del reembolso</h2>
   <p>Una vez aprobado, el reembolso vuelve al mismo medio de pago. Según tu banco puede tardar entre 5 y 10 días hábiles en verse reflejado.</p>
+  <h2>Tus derechos como consumidor</h2>
+  <p>Esta política no limita los derechos que la ley de tu país te otorgue y que no puedan excluirse. Si una ley aplicable te da un plazo de reembolso mayor, se respetará ese plazo.</p>
   {% else %}
   <h1>Refund Policy</h1>
   <div class="updated">Last updated: {{ updated }}</div>
-  <p>We want you to be happy with Bless Habit Premium.</p>
-  <h2>{{ refund_days }}-day guarantee</h2>
-  <p>If you're not satisfied, you can request a full refund of your payment within <strong>{{ refund_days }} days</strong> of the purchase or renewal, no questions asked.</p>
+  <h2>Refunds within {{ refund_hours }} hours</h2>
+  <p>You can request a full refund of your <strong>first payment</strong> for Bless Habit Premium (monthly or yearly plan) within <strong>{{ refund_hours }} hours</strong> of subscribing. After that period, the payment is non-refundable.</p>
+  <h2>Renewals</h2>
+  <p>Automatic renewals (monthly or yearly) are non-refundable. If you don't want your plan to renew, cancel it before the renewal date; you'll keep Premium until the end of the period you already paid for.</p>
   <h2>How to request it</h2>
-  <p>Email us at <a href="mailto:{{ support_email }}">{{ support_email }}</a> with your account email, or reply to the Paddle receipt you received. Payments are processed by <strong>Paddle.com</strong> (Merchant of Record), which can also handle your refund directly at <a href="https://paddle.net" rel="noopener">paddle.net</a>.</p>
+  <p>Email us within the period at <a href="mailto:{{ support_email }}">{{ support_email }}</a> with your account email, or reply to the Paddle receipt you received. Payments are processed by <strong>Paddle.com</strong> (Merchant of Record).</p>
   <h2>Cancelling your subscription</h2>
-  <p>You can cancel anytime in the app (Profile → Plan → Cancel subscription). You won't be charged again and keep Premium until the end of the paid period.</p>
-  <h2>Timing</h2>
+  <p>You can cancel anytime in the app (Profile → Plan → Cancel subscription). You won't be charged again.</p>
+  <h2>Refund timing</h2>
   <p>Once approved, the refund goes back to the original payment method. Depending on your bank it may take 5–10 business days to show up.</p>
+  <h2>Your consumer rights</h2>
+  <p>This policy does not limit any rights you have under the law of your country that cannot be excluded. If an applicable law gives you a longer refund period, that period will be honored.</p>
   {% endif %}
 {% elif page == 'delete' %}
   {% if lang == 'es' %}

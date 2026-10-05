@@ -1273,7 +1273,7 @@ def index():
 #   LEGAL_NAME     = nombre completo de la persona (o empresa) que vende
 #   SUPPORT_EMAIL  = correo de soporte para los usuarios
 #   LEGAL_COUNTRY  = país (por defecto Perú)
-#   REFUND_DAYS    = días de garantía de reembolso (por defecto 14)
+#   REFUND_HOURS   = horas para pedir reembolso del primer pago (por defecto 48)
 # ============================================================
 LEGAL_PAGES = {
     "pricing": {"es": ("/precios", "Precios"), "en": ("/pricing", "Pricing")},
@@ -1308,7 +1308,7 @@ def render_legal(page, lang):
         support_email=os.environ.get("SUPPORT_EMAIL", "soporte@blesshabit.app"),
         country=country,
         country_en=COUNTRY_EN.get(country, country),
-        refund_days=os.environ.get("REFUND_DAYS", "14"),
+        refund_hours=os.environ.get("REFUND_HOURS", "48"),
         price_label=PADDLE_PRICE_LABEL,
         price_label_en=PADDLE_PRICE_LABEL.replace("/mes", "/month"),
         price_label_num=price_num,
