@@ -1297,6 +1297,7 @@ let dailyAiLimitNotified = false;
 function notifyDailyAiLimit() {
   if (dailyAiLimitNotified || isPremium) return;
   dailyAiLimitNotified = true;
+  if (IS_NATIVE_APP) { setTimeout(() => addNote(chatScroll, t('aiLimitNoteNative')), 600); return; }
   setTimeout(() => {
     addNote(chatScroll, t('aiLimitNote', monthlyPriceLabel()), 'agenda-note', () => openPremiumSheet());
   }, 600);
@@ -1679,6 +1680,11 @@ const I18N = {
     pushEnableFail: 'No se pudo activar las notificaciones. Intenta de nuevo.',
 
     paddleOpening: 'Abriendo pago…',
+    premiumFeatureBtn: '✨ Función Premium',
+    nativePremiumInfo: 'Esto es parte de Bless Habit Premium ✨ Si tu cuenta tiene Premium, se activa sola al iniciar sesión con esa misma cuenta.',
+    nativePremiumNote: 'Si tu cuenta tiene Premium, se activa sola al iniciar sesión.',
+    habitLimitNative: (n) => `En el plan gratis puedes tener hasta ${n} hábitos 🌱. Con Bless Habit Premium son ilimitados.`,
+    aiLimitNoteNative: '🤍 Hoy ya conversamos un montón. En el plan gratis Bless tiene hasta ~15 mensajes al día; mañana seguimos. Con Bless Habit Premium la conversación no tiene límite.',
     perMonth: 'mes', perYear: 'año', fromPrice: (p) => p,
     planMonthly: 'Mensual', planYearly: 'Anual', planSave: (n) => `Ahorra ${n}%`,
     planContinue: 'Continuar al pago', planNote: 'Precios en dólares (USD); Paddle suma los impuestos de tu país al pagar. Cancelas cuando quieras.',
@@ -2081,6 +2087,11 @@ const I18N = {
     pushEnableFail: 'Could not enable notifications. Please try again.',
 
     paddleOpening: 'Opening checkout…',
+    premiumFeatureBtn: '✨ Premium feature',
+    nativePremiumInfo: "This is part of Bless Habit Premium ✨ If your account has Premium, it turns on automatically when you sign in with that same account.",
+    nativePremiumNote: 'If your account has Premium, it turns on automatically when you sign in.',
+    habitLimitNative: (n) => `On the free plan you can have up to ${n} habits 🌱. With Bless Habit Premium they're unlimited.`,
+    aiLimitNoteNative: "🤍 We've talked a lot today. On the free plan Bless has up to ~15 messages a day; we'll pick it up tomorrow. With Bless Habit Premium there's no limit.",
     perMonth: 'month', perYear: 'year', fromPrice: (p) => p,
     planMonthly: 'Monthly', planYearly: 'Yearly', planSave: (n) => `Save ${n}%`,
     planContinue: 'Continue to payment', planNote: "Prices in US dollars (USD); Paddle adds your country's taxes at checkout. Cancel anytime.",
@@ -2374,7 +2385,10 @@ function optLabelList(field, values) { return (values || []).map(v => optLabel(f
 
 function applyStaticI18n() {
   const legal = document.getElementById('login-legal');
-  if (legal && currentLang() === 'en') legal.innerHTML = '<a href="/pricing">Pricing</a> · <a href="/terms">Terms</a> · <a href="/privacy">Privacy</a> · <a href="/refunds">Refunds</a>';
+  if (legal && IS_NATIVE_APP) legal.innerHTML = currentLang() === 'en'
+    ? '<a href="/terms">Terms</a> · <a href="/privacy">Privacy</a>'
+    : '<a href="/terminos">Términos</a> · <a href="/privacidad">Privacidad</a>';
+  else if (legal && currentLang() === 'en') legal.innerHTML = '<a href="/pricing">Pricing</a> · <a href="/terms">Terms</a> · <a href="/privacy">Privacy</a> · <a href="/refunds">Refunds</a>';
   document.querySelectorAll('[data-i18n]').forEach(el => { el.textContent = t(el.getAttribute('data-i18n')); });
   document.querySelectorAll('[data-i18n-ph]').forEach(el => { el.placeholder = t(el.getAttribute('data-i18n-ph')); });
   document.querySelectorAll('[data-i18n-title]').forEach(el => { el.title = t(el.getAttribute('data-i18n-title')); });
@@ -2849,6 +2863,7 @@ function renderHabitPicker() {
 // antes de este límite se conservan; solo se frena agregar nuevos.)
 // Invitación genérica a Premium cuando se toca algo exclusivo.
 async function promptPremiumFeature(msg) {
+  if (IS_NATIVE_APP) { showNativePremiumInfo(); return; }
   if (await uiConfirm(msg, { okText: t('habitLimitOk') })) openPremiumSheet();
 }
 const FREE_HABIT_LIMIT = 3;
@@ -2856,6 +2871,7 @@ function canAddHabit(extra = 1) {
   return isPremium || ((state.profile.habitos || []).length + extra) <= FREE_HABIT_LIMIT;
 }
 async function promptHabitLimit() {
+  if (IS_NATIVE_APP) { uiAlert(t('habitLimitNative', FREE_HABIT_LIMIT)); return; }
   if (await uiConfirm(t('habitLimitMsg', FREE_HABIT_LIMIT), { okText: t('habitLimitOk') })) openPremiumSheet();
 }
 const HABIT_SUGGESTED_MINUTES = { ejercicio: 30, caminar: 20, lectura: 15, meditacion: 10, escritura: 10, estudio: 30, orden: 15, finanzas: 10, gratitud: 5, musica: 20, idioma: 15, familia: 30 };
@@ -3135,12 +3151,11 @@ const NATIVE_APP_URL_SCHEME = {{ native_app_url_scheme | tojson }};
    1) El login con Google no puede pasar por el WebView embebido (Google lo
       bloquea con "disallowed_useragent"): hay que abrir el navegador del
       sistema (plugin Browser) y volver a la app por un enlace personalizado.
-   2) El checkout de Paddle se abre en el navegador del sistema (no dentro
-      del WebView) con un token de un solo uso — ver openNativePaddleCheckout().
-      Al pagar, el navegador vuelve a la app por blesshabit://premium-done.
-      OJO: Google Play exige Play Billing para suscripciones digitales salvo
-      en los países con programas de enlaces externos; revisar esa política
-      antes de publicar.
+   2) No se vende nada dentro de la app (política de Google Play): sin precios
+      ni botones de pago; Premium se compra en la web y se activa solo al
+      iniciar sesión. Ver premiumCtaLabel() / showNativePremiumInfo().
+      (openNativePaddleCheckout() queda sin usar, por si algún día se habilita
+      un programa de pagos externos de Google.)
    ============================================================ */
 const IS_NATIVE_APP = !!(window.Capacitor && typeof window.Capacitor.isNativePlatform === 'function' && window.Capacitor.isNativePlatform());
 
@@ -3457,7 +3472,7 @@ function appLockCardHtml() {
   }
   return `<div class="profile-card">${title}
     <div style="font-size:13px;color:var(--text-dim);margin-bottom:10px;">${isPremium ? t('pinCardOff') : t('pinCardFree')}</div>
-    <button class="premium-btn" id="pin-enable-btn">${isPremium ? t('pinEnableBtn') : t('becomePremiumBtn', hasYearlyPlan() ? t('fromPrice', monthlyPriceLabel()) : monthlyPriceLabel())}</button></div>`;
+    <button class="premium-btn" id="pin-enable-btn">${isPremium ? t('pinEnableBtn') : premiumCtaLabel()}</button></div>`;
 }
 function bindAppLockCard() {
   const en = document.getElementById('pin-enable-btn'); if (en) en.onclick = setupAppLock;
@@ -3648,7 +3663,7 @@ async function pollPremiumStatus(attempts = 6, delayMs = 1500) {
 // (antes se hacía todo recién al tocar el botón y tardaba).
 let paddleReady = null; // Promise<cfg> o null
 function preparePaddle() {
-  if (isPremium) return null; // en la app nativa se usa solo para mostrar el precio local; el pago va por el navegador
+  if (isPremium || IS_NATIVE_APP) return null;
   if (paddleReady) return paddleReady;
   paddleReady = (async () => {
     const cfg = await (await fetch('/api/paddle-config')).json();
@@ -3703,8 +3718,21 @@ function refreshPremiumPriceTexts() {
 /* ---- Ventana "Elige tu plan" ----
    Todos los botones de Premium abren esta ventana: beneficios, plan mensual o
    anual (con el ahorro) y un solo botón para pagar. */
+/* ---- App de Android: no se vende nada dentro de la app ----
+   Política de Google Play: las suscripciones digitales compradas dentro de la
+   app deben usar Play Billing, y tampoco se permite dirigir al usuario a pagar
+   por fuera. Por eso en la app nativa no hay precios, botones de compra ni
+   enlaces al pago: Premium se compra en la web (blesshabit / Paddle) y se
+   activa solo en la app al iniciar sesión con la misma cuenta. */
+function premiumCtaLabel() {
+  if (IS_NATIVE_APP) return t('premiumFeatureBtn');
+  return t('becomePremiumBtn', hasYearlyPlan() ? t('fromPrice', monthlyPriceLabel()) : monthlyPriceLabel());
+}
+function showNativePremiumInfo() { uiAlert(t('nativePremiumInfo')); }
+
 async function openPremiumSheet() {
   if (isPremium) return;
+  if (IS_NATIVE_APP) { showNativePremiumInfo(); return; }
   try { await preparePaddle(); } catch (e) { /* igual se muestra con precios de respaldo */ }
   document.querySelectorAll('.premium-sheet-overlay').forEach(x => x.remove());
   const yearly = hasYearlyPlan();
@@ -4769,7 +4797,8 @@ async function handleUserMessage(text) {
       state.pending = null;
       const label = pending.task;
       if (!canAddHabit()) {
-        addNote(chatScroll, t('habitLimitMsg', FREE_HABIT_LIMIT), 'agenda-note', () => openPremiumSheet());
+        if (IS_NATIVE_APP) addNote(chatScroll, t('habitLimitNative', FREE_HABIT_LIMIT));
+        else addNote(chatScroll, t('habitLimitMsg', FREE_HABIT_LIMIT), 'agenda-note', () => openPremiumSheet());
         return;
       }
       if (!state.profile.habitos.some(h => h.label.toLowerCase() === label.toLowerCase())) {
@@ -5082,15 +5111,15 @@ function renderProfile() {
         ? `<div class="premium-badge">${t('premiumBadge')}</div><div style="margin-top:10px;"><span class="logout-link" id="cancel-premium-link">${t('cancelSubLink')}</span></div>`
         : `<div style="font-size:13px;color:var(--text-dim);margin-bottom:10px;">${t('freePlanDesc')}</div>
            <ul class="premium-benefits">${(I18N[currentLang()].premiumBenefits || I18N.es.premiumBenefits).map(b => `<li>${b}</li>`).join('')}</ul>
-           <button class="premium-btn" id="profile-unlock-premium-btn">${t('becomePremiumBtn', hasYearlyPlan() ? t('fromPrice', monthlyPriceLabel()) : monthlyPriceLabel())}</button>
-           <div class="premium-note">${t('premiumCancelNote')}</div>`}
+           <button class="premium-btn" id="profile-unlock-premium-btn">${premiumCtaLabel()}</button>
+           <div class="premium-note">${IS_NATIVE_APP ? t('nativePremiumNote') : t('premiumCancelNote')}</div>`}
     </div>
     ${appLockCardHtml()}
     <div class="profile-card">
       <h4>${t('memoriesTitle')}</h4>
       <div style="font-size:12.5px;color:var(--text-dim);line-height:1.5;margin-bottom:10px;">${t('memoriesDesc')}</div>
       ${!isPremium
-        ? `<div class="memory-empty">${t('memoriesFreeTeaser')}</div><button class="premium-btn" id="memories-premium-btn" style="margin-top:10px;">${t('becomePremiumBtn', hasYearlyPlan() ? t('fromPrice', monthlyPriceLabel()) : monthlyPriceLabel())}</button>`
+        ? `<div class="memory-empty">${t('memoriesFreeTeaser')}</div><button class="premium-btn" id="memories-premium-btn" style="margin-top:10px;">${premiumCtaLabel()}</button>`
         : (state.blessMemories || []).length
         ? `<div class="memory-list">${state.blessMemories.map(m => `<div class="memory-item"><span class="memory-text">${escapeHtml(m.text)}</span><button type="button" class="memory-del" data-id="${m.id}" title="${t('memoryDeleteTitle')}" aria-label="${t('memoryDeleteTitle')}">✕</button></div>`).join('')}</div>
            <div style="text-align:right;margin-top:8px;"><span class="logout-link" id="memories-clear-all">${t('memoriesClearAll')}</span></div>`
@@ -5104,7 +5133,9 @@ function renderProfile() {
     ${adBannerHtml()}
     <div style="text-align:center; margin-top: 14px;"><a href="/auth/logout" class="logout-link">${t('logoutLink')}</a></div>
     <div style="text-align:center; margin-top: 18px;"><button type="button" class="delete-account-link" id="delete-account-btn">${t('deleteAccountLink')}</button></div>
-    <div class="login-legal" style="text-align:center;">${currentLang() === 'en'
+    <div class="login-legal" style="text-align:center;">${IS_NATIVE_APP
+      ? (currentLang() === 'en' ? '<a href="/terms" target="_blank">Terms</a> · <a href="/privacy" target="_blank">Privacy</a>' : '<a href="/terminos" target="_blank">Términos</a> · <a href="/privacidad" target="_blank">Privacidad</a>')
+      : currentLang() === 'en'
       ? '<a href="/pricing" target="_blank">Pricing</a> · <a href="/terms" target="_blank">Terms</a> · <a href="/privacy" target="_blank">Privacy</a> · <a href="/refunds" target="_blank">Refunds</a>'
       : '<a href="/precios" target="_blank">Precios</a> · <a href="/terminos" target="_blank">Términos</a> · <a href="/privacidad" target="_blank">Privacidad</a> · <a href="/reembolsos" target="_blank">Reembolsos</a>'}</div>
   `;
@@ -7256,8 +7287,8 @@ function renderMetrics() {
           <div class="weekly-item">💡 ${t('lockedSampleInsight')}</div>
           <div class="mood-strip">${['😊','😌','😔','🙏','😊','😴','🤩'].map(e => `<div class="mood-day"><span>${e}</span></div>`).join('')}</div>
         </div>
-        <button class="premium-btn" id="unlock-premium-btn">${t('becomePremiumBtn', hasYearlyPlan() ? t('fromPrice', monthlyPriceLabel()) : monthlyPriceLabel())}</button>
-        <div class="premium-note">${t('premiumNote')}</div>
+        <button class="premium-btn" id="unlock-premium-btn">${premiumCtaLabel()}</button>
+        <div class="premium-note">${IS_NATIVE_APP ? t('nativePremiumNote') : t('premiumNote')}</div>
       </div>`;
 
   const emptyHistoryHtml = `
