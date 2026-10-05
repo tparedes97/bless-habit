@@ -1011,7 +1011,7 @@
   <div id="view-login" class="active">
     <div class="login-avatar"><svg class="bless-logo-svg" viewBox="0 0 64 64" aria-hidden="true"><defs><linearGradient id="blessLogoBg" x1="8" y1="4" x2="56" y2="60" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#6F7BFF"/><stop offset=".48" stop-color="#6CCEF1"/><stop offset="1" stop-color="#42D6A1"/></linearGradient><linearGradient id="blessLogoLeaf" x1="20" y1="20" x2="45" y2="43" gradientUnits="userSpaceOnUse"><stop stop-color="#DFFF65"/><stop offset="1" stop-color="#62E6A9"/></linearGradient></defs><circle cx="32" cy="32" r="30" fill="url(#blessLogoBg)"/><circle cx="32" cy="32" r="27.5" fill="none" stroke="#fff" stroke-opacity=".7" stroke-width="1.5"/><path d="M31.8 43.8c.2-8.7.4-15.1 2.4-21.5" fill="none" stroke="#6B4B43" stroke-width="4" stroke-linecap="round"/><path d="M32 34c-8.6.4-13.6-3.4-15.2-10.5 7.7-.6 13.2 2.4 15.2 10.5Z" fill="url(#blessLogoLeaf)"/><path d="M34 28.5c1.5-8.1 6.3-12.6 14.1-13.5.3 7.9-4.3 12.7-14.1 13.5Z" fill="#B9F36B"/><path d="M22.5 46.5h19" stroke="#F08A9D" stroke-width="4" stroke-linecap="round"/></svg></div>
     <h2>Bless Habit</h2>
-    <p data-i18n="loginDesc">Tu compañero de hábitos y agenda. Inicia sesión para que Bless recuerde tu perfil y tu progreso entre visitas.</p>
+    <p data-i18n="loginDesc">Tu app de hábitos y agenda que te escucha. Inicia sesión para que Bless recuerde tu perfil y tu progreso entre visitas.</p>
     <a href="/auth/login" class="google-btn" id="google-login-btn" data-i18n="loginBtn">Continuar con Google</a>
     <div class="login-loading" id="login-loading" style="display:none;" data-i18n="loginLoading">Cargando tu información…</div>
     <!-- Enlaces públicos (Paddle los revisa para aprobar los cobros). -->
@@ -1550,7 +1550,7 @@ function t2(preset) { return currentLang() === 'en' ? preset.en : preset.label; 
 const I18N = {
   es: {
     headerSubKnowing: 'Bless te está conociendo…',
-    loginDesc: 'Tu compañero de hábitos y agenda. Inicia sesión para que Bless recuerde tu perfil y tu progreso entre visitas.',
+    loginDesc: 'Tu app de hábitos y agenda que te escucha. Inicia sesión para que Bless recuerde tu perfil y tu progreso entre visitas.',
     loginBtn: 'Continuar con Google',
     loginLoading: 'Cargando tu información…',
     agendaTitle: 'Agenda de hoy',
@@ -1593,7 +1593,7 @@ const I18N = {
     deDespiertoADuermo: (a, b) => `Despierto ${a}, duermo ${b}`,
     deAaB: (a, b) => `De ${a} a ${b}`,
 
-    obAsk1: '¡Hola! 👋 Soy Bless, tu compañero de hábitos y agenda. Antes de empezar quiero conocerte de verdad — esto va a tomar un par de minutos, pero vale la pena. ¿Cómo te llamas?',
+    obAsk1: '¡Hola! 👋 Soy Bless y voy a acompañarte con tus hábitos y tu agenda. Antes de empezar quiero conocerte de verdad — esto va a tomar un par de minutos, pero vale la pena. ¿Cómo te llamas?',
     obAsk2: (p) => `Un gusto, ${p.nombre} 🙌. ¿A qué hora empieza y a qué hora termina tu horario fijo de trabajo?`,
     obAsk3: '¿En qué momento del día sientes que tienes más energía y concentración? ⚡',
     obAsk4: '¿Te consideras más madrugador/a o más nocturno/a? 🌅🌙',
@@ -2019,7 +2019,7 @@ const I18N = {
   },
   en: {
     headerSubKnowing: 'Bless is getting to know you…',
-    loginDesc: 'Your habit and schedule companion. Sign in so Bless remembers your profile and progress between visits.',
+    loginDesc: 'The habit and schedule app that listens. Sign in so Bless remembers your profile and progress between visits.',
     loginBtn: 'Continue with Google',
     loginLoading: 'Loading your info…',
     agendaTitle: "Today's agenda",
@@ -4392,7 +4392,7 @@ async function refreshReminderLinesIfNeeded() {
   try {
     const p = state.profile;
     const langName = lang === 'en' ? 'inglés' : 'español';
-    const sys = `Eres Bless, la compañera cálida de hábitos de la app Bless Habit. Escribes frases cortas para notificaciones del teléfono. Responde SOLO con un JSON válido, sin texto extra.`;
+    const sys = `Eres Bless, de la app de hábitos Bless Habit, y acompañas a las personas con calidez. Escribes frases cortas para notificaciones del teléfono. Responde SOLO con un JSON válido, sin texto extra.`;
     const prompt = `Escribe en ${langName} frases para las notificaciones de ${p.nombre}, como las diría una amiga que la conoce.
 Lo que sabes (úsalo para personalizar, sin recitarlo):
 - Lo que más la motiva: ${optLabel('motivacion', p.motivacion) || p.motivacion || '—'}

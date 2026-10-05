@@ -49,12 +49,12 @@ Bless Habit: hábitos y diario
 
 **Descripción breve (máx. 80):**
 ```
-Tu compañera de hábitos que te escucha: agenda, diario, ánimo y recordatorios 🌱
+La app de hábitos que te escucha: agenda, tareas, diario y recordatorios 🌱
 ```
 
 **Descripción completa:**
 ```
-Bless es una compañera cálida que te ayuda a construir hábitos sin presión. Le cuentas tu día como a una amiga y ella organiza tu agenda, te recuerda lo importante y celebra contigo cada avance. 🌱
+Bless te acompaña a construir hábitos sin presión. Le cuentas tu día como a alguien de confianza y Bless organiza tu agenda, te recuerda lo importante y celebra contigo cada avance. 🌱
 
 💬 CONVERSA CON BLESS
 Escríbele lo que quieres hacer hoy o cómo te sientes. Bless entiende, te responde con cariño y arma tu día contigo.
@@ -63,7 +63,7 @@ Escríbele lo que quieres hacer hoy o cómo te sientes. Bless entiende, te respo
 Crea hábitos con días, hora y minutos por día. Marca lo que vas cumpliendo y mira tu racha crecer.
 
 ✅ TAREAS Y NOTAS DEL DÍA
-Cada día tiene tus hábitos, tus tareas y tus notas. Escríbele a Bless "recuérdame pagar la luz el viernes a las 6" o "anota que…" y ella lo guarda por ti.
+Cada día tiene tus hábitos, tus tareas y tus notas. Escríbele a Bless "recuérdame pagar la luz el viernes a las 6" o "anota que…" y Bless lo guarda por ti.
 
 ⏰ RECORDATORIOS
 Notificaciones a la hora de tus hábitos y tareas para que no se te pase nada.
@@ -92,21 +92,21 @@ Bless Habit: habits & journal
 
 **Short description:**
 ```
-Your habit companion who listens: schedule, journal, mood and reminders 🌱
+The habit app that listens: schedule, tasks, journal and reminders 🌱
 ```
 
 **Full description:**
 ```
-Bless is a warm companion that helps you build habits without pressure. Tell her about your day like you would a friend, and she organizes your schedule, reminds you of what matters and celebrates every win with you. 🌱
+Bless helps you build habits without pressure. Tell Bless about your day like you would a friend, and Bless organizes your schedule, reminds you of what matters and celebrates every win with you. 🌱
 
 💬 TALK TO BLESS
-Tell her what you want to do today or how you feel. Bless understands, answers kindly and plans your day with you.
+Tell Bless what you want to do today or how you feel. Bless understands, answers kindly and plans your day with you.
 
 📅 SCHEDULE & HABITS
 Create habits with days, time and minutes per day. Check them off and watch your streak grow.
 
 ✅ DAILY TASKS & NOTES
-Every day has your habits, tasks and notes. Tell Bless "remind me to pay the bill Friday at 6" or "take a note…" and she saves it for you.
+Every day has your habits, tasks and notes. Tell Bless "remind me to pay the bill Friday at 6" or "take a note…" and Bless saves it for you.
 
 ⏰ REMINDERS
 Notifications at your habit and task times so nothing slips by.
