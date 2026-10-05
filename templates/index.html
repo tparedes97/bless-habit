@@ -315,6 +315,9 @@
   .plan-save { font-size: 11px; font-weight: 800; color: #fff; background: #2fb37b; padding: 2px 8px; border-radius: 999px; }
   .plan-price { font-weight: 800; white-space: nowrap; }
   .premium-benefits { list-style: none; padding: 0; margin: 0 0 12px; display: flex; flex-direction: column; gap: 6px; font-size: 13.5px; line-height: 1.4; }
+  .bubble.agent { position: relative; }
+  .bubble-flag { position: absolute; top: 4px; right: -26px; background: none; border: none; color: var(--text-dim); opacity: .35; font-size: 13px; cursor: pointer; padding: 4px; }
+  .bubble-flag:hover, .bubble-flag:focus { opacity: .9; }
   .memory-list { display: flex; flex-direction: column; gap: 6px; }
   .memory-item { display: flex; align-items: flex-start; gap: 8px; background: var(--panel-2); border: 1px solid var(--border); border-radius: 12px; padding: 9px 10px; font-size: 13.5px; line-height: 1.4; }
   .memory-text { flex: 1; }
@@ -1807,6 +1810,7 @@ const I18N = {
     diaryExportTitle: 'Exportar tu diario a PDF',
     diaryExportPremiumMsg: 'Con Premium puedes exportar tu diario completo a PDF, con tus fotos, para guardarlo o imprimirlo 📔 ¿Quieres verlo?',
     diaryExportFail: 'No se pudo preparar la exportación. Intenta de nuevo.',
+    reportAiTitle: 'Reportar esta respuesta', reportAiPrompt: '¿Por qué quieres reportar esta respuesta de Bless? (opcional)', reportAiThanks: 'Gracias por avisarnos 🤍 Lo revisaremos para que Bless mejore.', reportAiFail: 'No se pudo enviar el reporte. Intenta de nuevo.',
     memoriesTitle: '🧠 Lo que Bless recuerda de ti',
     memoriesDesc: 'El chat empieza limpio cada día. Bless guarda aquí solo lo importante de sus conversaciones, para acompañarte mejor. Puedes borrar lo que quieras.',
     memoriesEmpty: 'Todavía nada. Cuando conversen, aquí aparecerá lo que Bless quiera recordar de ti 🌱',
@@ -2214,6 +2218,7 @@ const I18N = {
     diaryExportTitle: 'Export your journal to PDF',
     diaryExportPremiumMsg: 'With Premium you can export your whole journal to PDF, with your photos, to keep or print it 📔 Want to see it?',
     diaryExportFail: "Couldn't prepare the export. Please try again.",
+    reportAiTitle: 'Report this reply', reportAiPrompt: 'Why do you want to report this reply from Bless? (optional)', reportAiThanks: 'Thanks for letting us know 🤍 We will review it to help Bless improve.', reportAiFail: "Couldn't send the report. Please try again.",
     memoriesTitle: '🧠 What Bless remembers about you',
     memoriesDesc: 'The chat starts fresh every day. Bless only keeps the important things from your conversations here, to support you better. You can delete anything.',
     memoriesEmpty: "Nothing yet. As you talk, what Bless wants to remember about you will show up here 🌱",
@@ -2646,6 +2651,14 @@ function setAvatarMood(mood, revertMs) {
 function addBubble(container, text, who, reactionEmoji) {
   if (container === chatScroll && !restoringChat && (who === 'user' || who === 'agent')) logChatBubble(who, text);
   const div = document.createElement('div'); div.className = 'bubble ' + who; div.textContent = text;
+  if (container === chatScroll && who === 'agent') {
+    // ⚑ Reportar respuesta de la IA (requisito de Google Play para contenido generado por IA).
+    const flag = document.createElement('button');
+    flag.type = 'button'; flag.className = 'bubble-flag'; flag.textContent = '⚑';
+    flag.title = t('reportAiTitle'); flag.setAttribute('aria-label', t('reportAiTitle'));
+    flag.onclick = (e) => { e.stopPropagation(); reportAiMessage(text); };
+    div.appendChild(flag);
+  }
   container.appendChild(div);
   if (reactionEmoji) {
     // Pequeña reacción animada en la esquina de la burbuja para momentos con carga
@@ -2658,6 +2671,14 @@ function addBubble(container, text, who, reactionEmoji) {
   }
   container.scrollTop = container.scrollHeight;
   return div;
+}
+async function reportAiMessage(text) {
+  const reason = await uiPrompt(t('reportAiPrompt'), '');
+  if (reason === null) return;
+  try {
+    const res = await fetch('/api/report-ai', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ message: text, reason }) });
+    uiAlert(res.ok ? t('reportAiThanks') : t('reportAiFail'));
+  } catch (e) { uiAlert(t('reportAiFail')); }
 }
 function addNote(container, text, cls='agenda-note', onClick) {
   const div = document.createElement('div'); div.className = cls; div.textContent = text;

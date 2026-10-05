@@ -282,6 +282,17 @@ def init_db():
             PRIMARY KEY (user_id, day)
         )
     """)
+    # Reportes de respuestas de la IA (requisito de Google Play para apps con
+    # contenido generado por IA: poder reportarlo desde la app).
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS ai_reports (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER,
+            message TEXT NOT NULL,
+            reason TEXT,
+            created_at REAL NOT NULL
+        )
+    """)
     # Ajustes internos del servidor (por ahora, las claves VAPID generadas solas).
     conn.execute("""
         CREATE TABLE IF NOT EXISTS app_settings (
@@ -1537,6 +1548,24 @@ def bless_memories():
 # datos de la semana (hábitos por día, ánimo y fragmentos del diario) y la IA
 # devuelve un resumen cálido y concreto con un siguiente paso.
 # ============================================================
+@app.route("/api/report-ai", methods=["POST"])
+def report_ai():
+    user_id = session.get("user_id")
+    if not user_id:
+        return jsonify({"ok": False, "error": "No autenticado"}), 401
+    data = request.get_json(force=True) or {}
+    message = str(data.get("message") or "").strip()[:2000]
+    if not message:
+        return jsonify({"ok": False, "error": "Falta el mensaje"}), 400
+    conn = get_db()
+    conn.execute("INSERT INTO ai_reports (user_id, message, reason, created_at) VALUES (?, ?, ?, ?)",
+                 (user_id, message, str(data.get("reason") or "")[:300], time.time()))
+    conn.commit()
+    conn.close()
+    print(f"[ia] respuesta reportada por el usuario {user_id}: {message[:120]!r}")
+    return jsonify({"ok": True})
+
+
 @app.route("/api/weekly-summary", methods=["POST"])
 def weekly_summary():
     user_id = session.get("user_id")
