@@ -4302,7 +4302,7 @@ async function scheduleNativeReminders() {
             title: offset
               ? `${h.icon || '🌱'} ${t('remindSoonTitle', offset, habitDisplayLabel(h))}`
               : `${h.icon || '🌱'} ${habitDisplayLabel(h)}${habitMinutesLabel(h) ? ' · ' + habitMinutesLabel(h) : ''}`,
-            body: offset ? tp('reminderSoonBody') : tp('reminderBody'),
+            body: offset ? reminderLine('soon') : reminderLine('habit'),
             schedule: { on: { weekday: wd + 1, hour: Math.floor(total / 60), minute: total % 60 }, allowWhileIdle: true },
           });
         });
@@ -4321,7 +4321,7 @@ async function scheduleNativeReminders() {
         notifications.push({
           id: taskId++,
           title: offset ? `✅ ${t('remindSoonTitle', offset, tk.text)}` : `✅ ${tk.text}`,
-          body: offset ? tp('reminderSoonBody') : tp('taskReminderBody'),
+          body: offset ? reminderLine('soon') : reminderLine('task'),
           schedule: { at, allowWhileIdle: true },
         });
       });
@@ -4329,6 +4329,7 @@ async function scheduleNativeReminders() {
     const comeBack = addDays(new Date(), 3);
     comeBack.setHours(19, 0, 0, 0);
     notifications.push({ id: NATIVE_REENGAGE_ID, title: 'Bless Habit 🤍', body: tp('reengageBody'), schedule: { at: comeBack, allowWhileIdle: true } });
+    refreshReminderLinesIfNeeded(); // en segundo plano; al terminar se reprograma con las frases nuevas
     try {
       await LN.schedule({ notifications });
     } catch (e) {
@@ -4340,6 +4341,84 @@ async function scheduleNativeReminders() {
   } catch (e) { lastReminderError = String((e && e.message) || e); console.warn('[recordatorios]', lastReminderError); }
 }
 let lastReminderError = null;
+
+/* ---- Frases de las notificaciones ----
+   Cada aviso lleva una frase al azar de un grupo que Bless escribe con la IA
+   para esta persona (su nombre, lo que la motiva, lo que le cuesta y sus
+   hábitos). Se renueva cada 3 días. Como las notificaciones se ven con el
+   teléfono bloqueado, nunca usan temas íntimos ni lo que la persona contó en
+   el chat. Sin IA, se usan frases de respaldo con su nombre y su motivación. */
+const REMINDER_LINES_MAX_AGE_DAYS = 3;
+function personalFallbackLines(kind) {
+  const n = (state.profile && state.profile.nombre) || '';
+  const withName = (txt) => n ? txt.replace('{n}', n) : txt.replace(/\{n\},?\s*/, '').replace(/^./, c => c.toUpperCase());
+  const en = currentLang() === 'en';
+  const base = en ? {
+    habit: ['{n}, it\'s your moment 🌱', 'A little time for you, {n} 🤍', 'Future you says thanks ✨', 'Step by step, {n} 💪', 'I\'m right here with you, let\'s go 🌱'],
+    task: ['{n}, this one\'s up now ⏰', 'It\'s time, just like we planned 🤍', 'Now\'s the moment! You\'ve got this ✨', 'One less thing on your list in a bit 🙌'],
+    soon: ['Get ready, it\'s almost time 🌱', '{n}, you\'re up in a little while 🤍', 'Get ready calmly ✨'],
+  } : {
+    habit: ['{n}, es tu momento 🌱', 'Un ratito para ti, {n} 🤍', 'Tu yo de mañana te lo agradece ✨', 'Pasito a pasito, {n} 💪', 'Aquí estoy contigo, vamos 🌱'],
+    task: ['{n}, te toca esto ⏰', 'Es la hora, como quedamos 🤍', '¡Ahora sí! Tú puedes ✨', 'Un pendiente menos en un ratito 🙌'],
+    soon: ['Ve preparándote, ya casi es hora 🌱', '{n}, en un ratito te toca 🤍', 'Prepárate con calma ✨'],
+  };
+  const byMotivation = en ? {
+    disciplina: ['A promise is a promise 😉 you can do it', 'Consistency is making you stronger 💪'],
+    recompensa: ['Do it and treat yourself after 🍫', 'Every check adds XP for you ✨'],
+    competencia: ['Shall we beat yesterday\'s you? 🏆', 'Keep the streak alive 🔥'],
+    acompanamiento: ['We do this as a team 🫂', 'I\'m with you on this 🤍'],
+  } : {
+    disciplina: ['Lo prometido es deuda 😉 tú puedes', 'La constancia te está haciendo fuerte 💪'],
+    recompensa: ['Hazlo y date un gustito después 🍫', 'Cada check te suma XP ✨'],
+    competencia: ['¿Le ganamos al tú de ayer? 🏆', 'Mantén la racha viva 🔥'],
+    acompanamiento: ['Lo hacemos en equipo 🫂', 'Te acompaño en esto 🤍'],
+  };
+  const extra = kind !== 'soon' ? (byMotivation[state.profile && state.profile.motivacion] || []) : [];
+  return base[kind].concat(extra).map(withName);
+}
+function reminderLine(kind) {
+  const c = state.reminderLines;
+  const pool = (c && c.lang === currentLang() && Array.isArray(c[kind]) && c[kind].length) ? c[kind] : personalFallbackLines(kind);
+  return pool[Math.floor(Math.random() * pool.length)];
+}
+let reminderLinesGenerating = false;
+async function refreshReminderLinesIfNeeded() {
+  if (reminderLinesGenerating || !aiEnabled() || !state.profile || !state.profile.nombre) return;
+  const c = state.reminderLines, lang = currentLang(), today = ymd(new Date());
+  if (c && c.lang === lang && c.date && (new Date(today) - new Date(c.date)) < REMINDER_LINES_MAX_AGE_DAYS * 86400000) return;
+  if (Date.now() - (state.reminderLinesTriedAt || 0) < 6 * 3600000) return; // si falló, no reintentar en cada guardado
+  state.reminderLinesTriedAt = Date.now();
+  reminderLinesGenerating = true;
+  try {
+    const p = state.profile;
+    const langName = lang === 'en' ? 'inglés' : 'español';
+    const sys = `Eres Bless, la compañera cálida de hábitos de la app Bless Habit. Escribes frases cortas para notificaciones del teléfono. Responde SOLO con un JSON válido, sin texto extra.`;
+    const prompt = `Escribe en ${langName} frases para las notificaciones de ${p.nombre}, como las diría una amiga que la conoce.
+Lo que sabes (úsalo para personalizar, sin recitarlo):
+- Lo que más la motiva: ${optLabel('motivacion', p.motivacion) || p.motivacion || '—'}
+- Lo que le cuesta: ${(p.dificultades || []).map(d => optLabel('dificultades', d) || d).join(', ') || '—'}
+- Sus hábitos: ${(p.habitos || []).map(h => habitDisplayLabel(h)).join(', ') || '—'}
+- Momento con más energía: ${optLabel('energia', p.energia) || p.energia || '—'}
+Reglas:
+- Máximo 80 caracteres cada una, con 1 o 2 emojis, tono cálido, cercano y variado.
+- Usa su nombre en algunas, no en todas. No uses palabras con género (ni "lista/listo", "sola/solo"): habla de forma neutra.
+- El título de la notificación ya dice el nombre del hábito o la tarea: NO lo repitas.
+- Se ven con el teléfono bloqueado: NADA íntimo, de salud, emociones difíciles ni cosas que contó en el chat.
+Formato exacto:
+{"habit":[10 frases para animarla a hacer un hábito ahora],"task":[8 frases para recordarle una tarea que toca ahora],"soon":[6 frases para avisarle que en unos minutos le toca algo]}`;
+    const raw = await callBlessAI(sys, prompt);
+    const json = raw && raw.match(/\{[\s\S]*\}/);
+    if (!json) return;
+    const data = JSON.parse(json[0]);
+    const clean = (arr) => (Array.isArray(arr) ? arr : []).map(x => String(x || '').trim()).filter(x => x && x.length <= 110).slice(0, 12);
+    const lines = { date: today, lang, habit: clean(data.habit), task: clean(data.task), soon: clean(data.soon) };
+    if (lines.habit.length < 3 || lines.task.length < 3) return;
+    if (!lines.soon.length) lines.soon = personalFallbackLines('soon');
+    state.reminderLines = lines;
+    saveStateToServer(); // reprograma los avisos ya con las frases nuevas
+  } catch (e) { /* se siguen usando las frases de respaldo */ }
+  finally { reminderLinesGenerating = false; }
+}
 
 /* ---- Prueba de notificaciones (Perfil → Notificaciones) ----
    Revisa cada paso y lo muestra en pantalla: permiso, alarmas exactas,
