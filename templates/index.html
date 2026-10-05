@@ -1681,7 +1681,7 @@ const I18N = {
     paddleOpening: 'Abriendo pago…',
     perMonth: 'mes', perYear: 'año', fromPrice: (p) => p,
     planMonthly: 'Mensual', planYearly: 'Anual', planSave: (n) => `Ahorra ${n}%`,
-    planContinue: 'Continuar al pago', planNote: 'Pago seguro con Paddle, en tu moneda local cuando está disponible. Cancelas cuando quieras.',
+    planContinue: 'Continuar al pago', planNote: 'Precios en dólares (USD); Paddle suma los impuestos de tu país al pagar. Cancelas cuando quieras.',
     paddleConnFail: 'No se pudo conectar con el servidor para iniciar el pago. Intenta de nuevo.',
     paddleNotConfigured: 'Los pagos no están disponibles en este momento. Intenta de nuevo más tarde.',
     paddleWidgetFail: 'No se pudo cargar el widget de pago de Paddle. Revisa tu conexión e intenta de nuevo.',
@@ -2083,7 +2083,7 @@ const I18N = {
     paddleOpening: 'Opening checkout…',
     perMonth: 'month', perYear: 'year', fromPrice: (p) => p,
     planMonthly: 'Monthly', planYearly: 'Yearly', planSave: (n) => `Save ${n}%`,
-    planContinue: 'Continue to payment', planNote: 'Secure payment with Paddle, in your local currency when available. Cancel anytime.',
+    planContinue: 'Continue to payment', planNote: "Prices in US dollars (USD); Paddle adds your country's taxes at checkout. Cancel anytime.",
     paddleConnFail: 'Could not connect to the server to start the payment. Please try again.',
     paddleNotConfigured: 'Payments are not available right now. Please try again later.',
     paddleWidgetFail: "Could not load Paddle's payment widget. Check your connection and try again.",
@@ -3668,63 +3668,26 @@ function preparePaddle() {
       },
     });
     paddleCfg = cfg;
-    loadLocalPrices(cfg);
     return cfg;
   })();
   paddleReady.catch(() => { paddleReady = null; }); // se reintenta al tocar el botón
   return paddleReady;
 }
 
-/* ---- Precio en la moneda local ----
-   Paddle.PricePreview calcula el precio final (con impuestos y en la moneda
-   que Paddle usa para ese país) a partir del país de la persona (Ajustes).
-   Si no se puede, se muestran los textos en dólares de las variables de Render. */
+/* ---- Precios: siempre en dólares (USD), con los textos de Render ----
+   (PADDLE_PRICE_LABEL y PADDLE_PRICE_LABEL_YEARLY). Paddle suma los impuestos
+   del país al momento de pagar. */
 let paddleCfg = null;
-const localPrices = {}; // { monthly: { text, amount }, yearly: { text, amount } }
-const COUNTRY_CODES = ['PE','MX','CO','CL','AR','EC','BO','PY','UY','VE','CR','PA','GT','HN','SV','NI','DO','PR','CU','ES','US','CA','GB','BR','PT','FR','DE','IT'];
-function countryCodeFromSettings() {
-  const name = ((state.settings && state.settings.country) || '').trim();
-  if (!name) return null;
-  const norm = (x) => x.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
-  try {
-    for (const lang of ['es', 'en']) {
-      const dn = new Intl.DisplayNames([lang], { type: 'region' });
-      const hit = COUNTRY_CODES.find(c => norm(dn.of(c)) === norm(name));
-      if (hit) return hit;
-    }
-  } catch (e) {}
-  return /^[A-Za-z]{2}$/.test(name) ? name.toUpperCase() : null;
-}
-async function loadLocalPrices(cfg) {
-  try {
-    if (typeof Paddle === 'undefined' || !Paddle.PricePreview) return;
-    const items = [{ priceId: cfg.priceId, quantity: 1 }];
-    if (cfg.priceIdYearly) items.push({ priceId: cfg.priceIdYearly, quantity: 1 });
-    const code = countryCodeFromSettings();
-    const req = { items };
-    if (code) req.address = { countryCode: code };
-    const res = await Paddle.PricePreview(req);
-    const lines = (res && res.data && res.data.details && res.data.details.lineItems) || [];
-    lines.forEach(li => {
-      const plan = li.price && li.price.id === cfg.priceIdYearly ? 'yearly' : 'monthly';
-      const text = li.formattedTotals && li.formattedTotals.total;
-      const amount = li.totals && Number(li.totals.total);
-      if (text) localPrices[plan] = { text, amount };
-    });
-    refreshPremiumPriceTexts();
-  } catch (e) { /* se quedan los precios en dólares */ }
-}
+function priceNumber(label) { const m = String(label || '').match(/[0-9]+(?:[.,][0-9]+)?/); return m ? Number(m[0].replace(',', '.')) : null; }
 function monthlyPriceLabel() {
-  if (localPrices.monthly) return `${localPrices.monthly.text}/${t('perMonth')}`;
   return currentLang() === 'en' ? PADDLE_PRICE_LABEL.replace('/mes', '/month') : PADDLE_PRICE_LABEL;
 }
 function yearlyPriceLabel() {
-  if (localPrices.yearly) return `${localPrices.yearly.text}/${t('perYear')}`;
   const fallback = (paddleCfg && paddleCfg.priceLabelYearly) || '';
   return currentLang() === 'en' ? fallback.replace('/año', '/year') : fallback;
 }
 function yearlySavingsPct() {
-  const m = localPrices.monthly && localPrices.monthly.amount, y = localPrices.yearly && localPrices.yearly.amount;
+  const m = priceNumber(PADDLE_PRICE_LABEL), y = priceNumber(paddleCfg && paddleCfg.priceLabelYearly);
   if (m && y) return Math.max(0, Math.round((1 - y / (m * 12)) * 100));
   return 30;
 }
