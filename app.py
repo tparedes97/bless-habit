@@ -311,6 +311,12 @@ def init_db():
         ("paddle_subscription_id", "ALTER TABLE users ADD COLUMN paddle_subscription_id TEXT"),
         ("premium_since", "ALTER TABLE users ADD COLUMN premium_since TEXT"),
         ("app_pin_hash", "ALTER TABLE users ADD COLUMN app_pin_hash TEXT"),
+        # Suscripción de Google Play (app de Android). Va aparte de Paddle: una
+        # cancelación en Paddle no debe apagar un Premium pagado en Google Play.
+        ("gplay_purchase_token", "ALTER TABLE users ADD COLUMN gplay_purchase_token TEXT"),
+        ("gplay_expiry", "ALTER TABLE users ADD COLUMN gplay_expiry REAL"),
+        ("gplay_checked_at", "ALTER TABLE users ADD COLUMN gplay_checked_at REAL"),
+        ("gplay_plan", "ALTER TABLE users ADD COLUMN gplay_plan TEXT"),
     ]:
         if col not in existing_cols:
             conn.execute(ddl)
@@ -382,6 +388,18 @@ def get_user(user_id):
     cur = conn.execute("SELECT * FROM users WHERE id = ?", (user_id,))
     row = _row_to_dict(cur, cur.fetchone())
     conn.close()
+    return _with_effective_premium(row)
+
+
+def _with_effective_premium(row):
+    """is_premium = Premium por Paddle (web) O suscripción vigente de Google Play.
+    paddle_premium y gplay_active quedan disponibles por separado."""
+    if not row:
+        return row
+    row["paddle_premium"] = bool(row.get("is_premium"))
+    row["gplay_active"] = bool(row.get("gplay_purchase_token")) and (row.get("gplay_expiry") or 0) > time.time()
+    row["is_premium"] = 1 if (row["paddle_premium"] or row["gplay_active"]) else 0
+    row["premium_source"] = "gplay" if row["gplay_active"] else ("paddle" if row["paddle_premium"] else None)
     return row
 
 
@@ -692,7 +710,7 @@ def auth_native_exchange():
 # ============================================================
 def delete_user_everything(user_id):
     conn = get_db()
-    for table in ("user_state", "push_subscriptions", "diary_photos", "one_time_tokens", "biometric_keys"):
+    for table in ("user_state", "push_subscriptions", "diary_photos", "one_time_tokens", "biometric_keys", "ai_usage", "ai_reports"):
         conn.execute(f"DELETE FROM {table} WHERE user_id = ?", (user_id,))
     conn.execute("DELETE FROM users WHERE id = ?", (user_id,))
     conn.commit()
@@ -710,7 +728,9 @@ def api_delete_account():
         return jsonify({"ok": False, "error": "Falta la confirmación"}), 400
     user = get_user(user_id)
     subscription_id = user.get("paddle_subscription_id") if user else None
-    if user and user["is_premium"] and subscription_id and paddle_configured():
+    if user and user.get("gplay_active"):
+        gplay_cancel_subscription(user)  # si falla, igual vence sola al fin del periodo
+    if user and user["paddle_premium"] and subscription_id and paddle_configured():
         try:
             resp = requests.post(
                 f"{PADDLE_API_BASE}/subscriptions/{subscription_id}/cancel",
@@ -744,7 +764,9 @@ def api_me():
     if not user:
         session.pop("user_id", None)
         return jsonify({"loggedIn": False})
+    user = gplay_refresh_if_stale(user)
     return jsonify({
+        "premiumSource": user.get("premium_source"),
         "loggedIn": True,
         "name": user["name"],
         "email": user["email"],
@@ -983,6 +1005,226 @@ def api_paddle_config():
     })
 
 
+# ============================================================
+# GOOGLE PLAY BILLING (app de Android) — la app compra con la librería de
+# pagos de Google (@capgo/native-purchases) y le manda al servidor el
+# purchaseToken. El servidor NUNCA confía en la app: consulta la compra
+# directamente a la API de Google Play (Android Publisher) con una cuenta de
+# servicio, y solo así activa Premium. La compra va "firmada" con un
+# identificador de la cuenta Bless (obfuscatedAccountId), así un token no se
+# puede reutilizar en otra cuenta.
+#
+# Variables de entorno:
+#   GOOGLE_PLAY_SERVICE_ACCOUNT_JSON  contenido completo del JSON de la cuenta de servicio
+#   GOOGLE_PLAY_PACKAGE               (opcional) app.blesshabit.android
+#   GOOGLE_PLAY_PRODUCT_ID            (opcional) bless_premium
+# Planes base en Play Console: "monthly" y "yearly".
+# ============================================================
+GOOGLE_PLAY_PACKAGE = os.environ.get("GOOGLE_PLAY_PACKAGE", "app.blesshabit.android")
+GOOGLE_PLAY_PRODUCT_ID = os.environ.get("GOOGLE_PLAY_PRODUCT_ID", "bless_premium")
+GOOGLE_PLAY_PLANS = ("monthly", "yearly")
+GPLAY_RECHECK_SECONDS = 12 * 3600  # re-consulta a Google como máximo cada 12 h
+_gplay_token_cache = {"token": None, "exp": 0}
+
+
+def gplay_service_account():
+    raw = os.environ.get("GOOGLE_PLAY_SERVICE_ACCOUNT_JSON", "").strip()
+    if not raw:
+        return None
+    try:
+        info = json.loads(raw)
+        return info if info.get("client_email") and info.get("private_key") else None
+    except Exception:
+        print("[gplay] GOOGLE_PLAY_SERVICE_ACCOUNT_JSON no es un JSON válido")
+        return None
+
+
+def gplay_configured():
+    return gplay_service_account() is not None
+
+
+def gplay_access_token():
+    """Token OAuth de la cuenta de servicio (JWT firmado RS256 → oauth2.googleapis.com)."""
+    if _gplay_token_cache["token"] and _gplay_token_cache["exp"] > time.time() + 60:
+        return _gplay_token_cache["token"]
+    info = gplay_service_account()
+    if not info:
+        return None
+    from authlib.jose import jwt as _jwt
+    now = int(time.time())
+    assertion = _jwt.encode({"alg": "RS256", "typ": "JWT"}, {
+        "iss": info["client_email"],
+        "scope": "https://www.googleapis.com/auth/androidpublisher",
+        "aud": "https://oauth2.googleapis.com/token",
+        "iat": now,
+        "exp": now + 3600,
+    }, info["private_key"])
+    if isinstance(assertion, bytes):
+        assertion = assertion.decode()
+    resp = requests.post("https://oauth2.googleapis.com/token", data={
+        "grant_type": "urn:ietf:params:oauth:grant-type:jwt-bearer",
+        "assertion": assertion,
+    }, timeout=15)
+    if resp.status_code >= 300:
+        print(f"[gplay] no se pudo obtener token OAuth: {resp.status_code} {resp.text[:300]}")
+        return None
+    data = resp.json()
+    _gplay_token_cache["token"] = data.get("access_token")
+    _gplay_token_cache["exp"] = time.time() + int(data.get("expires_in", 3600))
+    return _gplay_token_cache["token"]
+
+
+_gplay_salt = None
+
+
+def gplay_salt():
+    """Secreto propio (guardado en la base) para el identificador de cuenta: así
+    no cambia aunque cambie FLASK_SECRET_KEY y las compras se siguen reconociendo."""
+    global _gplay_salt
+    if _gplay_salt:
+        return _gplay_salt
+    conn = get_db()
+    conn.execute("INSERT OR IGNORE INTO app_settings (key, value) VALUES ('gplay_salt', ?)", (secrets.token_hex(32),))
+    conn.commit()
+    cur = conn.execute("SELECT value FROM app_settings WHERE key = 'gplay_salt'")
+    row = _row_to_dict(cur, cur.fetchone())
+    conn.close()
+    _gplay_salt = row["value"]
+    return _gplay_salt
+
+
+def gplay_account_token(user_id):
+    """Identificador opaco de la cuenta Bless que viaja con la compra (máx. 64)."""
+    return hmac.new(gplay_salt().encode(), f"gplay:{user_id}".encode(), hashlib.sha256).hexdigest()
+
+
+def gplay_fetch_subscription(purchase_token):
+    """Consulta purchases.subscriptionsv2. Devuelve el JSON de Google o None."""
+    token = gplay_access_token()
+    if not token:
+        return None
+    url = (f"https://androidpublisher.googleapis.com/androidpublisher/v3/applications/"
+           f"{GOOGLE_PLAY_PACKAGE}/purchases/subscriptionsv2/tokens/{purchase_token}")
+    try:
+        resp = requests.get(url, headers={"Authorization": f"Bearer {token}"}, timeout=15)
+    except Exception as e:
+        print(f"[gplay] error de red consultando la compra: {e}")
+        return None
+    if resp.status_code == 404 or resp.status_code == 410:
+        return {"subscriptionState": "SUBSCRIPTION_STATE_EXPIRED", "lineItems": []}
+    if resp.status_code >= 300:
+        print(f"[gplay] Google respondió {resp.status_code}: {resp.text[:300]}")
+        return None
+    return resp.json()
+
+
+def _gplay_parse_time(value):
+    if not value:
+        return 0
+    from datetime import datetime
+    try:
+        return datetime.fromisoformat(value.replace("Z", "+00:00")).timestamp()
+    except Exception:
+        return 0
+
+
+def gplay_evaluate(sub):
+    """→ (expiry_epoch, plan). expiry 0 = sin derecho a Premium."""
+    state = sub.get("subscriptionState", "")
+    expiry, plan = 0, None
+    for item in sub.get("lineItems") or []:
+        if item.get("productId") != GOOGLE_PLAY_PRODUCT_ID:
+            continue
+        exp = _gplay_parse_time(item.get("expiryTime"))
+        if exp > expiry:
+            expiry = exp
+            plan = ((item.get("offerDetails") or {}).get("basePlanId")) or plan
+    # Activa, en periodo de gracia o cancelada pero aún dentro de lo pagado.
+    if state not in ("SUBSCRIPTION_STATE_ACTIVE", "SUBSCRIPTION_STATE_IN_GRACE_PERIOD", "SUBSCRIPTION_STATE_CANCELED"):
+        return 0, plan
+    return (expiry if expiry > time.time() else 0), plan
+
+
+def gplay_store(user_id, purchase_token, expiry, plan):
+    conn = get_db()
+    conn.execute("""UPDATE users SET gplay_purchase_token = ?, gplay_expiry = ?, gplay_checked_at = ?,
+                    gplay_plan = ?, premium_since = CASE WHEN ? > 0 AND premium_since IS NULL THEN datetime('now') ELSE premium_since END
+                    WHERE id = ?""", (purchase_token, expiry, time.time(), plan, expiry, user_id))
+    conn.commit()
+    conn.close()
+
+
+def gplay_refresh_if_stale(user):
+    """Re-consulta a Google si pasó el tiempo o venció (renovaciones, reembolsos,
+    cancelaciones). Si Google no responde, se mantiene lo último conocido."""
+    if not user or not user.get("gplay_purchase_token") or not gplay_configured():
+        return user
+    stale = time.time() - (user.get("gplay_checked_at") or 0) > GPLAY_RECHECK_SECONDS
+    expired = (user.get("gplay_expiry") or 0) <= time.time()
+    if not (stale or (expired and time.time() - (user.get("gplay_checked_at") or 0) > 600)):
+        return user
+    sub = gplay_fetch_subscription(user["gplay_purchase_token"])
+    if sub is None:
+        return user
+    expiry, plan = gplay_evaluate(sub)
+    gplay_store(user["id"], user["gplay_purchase_token"], expiry, plan or user.get("gplay_plan"))
+    return get_user(user["id"])
+
+
+def gplay_cancel_subscription(user):
+    token = gplay_access_token()
+    if not token or not user.get("gplay_purchase_token"):
+        return False
+    url = (f"https://androidpublisher.googleapis.com/androidpublisher/v3/applications/{GOOGLE_PLAY_PACKAGE}"
+           f"/purchases/subscriptions/{GOOGLE_PLAY_PRODUCT_ID}/tokens/{user['gplay_purchase_token']}:cancel")
+    try:
+        resp = requests.post(url, headers={"Authorization": f"Bearer {token}"}, timeout=15)
+        return resp.status_code < 300
+    except Exception as e:
+        print(f"[gplay] error al cancelar: {e}")
+        return False
+
+
+@app.route("/api/gplay/config")
+def api_gplay_config():
+    user_id = session.get("user_id")
+    if not user_id:
+        return jsonify({"ok": False, "error": "No autenticado"}), 401
+    return jsonify({
+        "ok": True,
+        "configured": gplay_configured(),
+        "productId": GOOGLE_PLAY_PRODUCT_ID,
+        "plans": list(GOOGLE_PLAY_PLANS),
+        "accountToken": gplay_account_token(user_id),
+    })
+
+
+@app.route("/api/gplay/verify", methods=["POST"])
+def api_gplay_verify():
+    user_id = session.get("user_id")
+    if not user_id:
+        return jsonify({"ok": False, "error": "No autenticado"}), 401
+    data = request.get_json(force=True) or {}
+    purchase_token = str(data.get("purchaseToken") or "").strip()
+    if not purchase_token or len(purchase_token) > 1000:
+        return jsonify({"ok": False, "error": "Falta el purchaseToken"}), 400
+    if not gplay_configured():
+        return jsonify({"ok": False, "error": "not_configured"}), 503
+    sub = gplay_fetch_subscription(purchase_token)
+    if sub is None:
+        return jsonify({"ok": False, "error": "google_unavailable"}), 502
+    owner = ((sub.get("externalAccountIdentifiers") or {}).get("obfuscatedExternalAccountId")) or ""
+    if not hmac.compare_digest(owner, gplay_account_token(user_id)):
+        print(f"[gplay] compra de otra cuenta rechazada para el usuario {user_id}")
+        return jsonify({"ok": False, "error": "other_account"}), 403
+    expiry, plan = gplay_evaluate(sub)
+    if expiry <= 0:
+        return jsonify({"ok": True, "premium": bool(get_user(user_id)["is_premium"]), "active": False})
+    gplay_store(user_id, purchase_token, expiry, plan)
+    print(f"[gplay] Premium activado por Google Play para el usuario {user_id} (plan {plan})")
+    return jsonify({"ok": True, "premium": True, "active": True})
+
+
 @app.route("/api/subscription-status")
 def api_subscription_status():
     user_id = session.get("user_id")
@@ -998,6 +1240,10 @@ def api_cancel_subscription():
     if not user_id:
         return jsonify({"ok": False, "error": "No autenticado"}), 401
     user = get_user(user_id)
+    if user.get("gplay_active") and not user.get("paddle_premium"):
+        # Las suscripciones de Google Play se cancelan desde Google Play: la app
+        # abre esa pantalla (NativePurchases.manageSubscriptions).
+        return jsonify({"ok": False, "error": "gplay"}), 409
     subscription_id = user.get("paddle_subscription_id")
     if subscription_id and paddle_configured():
         # Se cancela al final del periodo ya pagado (no "immediately"): la
@@ -1343,7 +1589,12 @@ _register_legal_routes()
 def healthz():
     # Para un servicio externo gratis (ej. cron-job.org) que lo visite cada 10
     # minutos y así Render no "duerma" el servidor. No toca la base de datos.
-    return "ok"
+    # CORS abierto: lo consulta la pantalla "Despertando a Bless" de la app
+    # Android (www/error.html), que corre fuera de este dominio.
+    resp = app.make_response("ok")
+    resp.headers["Access-Control-Allow-Origin"] = "*"
+    resp.headers["Cache-Control"] = "no-store"
+    return resp
 
 
 @app.route("/api/status")

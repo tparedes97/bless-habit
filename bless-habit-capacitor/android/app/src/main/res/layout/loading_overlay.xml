@@ -1,7 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Pantalla de carga mientras llega la app desde el servidor. En el plan gratis
      de Render el servidor "duerme" y puede tardar ~30-60 s en despertar: sin
-     esto se vería una pantalla en blanco. La quita MainActivity al cargar. -->
+     esto se vería una pantalla en blanco. La quita MainActivity al cargar.
+     El logo es redondo, de 160dp y centrado, igual que la pantalla de inicio de
+     Android 12+, para que el paso de una a otra no se note. -->
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -9,24 +11,26 @@
     android:clickable="true"
     android:focusable="true">
 
+    <ImageView
+        android:layout_width="160dp"
+        android:layout_height="160dp"
+        android:layout_gravity="center"
+        android:contentDescription="@string/app_name"
+        android:src="@drawable/loading_logo_round" />
+
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_gravity="center"
         android:gravity="center_horizontal"
         android:orientation="vertical"
-        android:padding="32dp">
-
-        <ImageView
-            android:layout_width="112dp"
-            android:layout_height="112dp"
-            android:contentDescription="@string/app_name"
-            android:src="@drawable/loading_logo" />
+        android:paddingStart="32dp"
+        android:paddingEnd="32dp"
+        android:paddingTop="236dp">
 
         <ProgressBar
-            android:layout_width="36dp"
-            android:layout_height="36dp"
-            android:layout_marginTop="28dp"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
             android:indeterminate="true"
             android:indeterminateTint="@color/bless_accent" />
 
@@ -34,7 +38,7 @@
             android:id="@+id/loading_slow_text"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="18dp"
+            android:layout_marginTop="16dp"
             android:gravity="center"
             android:text="@string/loading_slow"
             android:textColor="@color/bless_text_dim"

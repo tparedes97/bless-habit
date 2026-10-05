@@ -18,7 +18,7 @@ Todo lo que pide Play Console, listo para copiar y pegar. Las imágenes están e
 3. Prueba en tu celular (cable + depuración USB → ▶ Run). Revisa:
    - Login con Google vuelve a la app.
    - Recordatorio de hábito llega como notificación **de la app** (pide permiso de notificaciones la primera vez).
-   - En Perfil, Premium **no** muestra botón de pago (solo explica que se activa desde la web).
+   - En Perfil, "✨ Hazte Premium" abre la ventana de planes de Google Play (los precios salen solo después de configurar la suscripción, sección 7).
    - Botón atrás cierra diálogos; sin internet aparece la página offline.
    - PIN / huella si tienes Premium.
 4. **Build → Generate Signed App Bundle or APK → Android App Bundle**.
@@ -154,7 +154,7 @@ Bless is a wellbeing and personal organization tool. It does not replace help fr
 - Violencia, sexo, drogas, apuestas, lenguaje: **No**.
 - ¿Los usuarios interactúan o comparten contenido entre sí? **No** (el chat es solo con la IA).
 - ¿Comparte ubicación? **No**.
-- ¿Compras digitales? **No** (dentro de la app no se vende nada).
+- ¿Compras digitales? **Sí** (suscripción Premium con Google Play).
 
 ### Seguridad de los datos (Data safety)
 - ¿Recopila o comparte datos? **Sí recopila**, **no comparte** con terceros (OpenAI y Paddle son proveedores de servicio que procesan por ti → no cuenta como "compartir").
@@ -166,10 +166,11 @@ Datos a declarar (todos: **recopilados, no compartidos, obligatorios, para Funci
 - Fotos y videos → **Fotos** (las del diario; opcional)
 - Mensajes → **Otros mensajes en la app** (chat con Bless)
 - Actividad en la app → **Otro contenido generado por el usuario** (diario, hábitos, ánimo)
-- **No** declares información financiera: los pagos no ocurren en la app.
+- Información financiera → **Historial de compras** (la suscripción de Google Play; nunca vemos datos de tarjeta)
 
 ### Pagos dentro de la app
-- La app **no vende nada** dentro: no hay botón de compra ni precio. Premium se activa en la web y la app solo lo reconoce al iniciar sesión (modelo "reader/consumption"). Si un revisor pregunta, responde eso.
+- **Sí** tiene compras dentro de la app: suscripción Bless Habit Premium con **Google Play Billing** (mensual y anual).
+- En la ficha, Play mostrará "Ofrece compras directas en la app" automáticamente.
 
 ---
 
@@ -190,3 +191,49 @@ Google exige **12 testers durante 14 días seguidos** antes de poder pedir produ
 - **Render**: el plan gratis se duerme y la primera carga tarda ~50 s (la app muestra "cargando…"). Para usuarios reales conviene el plan **Starter ($7/mes)**.
 - Revisa `/api/status` en producción (todo en verde).
 - Revisa reportes de IA en la tabla `ai_reports` de Turso de vez en cuando.
+
+---
+
+## 7. Configurar Google Play Billing (Premium dentro de la app)
+
+La app ya trae el código. Tú configuras esto **una sola vez**:
+
+### 7.1 Subir la app a Prueba interna
+Google solo deja crear suscripciones después de subir una versión que use pagos.
+Testing → **Internal testing** → Create release → sube el `.aab` → Save → Review → **Start rollout**.
+
+### 7.2 Crear la suscripción
+Monetize → Products → **Subscriptions** → Create subscription:
+- **Product ID:** `bless_premium` (exacto, no se puede cambiar después)
+- **Name:** Bless Habit Premium
+- Dentro, **Add base plan** (dos veces):
+
+| Base plan ID | Tipo | Periodo | Precio |
+|---|---|---|---|
+| `monthly` | Auto-renewing | 1 month | USD 2.99 |
+| `yearly` | Auto-renewing | 1 year | USD 24.99 |
+
+Al poner el precio en USD, Google sugiere el precio de cada país (puedes aceptarlo tal cual). **Activate** cada plan base.
+
+### 7.3 Cuenta de servicio (para que tu servidor confirme las compras)
+1. **Google Cloud Console** (el mismo proyecto del login con Google) → APIs & Services → Library → busca **Google Play Android Developer API** → **Enable**.
+2. IAM & Admin → **Service Accounts** → Create service account → nombre `bless-play-billing` → Done (sin roles).
+3. Entra a la cuenta creada → **Keys** → Add key → Create new key → **JSON** → se descarga un archivo. ⚠️ Es una clave secreta: no la compartas ni la pegues en chats.
+4. **Play Console** → Users and permissions → **Invite new users** → pega el correo de la cuenta de servicio (termina en `iam.gserviceaccount.com`) → pestaña **App permissions** → agrega Bless Habit → marca **View financial data** y **Manage orders and subscriptions** → Invite user.
+5. **Render** → tu servicio → Environment → Add variable:
+   - Key: `GOOGLE_PLAY_SERVICE_ACCOUNT_JSON`
+   - Value: abre el archivo JSON con el Bloc de notas, copia **todo** y pégalo.
+   - Save → se redeploya solo.
+
+> Google puede tardar **hasta 24-36 horas** en activar los permisos de la cuenta de servicio. Si al probar sale "no se pudo confirmar", espera y prueba de nuevo.
+
+### 7.4 Probar sin pagar de verdad
+Play Console → Settings → **License testing** → agrega tu Gmail (y el de tus testers) → Save.
+Instala la app desde el enlace de Prueba interna con esa cuenta: al comprar, Google muestra "Tarjeta de prueba, se aprueba siempre" y no cobra. Las suscripciones de prueba se renuevan cada pocos minutos y se cancelan solas.
+
+### Cómo funciona
+- La app compra con Google Play y manda el comprobante al servidor; el servidor lo **confirma con Google** antes de activar Premium (nadie puede activarlo sin pagar).
+- Cada compra queda ligada a la cuenta Bless que la hizo.
+- Si alguien cancela o pide reembolso, el servidor lo detecta (revisa con Google cada 12 h) y Premium se apaga al terminar lo pagado.
+- Quien pagó en la web (Paddle) también tiene Premium en la app con la misma cuenta, y al revés.
+- "Restaurar compra" (en Perfil y en la ventana de planes) recupera Premium al cambiar de celular.

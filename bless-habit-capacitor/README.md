@@ -68,15 +68,13 @@ nuevas). Requiere **Node.js 22 o superior** y **Android Studio** reciente
   requiere que hagas nada adicional, pero sí requiere que tu `app.py` en producción
   tenga el manejo de `/auth/callback?native=1` y `/auth/native-exchange` ya
   desplegado (esto ya estaba en tu código desde que se construyó esta cáscara).
-- **Pago Premium con Paddle**: el botón "Hazte Premium" de la app abre el checkout
-  de Paddle en el navegador del sistema (`/premium/native-checkout` en `app.py`,
-  con un token de un solo uso para identificar tu cuenta). Al pagar, el navegador
-  vuelve a la app por `blesshabit://premium-done` y la app revisa si el Premium ya
-  se activó (lo activa el webhook de Paddle). **Ojo con la política de Google
-  Play**: para suscripciones digitales Google exige Play Billing, salvo en los
-  países donde tiene programas de enlaces/pagos externos (p. ej. EE.UU. y el
-  Espacio Económico Europeo), que además requieren inscribirse en Play Console.
-  Revisa la política vigente antes de publicar — la app podría ser rechazada.
+- **Pago Premium con Google Play Billing** (plugin `@capgo/native-purchases`):
+  el botón "Hazte Premium" abre la ventana de planes con los precios locales de
+  Google Play (suscripción `bless_premium`, planes base `monthly` y `yearly`).
+  Tras comprar, la app manda el `purchaseToken` a `/api/gplay/verify` y el
+  servidor lo confirma con la API de Google Play antes de activar Premium. La
+  configuración (suscripción en Play Console + cuenta de servicio en Render) está
+  en `play-store/PLAY_STORE.md`, sección 7. Paddle se mantiene solo para la web.
 - **Política de Privacidad y Términos**: Play Console te va a pedir URLs públicas
   de ambos documentos (ver `bless-habit-legal/` si ya los tienes).
 

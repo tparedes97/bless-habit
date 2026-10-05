@@ -18,5 +18,8 @@
 
     <style name="AppTheme.NoActionBarLaunch" parent="Theme.SplashScreen">
         <item name="android:background">@drawable/splash</item>
+        <!-- Android 12+: mismo fondo lila claro que la pantalla de carga y la app. -->
+        <item name="windowSplashScreenBackground">@color/bless_bg</item>
+        <item name="postSplashScreenTheme">@style/AppTheme.NoActionBar</item>
     </style>
 </resources>

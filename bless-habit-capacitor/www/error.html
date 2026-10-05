@@ -5,43 +5,81 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Bless Habit</title>
 <!-- Se muestra (server.errorPath en capacitor.config.json) cuando la app no puede
-     cargar el servidor: sin internet, o el servidor caído. Aquí NO hay plugins de
-     Capacitor, solo HTML. Si cambias server.url, cambia también SERVER_URL abajo. -->
+     cargar el servidor. Hay dos casos:
+       1. El teléfono tiene internet pero el servidor está "dormido" (plan gratis de
+          Render, ~30-60 s en despertar) → "Despertando a Bless…" y reintento solo.
+       2. No hay internet → "Sin conexión" y vuelve sola cuando regresa la señal.
+     Aquí NO hay plugins de Capacitor, solo HTML. Si cambias server.url, cambia
+     también SERVER_URL abajo. -->
 <style>
   html, body { margin: 0; height: 100%; }
   body { display: flex; align-items: center; justify-content: center; background: #F7F6FD; color: #241f3a; font-family: system-ui, -apple-system, sans-serif; text-align: center; }
-  @media (prefers-color-scheme: dark) { body { background: #1b1830; color: #f1eefc; } p { color: #b9b3d6 !important; } }
   .box { max-width: 320px; padding: 24px; }
-  .emoji { font-size: 56px; }
-  h1 { font-size: 20px; margin: 14px 0 8px; }
+  .logo { width: 112px; height: 112px; border-radius: 50%; margin: 0 auto; display: flex; align-items: center; justify-content: center; font-size: 54px; background: linear-gradient(135deg, #7C6CF0, #A58CFF); box-shadow: 0 10px 28px rgba(124,108,240,.28); }
+  .waking .logo { animation: breathe 1.8s ease-in-out infinite; }
+  @keyframes breathe { 0%,100% { transform: scale(1); } 50% { transform: scale(1.07); } }
+  h1 { font-size: 20px; margin: 22px 0 8px; }
   p { font-size: 15px; line-height: 1.5; color: #6b6585; margin: 0 0 22px; }
+  .dots { display: inline-flex; gap: 6px; margin-bottom: 18px; }
+  .dots span { width: 8px; height: 8px; border-radius: 50%; background: #A58CFF; animation: dot 1.2s infinite ease-in-out; }
+  .dots span:nth-child(2) { animation-delay: .2s; } .dots span:nth-child(3) { animation-delay: .4s; }
+  @keyframes dot { 0%,80%,100% { opacity: .3; transform: translateY(0); } 40% { opacity: 1; transform: translateY(-5px); } }
   button { width: 100%; min-height: 48px; border: none; border-radius: 14px; font-size: 16px; font-weight: 800; color: #fff; background: linear-gradient(135deg, #7C6CF0, #A58CFF); }
   button:disabled { opacity: .6; }
+  .waking button, body:not(.waking) .dots { display: none; }
 </style>
 </head>
 <body>
 <div class="box">
-  <div class="emoji">🌱</div>
-  <h1 id="title">Sin conexión</h1>
-  <p id="desc">No pudimos conectar con Bless. Revisa tu internet e intenta de nuevo.</p>
-  <button id="retry">Reintentar</button>
+  <div class="logo">🌱</div>
+  <h1 id="title"></h1>
+  <p id="desc"></p>
+  <div class="dots"><span></span><span></span><span></span></div>
+  <button id="retry"></button>
 </div>
 <script>
   var SERVER_URL = 'https://bless-habit.onrender.com';
-  if ((navigator.language || '').toLowerCase().indexOf('es') !== 0) {
-    document.documentElement.lang = 'en';
-    document.getElementById('title').textContent = 'No connection';
-    document.getElementById('desc').textContent = "We couldn't reach Bless. Check your internet and try again.";
-    document.getElementById('retry').textContent = 'Try again';
+  var EN = (navigator.language || '').toLowerCase().indexOf('es') !== 0;
+  var TEXT = EN ? {
+    wakingTitle: 'Waking Bless up…', wakingDesc: 'Bless was resting. This can take up to a minute 🌱',
+    offTitle: 'No connection', offDesc: "We couldn't reach Bless. Check your internet and try again.", retry: 'Try again'
+  } : {
+    wakingTitle: 'Despertando a Bless…', wakingDesc: 'Bless estaba descansando. Puede tardar hasta un minuto 🌱',
+    offTitle: 'Sin conexión', offDesc: 'No pudimos conectar con Bless. Revisa tu internet e intenta de nuevo.', retry: 'Reintentar'
+  };
+  if (EN) document.documentElement.lang = 'en';
+  var titleEl = document.getElementById('title'), descEl = document.getElementById('desc'), btn = document.getElementById('retry');
+  btn.textContent = TEXT.retry;
+
+  function show(waking) {
+    document.body.className = waking ? 'waking' : '';
+    titleEl.textContent = waking ? TEXT.wakingTitle : TEXT.offTitle;
+    descEl.textContent = waking ? TEXT.wakingDesc : TEXT.offDesc;
+    btn.disabled = false;
   }
-  function retry() {
-    var btn = document.getElementById('retry');
-    btn.disabled = true;
-    window.location.href = SERVER_URL;
+  function openApp() { window.location.href = SERVER_URL; }
+
+  // Pregunta al servidor si ya despertó (/healthz responde "ok" y permite CORS).
+  var started = Date.now(), timer = null;
+  function poll() {
+    clearTimeout(timer);
+    if (!navigator.onLine) { show(false); return; }
+    show(true);
+    var ctrl = window.AbortController ? new AbortController() : null;
+    var abortTimer = setTimeout(function () { if (ctrl) ctrl.abort(); }, 15000);
+    fetch(SERVER_URL + '/healthz', { cache: 'no-store', signal: ctrl ? ctrl.signal : undefined })
+      .then(function (r) { clearTimeout(abortTimer); if (r.ok) openApp(); else retryLater(); })
+      .catch(function () { clearTimeout(abortTimer); retryLater(); });
   }
-  document.getElementById('retry').onclick = retry;
-  // Vuelve sola en cuanto el teléfono recupera la conexión.
-  window.addEventListener('online', retry);
+  function retryLater() {
+    // Tras ~2 minutos sin respuesta deja de insistir y muestra el botón.
+    if (Date.now() - started > 120000) { show(false); return; }
+    timer = setTimeout(poll, 4000);
+  }
+  btn.onclick = function () { btn.disabled = true; started = Date.now(); poll(); };
+  window.addEventListener('online', function () { started = Date.now(); poll(); });
+  window.addEventListener('offline', function () { clearTimeout(timer); show(false); });
+  poll();
 </script>
 </body>
 </html>

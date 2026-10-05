@@ -324,6 +324,9 @@
   .memory-del { background: none; border: none; color: var(--text-dim); font-size: 14px; cursor: pointer; padding: 2px 6px; min-width: 32px; min-height: 32px; }
   .memory-empty { font-size: 13px; color: var(--text-dim); background: var(--panel-2); border: 1px dashed var(--border); border-radius: 12px; padding: 12px; text-align: center; }
   .he-minutes .qr-btn { min-width: 58px; }
+  .he-remind .qr-btn.locked { position: relative; opacity: .6; }
+  .he-remind .qr-btn.locked::after { content: '🔒'; position: absolute; top: -6px; right: -6px; font-size: 11px; }
+  .he-remind-premium { font-size: 10.5px; font-weight: 800; color: var(--accent); background: rgba(124,98,245,.10); border-radius: 999px; padding: 2px 8px; margin-left: 4px; }
   .time .mins { font-weight: 600; opacity: .75; }
   /* ---- Compositor del diario (rediseño) ---- */
   .dc-overlay { position: fixed; inset: 0; z-index: 86; background: rgba(20,16,40,.45); display: flex; justify-content: center; }
@@ -539,23 +542,25 @@
   .week-grid .day-head .pct { font-size: 9px; font-weight: 800; }
   .week-grid .slot { background: var(--panel); }
   .week-grid .slot.has-item { font-size: 13px; }
-  .week-grid .slot.today-col { background: #1a2130; }
+  .week-grid .slot.today-col { background: rgba(124, 98, 245, .09); }
+  .week-grid .day-head.today-col { background: rgba(124, 98, 245, .16); color: var(--accent); }
   .week-summary { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; font-size: 12px; color: var(--text-dim); }
 
   /* Mes */
   .month-nav { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
   .month-nav button { background: var(--panel-2); border: 1px solid var(--border); color: var(--text); width: 30px; height: 30px; border-radius: 8px; cursor: pointer; }
-  .month-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+  .month-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; }
+  .month-grid .month-cell { min-width: 0; }
   .month-grid .wd { font-size: 10px; color: var(--text-dim); text-align: center; padding-bottom: 4px; }
   .month-cell { position: relative; aspect-ratio: 1; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 10px; border: 1px solid transparent; }
   .month-cell .dnum { position: absolute; top: 3px; left: 5px; font-size: 8.5px; opacity: .8; color: var(--text-dim); }
-  .month-cell.has-pct .dnum { color: rgba(255,255,255,.85); text-shadow: 0 1px 2px rgba(0,0,0,.5); }
+  .month-cell.has-pct .dnum { color: rgba(36,31,58,.7); }
   .month-cell .dicon { position: absolute; top: 2px; right: 4px; font-size: 10px; }
-  .month-cell .dpct { font-size: 13px; font-weight: 800; color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,.55); }
+  .month-cell .dpct { font-size: 12px; font-weight: 800; color: #3a3355; margin-top: 8px; }
   .month-cell.empty { background: transparent; }
-  .month-cell.today { border-color: var(--accent-2); }
+  .month-cell.today { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent) inset; }
   .month-legend { display: flex; align-items: center; gap: 8px; margin-top: 12px; font-size: 10.5px; color: var(--text-dim); }
-  .month-legend .grad-bar { flex: 1; max-width: 140px; height: 10px; border-radius: 999px; background: linear-gradient(90deg, hsl(0,72%,42%), hsl(60,72%,42%), hsl(120,72%,42%)); }
+  .month-legend .grad-bar { flex: 1; max-width: 140px; height: 10px; border-radius: 999px; background: linear-gradient(90deg, hsl(0,78%,87%), hsl(45,85%,82%), hsl(150,55%,80%)); }
 
   /* Métricas */
   .kpi-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
@@ -600,7 +605,10 @@
   .habit-sched-row .hs-field { display: flex; flex-direction: column; gap: 3px; font-size: 10.5px; color: var(--text-dim); }
   .habit-sched-row select { padding: 8px; font-size: 12.5px; border-radius: 10px; border: 1px solid var(--border); background: var(--panel); color: var(--text); min-height: 38px; }
   .habit-sched-row .hs-repeat { margin-left: auto; align-self: flex-end; padding-bottom: 8px; }
-  .habit-sched-row input[type=time] { flex: 0 0 auto; width: 90px; padding: 8px; font-size: 12.5px; }
+  .habit-sched-row input[type=time] { flex: 0 0 auto; width: 118px; padding: 8px; font-size: 12.5px; }
+  .habit-sched-row .hs-days { flex: 1 0 100%; display: flex; gap: 6px; justify-content: space-between; }
+  .habit-sched-row .hs-day { flex: 1; min-height: 36px; border-radius: 10px; border: 1px solid var(--border); background: var(--panel); color: var(--text-dim); font-weight: 700; font-size: 13px; cursor: pointer; }
+  .habit-sched-row .hs-day.selected { background: var(--accent); border-color: var(--accent); color: #fff; }
   .habit-sched-row .hs-repeat { display: flex; align-items: center; gap: 4px; font-size: 10px; color: var(--text-dim); white-space: nowrap; }
 
   ::-webkit-scrollbar { width: 6px; }
@@ -736,7 +744,7 @@
   html[data-theme="light"] .cal-subtabs { padding:10px 16px 2px; gap:8px; background:#fff; }
   html[data-theme="light"] .cal-subtab { border:1px solid #ecebf2; background:#fafafd; color:#7e8496; border-radius:14px; font-weight:700; padding:10px 12px; }
   html[data-theme="light"] .cal-subtab.active { background:#7c62f5; border-color:#7c62f5; color:#fff; box-shadow:0 7px 16px rgba(124,98,245,.18); }
-  html[data-theme="light"] .month-cell { border:1px solid #ecebf3; background:#fafafd; border-radius:14px; min-height:66px; }
+  html[data-theme="light"] .month-cell { border:1px solid #ecebf3; background:#fafafd; border-radius:14px; min-height:0; aspect-ratio:1 / 1.15; }
   html[data-theme="light"] .month-cell.good { background:#e7faf2; border-color:#c9f1df; }
   html[data-theme="light"] .month-cell.warning { background:#fff5d9; border-color:#f4e4ad; }
   html[data-theme="light"] .month-cell.critical { background:#fff0f0; border-color:#f4cccc; }
@@ -820,7 +828,7 @@
   html[data-theme="light"] .cal-body { padding-top:16px; }
   html[data-theme="light"] .month-nav { margin-bottom:12px; }
   html[data-theme="light"] .month-nav button, html[data-theme="light"] .day-nav button { background:#FAFAFD; border-color:#EAE8F1; color:#596175; }
-  html[data-theme="light"] .month-cell { min-height:68px; border-radius:15px; background:#FAFAFD; border-color:#ECEAF2; transition:transform .15s,box-shadow .15s; }
+  html[data-theme="light"] .month-cell { min-height:0; aspect-ratio:1 / 1.15; border-radius:12px; background:#FAFAFD; border-color:#ECEAF2; transition:transform .15s,box-shadow .15s; }
   html[data-theme="light"] .month-cell:hover { transform:translateY(-1px); box-shadow:0 5px 14px rgba(60,53,110,.07); }
   html[data-theme="light"] .month-cell.good { background:linear-gradient(145deg,#E7FAF2,#F3FFF9); border-color:#C9F0DF; }
   html[data-theme="light"] .month-cell.warning { background:linear-gradient(145deg,#FFF4CF,#FFF9E9); border-color:#F1DFA4; }
@@ -1086,6 +1094,8 @@
       <div class="row-input" id="he-minutes-custom-row" style="display:none;margin-top:6px;align-items:center;gap:8px;">
         <input type="number" id="he-minutes-custom" min="1" max="600" inputmode="numeric" style="max-width:110px;"> <span style="font-size:13px;color:var(--text-dim);" data-i18n="heMinutesUnit">minutos</span>
       </div>
+      <div style="font-size:12px;color:var(--text-dim);margin:14px 0 6px;"><span data-i18n="heRemindQ">¿Cuándo te aviso?</span> <span class="he-remind-premium" id="he-remind-premium" data-i18n="heRemindPremiumTag">✨ Premium</span></div>
+      <div class="quick-replies he-remind" id="he-remind"></div>
       <div style="font-size:12px;color:var(--text-dim);margin:14px 0 6px;" data-i18n="heDurationQ">¿Hasta cuándo?</div>
       <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:13px;color:var(--text-dim);">
         <label style="display:flex;align-items:center;gap:4px;"><input type="radio" name="he-duration" id="he-duration-indef" checked> <span data-i18n="heIndef">Indefinido</span></label>
@@ -1300,7 +1310,7 @@ let dailyAiLimitNotified = false;
 function notifyDailyAiLimit() {
   if (dailyAiLimitNotified || isPremium) return;
   dailyAiLimitNotified = true;
-  if (IS_NATIVE_APP) { setTimeout(() => addNote(chatScroll, t('aiLimitNoteNative')), 600); return; }
+  if (IS_NATIVE_APP) { setTimeout(() => addNote(chatScroll, t('aiLimitNoteNative'), 'agenda-note', () => openPremiumSheet()), 600); return; }
   setTimeout(() => {
     addNote(chatScroll, t('aiLimitNote', monthlyPriceLabel()), 'agenda-note', () => openPremiumSheet());
   }, 600);
@@ -1419,6 +1429,13 @@ CÓMO DEBES CONVERSAR:
 13. Responde normalmente en 2-5 frases cortas cuando el tema lo necesite; sé breve en confirmaciones.
 14. Usa emojis con naturalidad, como en un chat entre amigas: normalmente 1 a 3 por mensaje (🤍 🌱 ✨ 🫂 😊 🙌 💪 🌙 ☕ 😅…), elegidos según la emoción. En momentos tristes usa emojis suaves (🤍 🫂 🌧️), nunca festivos.
 
+SOBRE LA APP (úsalo solo si preguntan; nunca inventes menús, pantallas ni precios):
+- Secciones: Bless (chat), Calendario (día/semana/mes), Métricas, Diario y Perfil.
+- Plan gratis: chat con Bless (límite diario de mensajes), hasta 3 hábitos, calendario, diario y recordatorios a la hora de cada hábito.
+- Bless Habit Premium incluye: chat ilimitado y memoria (Bless recuerda lo importante de días anteriores), hábitos ilimitados, resumen semanal escrito por Bless, análisis de ánimo, recordatorios personalizados (avisar 10, 15, 30 o 60 minutos antes), temas y stickers extra para el diario, exportar el diario a PDF y bloqueo con PIN o huella.
+- Esta persona ${isPremium ? 'YA tiene Premium: agradécele y no le ofrezcas comprarlo' : 'todavía no tiene Premium'}.
+- Cómo hacerse Premium: en la pestaña Perfil, tarjeta "Bless Habit Premium", botón "Hazte Premium". Al responder sobre Premium sé breve y no menciones páginas web, enlaces ni otros medios de pago.
+
 REGLA DE ORO: si la respuesta puede sonar igual para cualquier usuario, todavía no es una buena respuesta de Bless. Hazla específica a esta persona y a lo que acaba de pasar.
 
 Responde solo con el mensaje que Bless le diría ahora. No uses listas ni encabezados salvo que la persona pida explícitamente una lista.`;
@@ -1532,7 +1549,7 @@ const I18N = {
       (icon, val) => `Anotado — ${icon} ${val}. Cuenta conmigo para acompañarte también con este.`,
     ],
     chooseHabitOrCustom: 'Elige al menos un hábito o agrega el tuyo ✍️',
-    todaSemana: 'Toda la semana', guardarHorarios: 'Guardar horarios',
+    todaSemana: 'Toda la semana', guardarHorarios: 'Guardar horarios', hsPickDay: (h) => `Elige al menos un día para ${h} 📅`, seePremiumNote: '✨ Ver qué incluye Premium',
     horarioResumen: (icon, time, repeatWeekly) => `${icon} ${time}${repeatWeekly ? ' · toda la semana' : ' · solo hoy'}`,
     deDespiertoADuermo: (a, b) => `Despierto ${a}, duermo ${b}`,
     deAaB: (a, b) => `De ${a} a ${b}`,
@@ -1685,9 +1702,22 @@ const I18N = {
     paddleOpening: 'Abriendo pago…',
     premiumFeatureBtn: '✨ Función Premium',
     nativePremiumInfo: 'Esto es parte de Bless Habit Premium ✨ Si tu cuenta tiene Premium, se activa sola al iniciar sesión con esa misma cuenta.',
-    nativePremiumNote: 'Si tu cuenta tiene Premium, se activa sola al iniciar sesión.',
+    nativePremiumNote: 'Pago seguro con Google Play. Cancelas cuando quieras.',
+    becomePremiumNativeBtn: '✨ Hazte Premium',
+    gplaySubscribeBtn: 'Suscribirme con Google Play', gplayNote: 'Se renueva automáticamente. Cancelas cuando quieras desde Google Play.',
+    gplayRestoreLink: 'Restaurar compra', gplayManageLink: 'Gestionar suscripción en Google Play',
+    perMonthSuffix: '/mes', perYearSuffix: '/año',
+    gplayThanks: '¡Gracias! 🤍 Bless Habit Premium ya está activo ✨',
+    gplayConfirming: 'Recibimos tu pago 🤍 Estamos confirmándolo con Google; Premium se activa en unos segundos.',
+    gplayPending: 'Tu pago está pendiente ⏳ Premium se activará cuando Google lo confirme.',
+    gplayBuyFail: 'No se pudo completar la compra. Intenta de nuevo en un momento.',
+    gplayRestored: '¡Listo! Recuperamos tu Premium ✨',
+    gplayNothingToRestore: 'No encontramos una suscripción activa en esta cuenta de Google Play.',
+    gplayUnavailable: 'Google Play no está disponible en este momento. Revisa tu conexión e intenta de nuevo.',
+    gplayNotReady: 'Premium estará disponible muy pronto en la app ✨',
+    gplayManageInPlay: 'Tu suscripción se gestiona en Google Play: abre Play Store → tu perfil → Pagos y suscripciones → Suscripciones.',
     habitLimitNative: (n) => `En el plan gratis puedes tener hasta ${n} hábitos 🌱. Con Bless Habit Premium son ilimitados.`,
-    aiLimitNoteNative: '🤍 Hoy ya conversamos un montón. En el plan gratis Bless tiene hasta ~15 mensajes al día; mañana seguimos. Con Bless Habit Premium la conversación no tiene límite.',
+    aiLimitNoteNative: '🤍 Hoy ya conversamos un montón. En el plan gratis Bless tiene hasta ~15 mensajes al día; mañana seguimos. Con Bless Habit Premium la conversación no tiene límite. Toca aquí para verlo ✨',
     perMonth: 'mes', perYear: 'año', fromPrice: (p) => p,
     planMonthly: 'Mensual', planYearly: 'Anual', planSave: (n) => `Ahorra ${n}%`,
     planContinue: 'Continuar al pago', planNote: 'Precios en dólares (USD); Paddle suma los impuestos de tu país al pagar. Cancelas cuando quieras.',
@@ -1825,8 +1855,13 @@ const I18N = {
     openConfigBtn: 'Abrir configuración',
     planTitle: 'Plan', premiumBadge: '✨ Bless Habit Premium', cancelSubLink: 'Cancelar suscripción',
     freePlanDesc: 'Estás en el plan gratis. Con Premium tienes:',
-    premiumBenefits: ['💬 Conversa con Bless sin límite, y Bless recuerda lo importante de ti', '📬 Cada lunes, tu resumen semanal escrito por Bless', '😊 Tu ánimo en el tiempo y qué hábitos acompañan tus días buenos', '🌱 Hábitos ilimitados (gratis: hasta 3)', '📔 Diario con temas y stickers exclusivos, y exportar a PDF', '🔒 Bloqueo con PIN (y huella o rostro en Android)', '🚫 Sin anuncios · ✨ Tema dorado'],
+    premiumBenefits: ['💬 Conversa con Bless sin límite, y Bless recuerda lo importante de ti', '📬 Cada lunes, tu resumen semanal escrito por Bless', '😊 Tu ánimo en el tiempo y qué hábitos acompañan tus días buenos', '🌱 Hábitos ilimitados (gratis: hasta 3)', '⏰ Recordatorios a tu medida: 10, 15, 30 o 60 min antes', '📔 Diario con temas y stickers exclusivos, y exportar a PDF', '🔒 Bloqueo con PIN (y huella o rostro en Android)', '🚫 Sin anuncios · ✨ Tema dorado'],
     premiumCancelNote: 'Pago mensual con Paddle. Cancelas cuando quieras.',
+    heRemindQ: '¿Cuándo te aviso?', heRemindPremiumTag: '✨ Premium para más opciones',
+    remindAtTime: 'A la hora', remindBefore: (m) => m >= 60 ? '1 h antes' : `${m} min antes`,
+    remindPremiumMsg: 'Con Premium eliges cuándo te aviso: 10, 15, 30 o 60 minutos antes ⏰✨',
+    remindSoonTitle: (m, label) => `En ${m >= 60 ? '1 hora' : m + ' min'}: ${label}`,
+    reminderSoonBody: ['Ve preparándote, ya casi es hora 🌱', 'Un recordatorio amable para que llegues con calma 🤍', 'Prepárate con tiempo ✨'],
     becomePremiumBtn: (price) => `Hazte Premium — ${price}`,
     notifTitle: 'Notificaciones', consultando: 'Consultando…', logoutLink: 'Cerrar sesión',
     editFieldPrompt: (label) => `Editar ${label}:`,
@@ -1944,7 +1979,7 @@ const I18N = {
       (icon, val) => `Noted — ${icon} ${val}. Count on me to help you with this one too.`,
     ],
     chooseHabitOrCustom: 'Choose at least one habit or add your own ✍️',
-    todaSemana: 'All week', guardarHorarios: 'Save schedule',
+    todaSemana: 'All week', guardarHorarios: 'Save schedule', hsPickDay: (h) => `Pick at least one day for ${h} 📅`, seePremiumNote: '✨ See what Premium includes',
     horarioResumen: (icon, time, repeatWeekly) => `${icon} ${time}${repeatWeekly ? ' · all week' : ' · just today'}`,
     deDespiertoADuermo: (a, b) => `Wake ${a}, sleep ${b}`,
     deAaB: (a, b) => `${a} to ${b}`,
@@ -2093,9 +2128,22 @@ const I18N = {
     paddleOpening: 'Opening checkout…',
     premiumFeatureBtn: '✨ Premium feature',
     nativePremiumInfo: "This is part of Bless Habit Premium ✨ If your account has Premium, it turns on automatically when you sign in with that same account.",
-    nativePremiumNote: 'If your account has Premium, it turns on automatically when you sign in.',
+    nativePremiumNote: 'Secure payment with Google Play. Cancel anytime.',
+    becomePremiumNativeBtn: '✨ Go Premium',
+    gplaySubscribeBtn: 'Subscribe with Google Play', gplayNote: 'Renews automatically. Cancel anytime from Google Play.',
+    gplayRestoreLink: 'Restore purchase', gplayManageLink: 'Manage subscription in Google Play',
+    perMonthSuffix: '/month', perYearSuffix: '/year',
+    gplayThanks: 'Thank you! 🤍 Bless Habit Premium is now active ✨',
+    gplayConfirming: "We got your payment 🤍 We're confirming it with Google; Premium will turn on in a few seconds.",
+    gplayPending: 'Your payment is pending ⏳ Premium will turn on once Google confirms it.',
+    gplayBuyFail: "The purchase couldn't be completed. Please try again in a moment.",
+    gplayRestored: 'Done! We restored your Premium ✨',
+    gplayNothingToRestore: "We couldn't find an active subscription on this Google Play account.",
+    gplayUnavailable: "Google Play isn't available right now. Check your connection and try again.",
+    gplayNotReady: 'Premium will be available in the app very soon ✨',
+    gplayManageInPlay: 'Your subscription is managed in Google Play: open Play Store → your profile → Payments & subscriptions → Subscriptions.',
     habitLimitNative: (n) => `On the free plan you can have up to ${n} habits 🌱. With Bless Habit Premium they're unlimited.`,
-    aiLimitNoteNative: "🤍 We've talked a lot today. On the free plan Bless has up to ~15 messages a day; we'll pick it up tomorrow. With Bless Habit Premium there's no limit.",
+    aiLimitNoteNative: "🤍 We've talked a lot today. On the free plan Bless has up to ~15 messages a day; we'll pick it up tomorrow. With Bless Habit Premium there's no limit. Tap here to see it ✨",
     perMonth: 'month', perYear: 'year', fromPrice: (p) => p,
     planMonthly: 'Monthly', planYearly: 'Yearly', planSave: (n) => `Save ${n}%`,
     planContinue: 'Continue to payment', planNote: "Prices in US dollars (USD); Paddle adds your country's taxes at checkout. Cancel anytime.",
@@ -2233,8 +2281,13 @@ const I18N = {
     openConfigBtn: 'Open settings',
     planTitle: 'Plan', premiumBadge: '✨ Bless Habit Premium', cancelSubLink: 'Cancel subscription',
     freePlanDesc: "You're on the free plan. With Premium you get:",
-    premiumBenefits: ['💬 Talk with Bless without limits, and Bless remembers what matters to you', '📬 Every Monday, your weekly summary written by Bless', '😊 Your mood over time and which habits come with your good days', '🌱 Unlimited habits (free: up to 3)', '📔 Journal with exclusive themes and stickers, plus PDF export', '🔒 PIN lock (plus fingerprint or face on Android)', '🚫 No ads · ✨ Gold theme'],
+    premiumBenefits: ['💬 Talk with Bless without limits, and Bless remembers what matters to you', '📬 Every Monday, your weekly summary written by Bless', '😊 Your mood over time and which habits come with your good days', '🌱 Unlimited habits (free: up to 3)', '⏰ Reminders your way: 10, 15, 30 or 60 min before', '📔 Journal with exclusive themes and stickers, plus PDF export', '🔒 PIN lock (plus fingerprint or face on Android)', '🚫 No ads · ✨ Gold theme'],
     premiumCancelNote: 'Monthly payment via Paddle. Cancel anytime.',
+    heRemindQ: 'When should I remind you?', heRemindPremiumTag: '✨ Premium for more options',
+    remindAtTime: 'On time', remindBefore: (m) => m >= 60 ? '1 h before' : `${m} min before`,
+    remindPremiumMsg: 'With Premium you choose when I remind you: 10, 15, 30 or 60 minutes before ⏰✨',
+    remindSoonTitle: (m, label) => `In ${m >= 60 ? '1 hour' : m + ' min'}: ${label}`,
+    reminderSoonBody: ['Get ready, it is almost time 🌱', 'A gentle heads-up so you arrive calm 🤍', 'Get ready with time to spare ✨'],
     becomePremiumBtn: (price) => `Go Premium — ${price}`,
     notifTitle: 'Notifications', consultando: 'Checking…', logoutLink: 'Log out',
     editFieldPrompt: (label) => `Edit ${label}:`,
@@ -2574,6 +2627,36 @@ function habitForAgendaItem(habitKey, label) {
 }
 const HE_MINUTE_OPTIONS = [5, 10, 15, 20, 30, 45, 60, 90];
 let heSelectedMinutes = null; // número, 'custom' o null (sin definir)
+// Recordatorios: gratis = a la hora del hábito; Premium = puede elegir uno o
+// varios avisos antes (10/15/30/60 min) además o en lugar del de la hora.
+const REMIND_OFFSET_OPTIONS = [0, 10, 15, 30, 60];
+function habitReminderOffsets(h) {
+  if (!isPremium) return [0];
+  const o = Array.isArray(h.reminderOffsets) ? h.reminderOffsets.filter(n => REMIND_OFFSET_OPTIONS.includes(n)) : [];
+  return o.length ? o : [0];
+}
+function renderHabitRemindPicker(h) {
+  const wrap = document.getElementById('he-remind');
+  document.getElementById('he-remind-premium').style.display = isPremium ? 'none' : '';
+  const current = h ? habitReminderOffsets(h) : [0];
+  wrap.innerHTML = '';
+  REMIND_OFFSET_OPTIONS.forEach(m => {
+    const b = document.createElement('button'); b.type = 'button';
+    const locked = !isPremium && m !== 0;
+    b.className = 'qr-btn' + (current.includes(m) ? ' selected' : '') + (locked ? ' locked' : '');
+    b.dataset.offset = m;
+    b.textContent = m === 0 ? t('remindAtTime') : t('remindBefore', m);
+    b.onclick = () => {
+      if (locked) { promptPremiumFeature(t('remindPremiumMsg')); return; }
+      b.classList.toggle('selected');
+      if (!wrap.querySelector('.qr-btn.selected')) b.classList.add('selected'); // siempre al menos uno
+    };
+    wrap.appendChild(b);
+  });
+}
+function readHabitRemindPicker() {
+  return Array.from(document.querySelectorAll('#he-remind .qr-btn.selected')).map(b => parseInt(b.dataset.offset, 10)).sort((a, b) => b - a);
+}
 function renderHabitMinutesPicker(current) {
   const wrap = document.getElementById('he-minutes');
   const customRow = document.getElementById('he-minutes-custom-row');
@@ -2884,7 +2967,6 @@ function renderHabitPicker() {
 // antes de este límite se conservan; solo se frena agregar nuevos.)
 // Invitación genérica a Premium cuando se toca algo exclusivo.
 async function promptPremiumFeature(msg) {
-  if (IS_NATIVE_APP) { showNativePremiumInfo(); return; }
   if (await uiConfirm(msg, { okText: t('habitLimitOk') })) openPremiumSheet();
 }
 const FREE_HABIT_LIMIT = 3;
@@ -2892,7 +2974,6 @@ function canAddHabit(extra = 1) {
   return isPremium || ((state.profile.habitos || []).length + extra) <= FREE_HABIT_LIMIT;
 }
 async function promptHabitLimit() {
-  if (IS_NATIVE_APP) { uiAlert(t('habitLimitNative', FREE_HABIT_LIMIT)); return; }
   if (await uiConfirm(t('habitLimitMsg', FREE_HABIT_LIMIT), { okText: t('habitLimitOk') })) openPremiumSheet();
 }
 const HABIT_SUGGESTED_MINUTES = { ejercicio: 30, caminar: 20, lectura: 15, meditacion: 10, escritura: 10, estudio: 30, orden: 15, finanzas: 10, gratitud: 5, musica: 20, idioma: 15, familia: 30 };
@@ -2918,26 +2999,40 @@ function renderHabitSchedule() {
       const repWrap = document.createElement('label'); repWrap.className = 'hs-repeat';
       const rep = document.createElement('input'); rep.type = 'checkbox'; rep.checked = true;
       repWrap.appendChild(rep); repWrap.appendChild(document.createTextNode(t('todaSemana')));
-      row.appendChild(lbl); row.appendChild(timeField); row.appendChild(minsField); row.appendChild(repWrap);
+      // Al desmarcar "Toda la semana" aparecen los días para elegir (lunes a viernes por defecto).
+      const daysWrap = document.createElement('div'); daysWrap.className = 'hs-days'; daysWrap.style.display = 'none';
+      [1,2,3,4,5,6,0].forEach(i => {
+        const b = document.createElement('button'); b.type = 'button';
+        b.className = 'hs-day' + (i >= 1 && i <= 5 ? ' selected' : '');
+        b.textContent = WEEKDAY_LABELS[i]; b.title = WEEKDAY_NAMES[i]; b.dataset.day = i;
+        b.onclick = () => b.classList.toggle('selected');
+        daysWrap.appendChild(b);
+      });
+      rep.onchange = () => { daysWrap.style.display = rep.checked ? 'none' : 'flex'; };
+      row.appendChild(lbl); row.appendChild(timeField); row.appendChild(minsField); row.appendChild(repWrap); row.appendChild(daysWrap);
       list.appendChild(row);
-      rows.push({ h, time, rep, mins });
+      rows.push({ h, time, rep, mins, daysWrap });
     });
     obControls.appendChild(list);
     const continueBtn = document.createElement('button'); continueBtn.className = 'send-btn'; continueBtn.style.width = '100%'; continueBtn.style.marginTop = '4px'; continueBtn.textContent = t('guardarHorarios');
     obControls.appendChild(continueBtn);
     continueBtn.onclick = () => {
       const todayStr = ymd(new Date());
+      for (const r of rows) {
+        if (!r.rep.checked && !r.daysWrap.querySelector('.hs-day.selected')) { addNote(ob, t('hsPickDay', r.h.icon + ' ' + habitDisplayLabel(r.h))); return; }
+      }
       rows.forEach(r => {
         r.h.time = r.time.value || defaultTimeFor(r.h.key);
-        r.h.repeatWeekly = r.rep.checked;
-        r.h.repeatDays = r.rep.checked ? [0,1,2,3,4,5,6] : [new Date().getDay()];
+        const picked = Array.from(r.daysWrap.querySelectorAll('.hs-day.selected')).map(b => parseInt(b.dataset.day, 10));
+        r.h.repeatDays = r.rep.checked ? [0,1,2,3,4,5,6] : picked;
+        r.h.repeatWeekly = r.h.repeatDays.length > 0;
         r.h.sameTimeEveryday = true;
         r.h.timesByDay = {};
         r.h.durationWeeks = null;
         r.h.minutesPerDay = parseInt(r.mins.value, 10) || null;
         r.h.createdAt = todayStr;
       });
-      addBubble(ob, rows.map(r => t('horarioResumen', r.h.icon, r.h.time + (r.h.minutesPerDay ? ' · ' + minutesLabel(r.h.minutesPerDay) : ''), r.h.repeatWeekly)).join('   '), 'user');
+      addBubble(ob, rows.map(r => `${r.h.icon} ${r.h.time}${r.h.minutesPerDay ? ' · ' + minutesLabel(r.h.minutesPerDay) : ''} · ${habitDaysCompact(r.h)}`).join('   '), 'user');
       advanceOnboarding();
     };
   };
@@ -3172,11 +3267,9 @@ const NATIVE_APP_URL_SCHEME = {{ native_app_url_scheme | tojson }};
    1) El login con Google no puede pasar por el WebView embebido (Google lo
       bloquea con "disallowed_useragent"): hay que abrir el navegador del
       sistema (plugin Browser) y volver a la app por un enlace personalizado.
-   2) No se vende nada dentro de la app (política de Google Play): sin precios
-      ni botones de pago; Premium se compra en la web y se activa solo al
-      iniciar sesión. Ver premiumCtaLabel() / showNativePremiumInfo().
-      (openNativePaddleCheckout() queda sin usar, por si algún día se habilita
-      un programa de pagos externos de Google.)
+   2) Dentro de la app Premium se compra con Google Play Billing (política de
+      Google Play: nada de pagos externos ni enlaces a la web para pagar).
+      Ver openGplaySheet(). (openNativePaddleCheckout() queda sin usar.)
    ============================================================ */
 const IS_NATIVE_APP = !!(window.Capacitor && typeof window.Capacitor.isNativePlatform === 'function' && window.Capacitor.isNativePlatform());
 
@@ -3546,6 +3639,7 @@ async function bootstrapApp() {
     if (!me.loggedIn) return; // se queda en la pantalla de login, esperando el clic
 
     isPremium = !!me.premium;
+    premiumSource = me.premiumSource || null;
     currentUserEmail = me.email || '';
     loginBtn.style.display = 'none';
     loginLoading.style.display = 'block';
@@ -3564,6 +3658,7 @@ async function bootstrapApp() {
       prepareChatMemoryForToday();
       rolloverDayIfNeeded();
       scheduleNativeRemindersSoon(); // reprograma el "te extrañé" a 3 días desde hoy
+      if (IS_NATIVE_APP && !isPremium) setTimeout(() => restoreGplayPurchases(true), 3000); // compras sin confirmar
       migrateDiaryPhotos();
       applyTheme(state.settings.theme);
       refreshLocaleArrays();
@@ -3739,21 +3834,20 @@ function refreshPremiumPriceTexts() {
 /* ---- Ventana "Elige tu plan" ----
    Todos los botones de Premium abren esta ventana: beneficios, plan mensual o
    anual (con el ahorro) y un solo botón para pagar. */
-/* ---- App de Android: no se vende nada dentro de la app ----
+/* ---- App de Android: Premium con Google Play Billing ----
    Política de Google Play: las suscripciones digitales compradas dentro de la
-   app deben usar Play Billing, y tampoco se permite dirigir al usuario a pagar
-   por fuera. Por eso en la app nativa no hay precios, botones de compra ni
-   enlaces al pago: Premium se compra en la web (blesshabit / Paddle) y se
-   activa solo en la app al iniciar sesión con la misma cuenta. */
+   app deben usar Play Billing, y no se permite dirigir al usuario a pagar por
+   fuera. Quien pagó en la web (Paddle) igual tiene Premium en la app con la
+   misma cuenta, y al revés. */
 function premiumCtaLabel() {
-  if (IS_NATIVE_APP) return t('premiumFeatureBtn');
+  if (IS_NATIVE_APP) return t('becomePremiumNativeBtn');
   return t('becomePremiumBtn', hasYearlyPlan() ? t('fromPrice', monthlyPriceLabel()) : monthlyPriceLabel());
 }
 function showNativePremiumInfo() { uiAlert(t('nativePremiumInfo')); }
 
 async function openPremiumSheet() {
   if (isPremium) return;
-  if (IS_NATIVE_APP) { showNativePremiumInfo(); return; }
+  if (IS_NATIVE_APP) { openGplaySheet(); return; }
   try { await preparePaddle(); } catch (e) { /* igual se muestra con precios de respaldo */ }
   document.querySelectorAll('.premium-sheet-overlay').forEach(x => x.remove());
   const yearly = hasYearlyPlan();
@@ -3807,12 +3901,148 @@ async function openPaddleCheckout(ev, plan) {
   });
 }
 
+/* ============================================================
+   GOOGLE PLAY BILLING (solo app de Android)
+   La compra la hace Google; el servidor la verifica con la API de Google Play
+   (/api/gplay/verify) antes de activar Premium. Nunca se activa solo porque la
+   app "dice" que se pagó.
+   ============================================================ */
+let premiumSource = null; // 'gplay' | 'paddle' | null (de /api/me)
+function nativePurchases() {
+  return IS_NATIVE_APP && window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.NativePurchases;
+}
+let gplayReady = null, gplayCfg = null, gplayProducts = [];
+function prepareGplay() {
+  const NP = nativePurchases();
+  if (!NP) return Promise.reject(new Error('unsupported'));
+  if (gplayReady) return gplayReady;
+  gplayReady = (async () => {
+    const cfg = await (await fetch('/api/gplay/config')).json();
+    if (!cfg.ok || !cfg.configured) throw new Error('not_configured');
+    const sup = await NP.isBillingSupported();
+    if (!sup || !sup.isBillingSupported) throw new Error('unsupported');
+    const res = await NP.getProducts({ productIdentifiers: [cfg.productId], productType: 'subs' });
+    gplayProducts = (res && res.products) || [];
+    if (!gplayProducts.length) throw new Error('no_products');
+    gplayCfg = cfg;
+    return cfg;
+  })();
+  gplayReady.catch(() => { gplayReady = null; });
+  return gplayReady;
+}
+// Precio del plan base (sin ofertas) tal como lo muestra Google, en la moneda local.
+function gplayPlanProduct(plan) {
+  return gplayProducts.find(p => p.identifier === plan && !p.offerId) || gplayProducts.find(p => p.identifier === plan) || null;
+}
+async function verifyGplayPurchase(purchaseToken) {
+  if (!purchaseToken) return false;
+  try {
+    const res = await fetch('/api/gplay/verify', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ purchaseToken }) });
+    const data = await res.json();
+    if (data.ok && data.premium) {
+      isPremium = true; premiumSource = premiumSource || 'gplay';
+      renderMetrics(); renderProfile();
+      return true;
+    }
+  } catch (e) { /* se reintenta al abrir la app (restoreGplayPurchases) */ }
+  return false;
+}
+// Revisa compras que Google ya tiene para esta cuenta (cambio de celular, o si
+// la verificación falló justo después de pagar). silent = sin mensajes.
+async function restoreGplayPurchases(silent) {
+  const NP = nativePurchases();
+  if (!NP) return false;
+  try {
+    await prepareGplay();
+    const res = await NP.getPurchases({ productType: 'subs' });
+    for (const p of (res && res.purchases) || []) {
+      if (p.purchaseToken && await verifyGplayPurchase(p.purchaseToken)) {
+        if (!silent) uiAlert(t('gplayRestored'));
+        return true;
+      }
+    }
+    if (!silent) uiAlert(t('gplayNothingToRestore'));
+  } catch (e) {
+    if (!silent) uiAlert(t('gplayUnavailable'));
+  }
+  return false;
+}
+async function openGplaySheet() {
+  if (isPremium) return;
+  try {
+    await prepareGplay();
+  } catch (e) {
+    uiAlert(e && e.message === 'not_configured' ? t('gplayNotReady') : t('gplayUnavailable'));
+    return;
+  }
+  document.querySelectorAll('.premium-sheet-overlay').forEach(x => x.remove());
+  const monthly = gplayPlanProduct('monthly'), yearly = gplayPlanProduct('yearly');
+  let plan = yearly ? 'yearly' : 'monthly';
+  const savings = (monthly && yearly && monthly.price) ? Math.max(0, Math.round((1 - yearly.price / (monthly.price * 12)) * 100)) : 0;
+  const overlay = document.createElement('div');
+  overlay.className = 'ui-dialog-overlay premium-sheet-overlay';
+  const benefits = (I18N[currentLang()].premiumBenefits || I18N.es.premiumBenefits);
+  overlay.innerHTML = `
+    <div class="ui-dialog premium-sheet" role="dialog" aria-modal="true">
+      <div class="premium-sheet-title">✨ Bless Habit Premium</div>
+      <ul class="premium-benefits">${benefits.map(b => `<li>${b}</li>`).join('')}</ul>
+      <div class="plan-options">
+        ${yearly ? `<button type="button" class="plan-option" data-plan="yearly"><span class="plan-name">${t('planYearly')}${savings ? ` <span class="plan-save">${t('planSave', savings)}</span>` : ''}</span><span class="plan-price">${escapeHtml(yearly.priceString)}${t('perYearSuffix')}</span></button>` : ''}
+        ${monthly ? `<button type="button" class="plan-option" data-plan="monthly"><span class="plan-name">${t('planMonthly')}</span><span class="plan-price">${escapeHtml(monthly.priceString)}${t('perMonthSuffix')}</span></button>` : ''}
+      </div>
+      <button type="button" class="premium-btn" id="premium-sheet-pay">${t('gplaySubscribeBtn')}</button>
+      <div class="premium-note">${t('gplayNote')}</div>
+      <div style="text-align:center;margin-top:6px;display:flex;justify-content:center;gap:18px;">
+        <button type="button" class="pin-link" id="premium-sheet-restore">${t('gplayRestoreLink')}</button>
+        <button type="button" class="pin-link" id="premium-sheet-close">${t('dialogCancel')}</button>
+      </div>
+    </div>`;
+  const paint = () => overlay.querySelectorAll('.plan-option').forEach(b => b.classList.toggle('selected', b.dataset.plan === plan));
+  overlay.querySelectorAll('.plan-option').forEach(b => { b.onclick = () => { plan = b.dataset.plan; paint(); }; });
+  const close = () => { overlay.remove(); if (uiDialogClose === close) uiDialogClose = null; };
+  overlay.querySelector('#premium-sheet-close').onclick = close;
+  overlay.querySelector('#premium-sheet-restore').onclick = () => { close(); restoreGplayPurchases(false); };
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
+  overlay.querySelector('#premium-sheet-pay').onclick = () => { const p = plan; close(); buyGplay(p); };
+  uiDialogClose = close;
+  paint();
+  document.body.appendChild(overlay);
+}
+async function buyGplay(plan) {
+  const NP = nativePurchases();
+  let tx;
+  try {
+    const cfg = await prepareGplay();
+    tx = await NP.purchaseProduct({ productIdentifier: cfg.productId, planIdentifier: plan, productType: 'subs', appAccountToken: cfg.accountToken });
+  } catch (e) {
+    const msg = String((e && (e.message || e.code)) || e);
+    if (/USER_CANCELED|cancel/i.test(msg)) return; // la persona cerró la ventana de Google
+    if (/ITEM_ALREADY_OWNED/i.test(msg)) { restoreGplayPurchases(false); return; }
+    uiAlert(t('gplayBuyFail'));
+    return;
+  }
+  if (tx && tx.purchaseState && String(tx.purchaseState).toUpperCase().includes('PENDING')) { uiAlert(t('gplayPending')); return; }
+  setAvatarMood('happy');
+  if (await verifyGplayPurchase(tx && tx.purchaseToken)) { uiAlert(t('gplayThanks')); return; }
+  // Google cobró pero el servidor aún no pudo confirmar: reintenta en silencio.
+  uiAlert(t('gplayConfirming'));
+  setTimeout(() => restoreGplayPurchases(true), 4000);
+}
+
 async function cancelPremium() {
+  // Suscripción de Google Play: se gestiona/cancela en la pantalla de Google Play.
+  if (premiumSource === 'gplay') {
+    const NP = nativePurchases();
+    if (NP) { try { await NP.manageSubscriptions(); return; } catch (e) {} }
+    uiAlert(t('gplayManageInPlay'));
+    return;
+  }
   if (!(await uiConfirm(t('cancelConfirm'), { danger: true, okText: t('cancelSubLink') }))) return;
   let data = null;
   try {
     data = await (await fetch('/api/cancel-subscription', { method: 'POST' })).json();
   } catch (e) { /* se avisa abajo */ }
+  if (data && data.error === 'gplay') { premiumSource = 'gplay'; return cancelPremium(); }
   if (!data || !data.ok) { uiAlert(t('cancelFail')); return; }
   if (data.endsAtPeriodEnd) { uiAlert(t('cancelScheduled')); return; }
   isPremium = !!data.premium;
@@ -3904,11 +4134,19 @@ async function scheduleNativeReminders() {
       habitRepeatDays(h).forEach(dow => {
         const [hh, mm] = String(habitTimeForDay(h, dow) || '').split(':').map(Number);
         if (!Number.isFinite(hh)) return;
-        notifications.push({
-          id: id++,
-          title: `${h.icon || '🌱'} ${habitDisplayLabel(h)}${habitMinutesLabel(h) ? ' · ' + habitMinutesLabel(h) : ''}`,
-          body: tp('reminderBody'),
-          schedule: { on: { weekday: dow + 1, hour: hh, minute: Number.isFinite(mm) ? mm : 0 }, allowWhileIdle: true },
+        habitReminderOffsets(h).forEach(offset => {
+          // Hora del aviso = hora del hábito - offset (puede caer el día anterior).
+          let total = hh * 60 + (Number.isFinite(mm) ? mm : 0) - offset;
+          let wd = dow;
+          if (total < 0) { total += 24 * 60; wd = (dow + 6) % 7; }
+          notifications.push({
+            id: id++,
+            title: offset
+              ? `${h.icon || '🌱'} ${t('remindSoonTitle', offset, habitDisplayLabel(h))}`
+              : `${h.icon || '🌱'} ${habitDisplayLabel(h)}${habitMinutesLabel(h) ? ' · ' + habitMinutesLabel(h) : ''}`,
+            body: offset ? tp('reminderSoonBody') : tp('reminderBody'),
+            schedule: { on: { weekday: wd + 1, hour: Math.floor(total / 60), minute: total % 60 }, allowWhileIdle: true },
+          });
         });
       });
     });
@@ -4674,7 +4912,14 @@ async function respondWithHabitSuggestions() {
   await say(chatScroll, `La persona quiere que le recomiendes/sugieras un hábito nuevo para construir. Sugiérele estas opciones concretas con calidez, mencionando sus nombres tal cual: ${names}. Pregúntale si alguna le llama la atención, o si prefiere agregar otra cosa distinta (puede tocar el botón "+" del calendario para elegir).`, t('habitRecommendationFallback', names));
 }
 
+// Si la persona pregunta por Premium, además de la respuesta de Bless aparece
+// un acceso directo a la tarjeta de Premium (con su botón de compra).
 async function handleUserMessage(text) {
+  const asksPremium = !isPremium && /premium|suscrip|subscri|membres|\bpagar\b|\bpago\b|\bpay\b/i.test(text);
+  await handleUserMessageInner(text);
+  if (asksPremium) addNote(chatScroll, t('seePremiumNote'), 'agenda-note', () => openPremiumSheet());
+}
+async function handleUserMessageInner(text) {
   addBubble(chatScroll, text, 'user');
   pushChatMemory('user', text);
 
@@ -4818,8 +5063,7 @@ async function handleUserMessage(text) {
       state.pending = null;
       const label = pending.task;
       if (!canAddHabit()) {
-        if (IS_NATIVE_APP) addNote(chatScroll, t('habitLimitNative', FREE_HABIT_LIMIT));
-        else addNote(chatScroll, t('habitLimitMsg', FREE_HABIT_LIMIT), 'agenda-note', () => openPremiumSheet());
+        addNote(chatScroll, t('habitLimitMsg', FREE_HABIT_LIMIT), 'agenda-note', () => openPremiumSheet());
         return;
       }
       if (!state.profile.habitos.some(h => h.label.toLowerCase() === label.toLowerCase())) {
@@ -5129,11 +5373,12 @@ function renderProfile() {
     <div class="profile-card">
       <h4>${t('planTitle')}</h4>
       ${isPremium
-        ? `<div class="premium-badge">${t('premiumBadge')}</div><div style="margin-top:10px;"><span class="logout-link" id="cancel-premium-link">${t('cancelSubLink')}</span></div>`
+        ? `<div class="premium-badge">${t('premiumBadge')}</div><div style="margin-top:10px;"><span class="logout-link" id="cancel-premium-link">${premiumSource === 'gplay' ? t('gplayManageLink') : t('cancelSubLink')}</span></div>`
         : `<div style="font-size:13px;color:var(--text-dim);margin-bottom:10px;">${t('freePlanDesc')}</div>
            <ul class="premium-benefits">${(I18N[currentLang()].premiumBenefits || I18N.es.premiumBenefits).map(b => `<li>${b}</li>`).join('')}</ul>
            <button class="premium-btn" id="profile-unlock-premium-btn">${premiumCtaLabel()}</button>
-           <div class="premium-note">${IS_NATIVE_APP ? t('nativePremiumNote') : t('premiumCancelNote')}</div>`}
+           <div class="premium-note">${IS_NATIVE_APP ? t('nativePremiumNote') : t('premiumCancelNote')}</div>
+           ${IS_NATIVE_APP ? `<div style="text-align:center;margin-top:8px;"><span class="logout-link" id="gplay-restore-link">${t('gplayRestoreLink')}</span></div>` : ''}`}
     </div>
     ${appLockCardHtml()}
     <div class="profile-card">
@@ -5166,6 +5411,8 @@ function renderProfile() {
   } else {
     const btn = document.getElementById('profile-unlock-premium-btn');
     if (btn) btn.onclick = () => openPremiumSheet();
+    const restore = document.getElementById('gplay-restore-link');
+    if (restore) restore.onclick = () => restoreGplayPurchases(false);
     pushAdsenseSlots();
   }
   bindAppLockCard();
@@ -6653,6 +6900,7 @@ function openHabitEditor(index) {
   renderPerDayTimeInputs(days, h);
 
   renderHabitMinutesPicker(h ? h.minutesPerDay : null);
+  renderHabitRemindPicker(h);
 
   const hasWeeks = !!(h && h.durationWeeks);
   document.getElementById('he-duration-indef').checked = !hasWeeks;
@@ -6738,6 +6986,7 @@ function saveHabitEditor() {
     timesByDay,
     durationWeeks,
     minutesPerDay: readHabitMinutesPicker(),
+    reminderOffsets: isPremium ? readHabitRemindPicker() : ((existing && existing.reminderOffsets) || [0]),
     createdAt: existing ? (existing.createdAt || ymd(new Date())) : ymd(new Date()),
   };
   entry.repeatWeekly = entry.repeatDays.length === 7;
@@ -6752,6 +7001,7 @@ function saveHabitEditor() {
   }
   syncTodayAgendaForHabit(entry);
   saveStateToServer();
+  scheduleNativeRemindersSoon();
   setAvatarMood('happy');
   closeHabitEditor();
   renderProfile();
@@ -6840,12 +7090,22 @@ function findDay(dateStr) {
   return (state.history||[]).find(d => d.date === dateStr) || { date: dateStr, dow: new Date(dateStr + 'T00:00:00').getDay(), items: [], pct: null };
 }
 
-function heatColor(pct) {
-  // gradiente continuo rojo (0%) -> amarillo (50%) -> verde (100%)
+// Escala pastel (fondos): rosa (0%) -> durazno/amarillo (50%) -> menta (100%),
+// a juego con la paleta suave del resto de la app.
+function heatPastel(pct) {
   if (pct === null || pct === undefined) return 'var(--panel-3)';
   const p = Math.max(0, Math.min(100, pct));
-  const hue = (p / 100) * 120; // 0=rojo, 60=amarillo, 120=verde
-  return `hsl(${hue.toFixed(0)}, 72%, 42%)`;
+  const hue = p <= 50 ? (p / 50) * 45 : 45 + ((p - 50) / 50) * 105;
+  const sat = p <= 50 ? 78 + (p / 50) * 7 : 85 - ((p - 50) / 50) * 30;
+  const light = p <= 50 ? 87 - (p / 50) * 5 : 82 - ((p - 50) / 50) * 2;
+  return `hsl(${hue.toFixed(0)}, ${sat.toFixed(0)}%, ${light.toFixed(0)}%)`;
+}
+// Misma escala, más intensa: para textos y barras que deben leerse bien.
+function heatColor(pct) {
+  if (pct === null || pct === undefined) return 'var(--panel-3)';
+  const p = Math.max(0, Math.min(100, pct));
+  const hue = p <= 50 ? (p / 50) * 40 : 40 + ((p - 50) / 50) * 110;
+  return `hsl(${hue.toFixed(0)}, 60%, ${p <= 50 ? 62 : 50}%)`;
 }
 
 /* ============================================================
@@ -6983,7 +7243,7 @@ function renderCalWeek() {
   let grid = `<div class="week-grid">`;
   grid += `<div class="cell hour-lbl"></div>`;
   weekDays.forEach((d,i) => {
-    grid += `<div class="cell day-head"><span>${DAY_NAMES_SHORT[d.getDay()]} ${d.getDate()}</span></div>`;
+    grid += `<div class="cell day-head ${ymd(d) === todayStr ? 'today-col' : ''}"><span>${DAY_NAMES_SHORT[d.getDay()]} ${d.getDate()}</span></div>`;
   });
   hours.forEach(h => {
     grid += `<div class="cell hour-lbl">${String(h).padStart(2,'0')}:00</div>`;
@@ -7039,10 +7299,13 @@ function renderCalMonth() {
     const entry = findDay(dateStr);
     const isToday = dateStr === todayStr;
     const isFuture = dateStr > todayStr;
-    const bg = isFuture ? 'transparent' : heatColor(entry.pct);
+    // Hoy no se "castiga" en rojo mientras el día sigue en curso: queda neutro
+    // hasta que se cumpla algo.
+    const todayPending = isToday && !entry.pct;
+    const bg = (isFuture || todayPending) ? 'transparent' : heatPastel(entry.pct);
     const mainIcon = entry.items.length ? (entry.items.reduce((best,it) => (!best || it.done) ? it : best, null)?.icon) : '';
     const titleTxt = entry.pct !== null ? entry.pct + '%' : (entry.items.length ? t('programado') : '');
-    const hasPct = !isFuture && entry.pct !== null;
+    const hasPct = !isFuture && !todayPending && entry.pct !== null;
     cells += `<div class="month-cell ${isToday?'today':''} ${hasPct?'has-pct':''}" style="background:${bg}; ${isFuture&&mainIcon?'border:1px dashed var(--border);':''}" title="${titleTxt}">
       <span class="dnum">${d}</span>${mainIcon ? `<span class="dicon" style="${isFuture?'opacity:.5;':''}">${mainIcon}</span>` : ''}${hasPct ? `<span class="dpct">${entry.pct}%</span>` : ''}
     </div>`;
