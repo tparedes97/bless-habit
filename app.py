@@ -269,6 +269,15 @@ def init_db():
             created_at REAL NOT NULL
         )
     """)
+    # Uso diario de la IA (para el límite del plan gratis).
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS ai_usage (
+            user_id INTEGER NOT NULL,
+            day TEXT NOT NULL,
+            count INTEGER NOT NULL DEFAULT 0,
+            PRIMARY KEY (user_id, day)
+        )
+    """)
     # Ajustes internos del servidor (por ahora, las claves VAPID generadas solas).
     conn.execute("""
         CREATE TABLE IF NOT EXISTS app_settings (
@@ -1347,6 +1356,44 @@ def check_ai():
         return jsonify({"ok": False, "model": OPENAI_MODEL, "error": str(e)})
 
 
+# ============================================================
+# PLAN GRATIS vs PREMIUM — límites del lado del servidor
+# ============================================================
+FREE_AI_REQUESTS_PER_DAY = int(os.environ.get("FREE_AI_REQUESTS_PER_DAY", "30"))  # ~15 mensajes (cada mensaje puede usar 2 llamadas)
+
+
+def user_is_premium(user_id):
+    user = get_user(user_id)
+    return bool(user and user["is_premium"])
+
+
+def consume_ai_quota(user_id):
+    """Suma una llamada a la IA del día. Devuelve False si el plan gratis ya
+    llegó al límite (Premium no tiene límite)."""
+    if user_is_premium(user_id):
+        return True
+    day = time.strftime("%Y-%m-%d", time.gmtime())
+    conn = get_db()
+    cur = conn.execute("SELECT count FROM ai_usage WHERE user_id = ? AND day = ?", (user_id, day))
+    row = cur.fetchone()
+    used = row[0] if row else 0
+    if used >= FREE_AI_REQUESTS_PER_DAY:
+        conn.close()
+        return False
+    conn.execute("""
+        INSERT INTO ai_usage (user_id, day, count) VALUES (?, ?, 1)
+        ON CONFLICT(user_id, day) DO UPDATE SET count = count + 1
+    """, (user_id, day))
+    conn.execute("DELETE FROM ai_usage WHERE day < ?", (time.strftime("%Y-%m-%d", time.gmtime(time.time() - 3 * 86400)),))
+    conn.commit()
+    conn.close()
+    return True
+
+
+def premium_required_response():
+    return jsonify({"ok": False, "error": "premium_required"}), 403
+
+
 @app.route("/api/bless-reply", methods=["POST"])
 def bless_reply():
     # Solo para usuarios con sesión: si no, cualquiera en internet podría usar
@@ -1355,6 +1402,8 @@ def bless_reply():
         return jsonify({"ok": False, "reply": None, "error": "No autenticado"}), 401
     if app_lock_blocks(session["user_id"]):
         return locked_response()
+    if not consume_ai_quota(session["user_id"]):
+        return jsonify({"ok": False, "reply": None, "limit": True, "error": "daily_limit"}), 429
     data = request.get_json(force=True) or {}
     # Compatibilidad con el formato viejo (solo "prompt") y el nuevo, que separa
     # el prompt de sistema (persona de Bless) del historial real de la conversación,
@@ -1426,6 +1475,8 @@ def bless_memories():
         return jsonify({"ok": False, "error": "No autenticado"}), 401
     if app_lock_blocks(session["user_id"]):
         return locked_response()
+    if not user_is_premium(session["user_id"]):
+        return premium_required_response()  # la memoria entre días es de Premium
     data = request.get_json(force=True) or {}
     lang = "inglés" if data.get("language") == "en" else "español"
     date = str(data.get("date") or "")[:10]
@@ -1470,6 +1521,129 @@ def bless_memories():
     except Exception as e:
         print(f"[openai] error en /api/bless-memories: {e}")
         return jsonify({"ok": False, "error": str(e)}), 500
+
+
+# ============================================================
+# RESUMEN SEMANAL CON IA (Premium) — "Tu semana con Bless": la app manda los
+# datos de la semana (hábitos por día, ánimo y fragmentos del diario) y la IA
+# devuelve un resumen cálido y concreto con un siguiente paso.
+# ============================================================
+@app.route("/api/weekly-summary", methods=["POST"])
+def weekly_summary():
+    user_id = session.get("user_id")
+    if not user_id:
+        return jsonify({"ok": False, "error": "No autenticado"}), 401
+    if app_lock_blocks(user_id):
+        return locked_response()
+    if not user_is_premium(user_id):
+        return premium_required_response()
+    data = request.get_json(force=True) or {}
+    lang = "inglés" if data.get("language") == "en" else "español"
+    name = str(data.get("name") or "")[:60]
+    lines = []
+    for d in (data.get("days") or [])[:7]:
+        if not isinstance(d, dict):
+            continue
+        parts = [str(d.get("date", ""))[:10]]
+        if d.get("pct") is not None:
+            parts.append(f"cumplimiento {d.get('pct')}%")
+        if d.get("done"):
+            parts.append("hizo: " + ", ".join(str(x)[:40] for x in d["done"][:8]))
+        if d.get("missed"):
+            parts.append("no hizo: " + ", ".join(str(x)[:40] for x in d["missed"][:8]))
+        if d.get("mood"):
+            parts.append(f"ánimo: {str(d.get('mood'))[:30]}")
+        if d.get("diary"):
+            parts.append(f"diario: \"{str(d.get('diary'))[:300]}\"")
+        lines.append(" · ".join(parts))
+    if not lines:
+        return jsonify({"ok": False, "error": "no_data"}), 400
+    try:
+        client = get_client()
+    except Exception as e:
+        print(f"[openai] no se pudo crear el cliente: {e}")
+        client = None
+    if client is None:
+        return jsonify({"ok": False, "error": "IA no disponible"}), 503
+    instructions = (
+        f"Eres Bless, la compañera de hábitos de la app Bless Habit, y escribes el resumen semanal de {name or 'la persona'}. "
+        f"Habla en {lang}, en segunda persona, cálida, concreta y honesta, sin exagerar ni juzgar. "
+        "Usa SOLO los datos dados. Busca conexiones reales entre ánimo, diario y hábitos (por ejemplo: los días que hizo X, su ánimo fue mejor). "
+        "Si hay pocos datos, dilo con cariño y no inventes. "
+        'Responde SOLO con JSON: {"headline": "frase corta que resume la semana, con 1 emoji", '
+        '"wins": ["máx 3 logros concretos"], "challenges": ["máx 2 cosas que costaron"], '
+        '"insight": "1-2 frases con una conexión o patrón que notaste", '
+        '"nextStep": "un paso pequeño y específico para la próxima semana"}'
+    )
+    try:
+        resp = client.chat.completions.create(
+            model=OPENAI_MODEL,
+            messages=[{"role": "system", "content": instructions}, {"role": "user", "content": "\n".join(lines)}],
+            temperature=0.6,
+            max_tokens=700,
+            response_format={"type": "json_object"},
+        )
+        parsed = json.loads(resp.choices[0].message.content or "{}")
+        clean = lambda v, n: str(v or "").strip()[:n]
+        summary = {
+            "headline": clean(parsed.get("headline"), 160),
+            "wins": [clean(x, 200) for x in (parsed.get("wins") or [])[:3] if clean(x, 200)],
+            "challenges": [clean(x, 200) for x in (parsed.get("challenges") or [])[:2] if clean(x, 200)],
+            "insight": clean(parsed.get("insight"), 400),
+            "nextStep": clean(parsed.get("nextStep"), 300),
+        }
+        return jsonify({"ok": True, "summary": summary})
+    except Exception as e:
+        print(f"[openai] error en /api/weekly-summary: {e}")
+        return jsonify({"ok": False, "error": str(e)}), 500
+
+
+# ============================================================
+# EXPORTAR EL DIARIO (Premium) — página lista para imprimir o "Guardar como
+# PDF". En la web se abre con la sesión; en la app de Android se abre en el
+# navegador del sistema con un token de un solo uso (mismo patrón que el pago).
+# Las fotos van incrustadas para que el PDF quede completo.
+# ============================================================
+@app.route("/api/diary-export-token", methods=["POST"])
+def api_diary_export_token():
+    user_id = session.get("user_id")
+    if not user_id:
+        return jsonify({"ok": False, "error": "No autenticado"}), 401
+    if app_lock_blocks(user_id):
+        return locked_response()
+    if not user_is_premium(user_id):
+        return premium_required_response()
+    token = create_one_time_token(user_id, "export", NATIVE_TOKEN_TTL_SECONDS)
+    lang = "en" if request.args.get("lang") == "en" else "es"
+    return jsonify({"ok": True, "url": url_for("diary_export", token=token, lang=lang, _external=True)})
+
+
+@app.route("/diario/exportar")
+def diary_export():
+    lang = "en" if request.args.get("lang") == "en" else "es"
+    token = request.args.get("token")
+    user_id = consume_one_time_token(token, "export") if token else session.get("user_id")
+    if token is None and user_id and app_lock_blocks(user_id):
+        user_id = None
+    if not user_id or not user_is_premium(user_id):
+        return ("Link expired. Go back to the app and try again." if lang == "en"
+                else "Este enlace expiró. Vuelve a la app e inténtalo de nuevo."), 403
+    state = load_user_state(user_id) or {}
+    user = get_user(user_id)
+    entries = sorted([e for e in (state.get("journal") or []) if isinstance(e, dict)], key=lambda e: str(e.get("date", "")))
+    out = []
+    for e in entries:
+        photo = e.get("photo") or ""
+        m = DIARY_PHOTO_URL_RE.search(photo)
+        if m:
+            row = get_diary_photo(user_id, m.group(1))
+            photo = f"data:{row['mime']};base64,{row['data_b64']}" if row else ""
+        elif not photo.startswith("data:image/"):
+            photo = ""
+        out.append({"date": str(e.get("date", "")), "mood": str(e.get("mood") or ""), "text": str(e.get("text") or ""),
+                    "photo": photo, "tags": [str(t) for t in (e.get("tags") or [])][:8], "favorite": bool(e.get("favorite"))})
+    name = ((state.get("profile") or {}).get("nombre")) or (user["name"] if user else "")
+    return render_template("diary_export.html", entries=out, name=name, lang=lang)
 
 
 if __name__ == "__main__":

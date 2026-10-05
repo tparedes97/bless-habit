@@ -286,6 +286,26 @@
   .delete-account-link { background: none; border: none; color: #d9534f; font-size: 13px; text-decoration: underline; cursor: pointer; padding: 8px; }
   .login-legal { margin-top: 22px; font-size: 12.5px; color: var(--text-dim); }
   .login-legal a { color: var(--text-dim); }
+  .weekly-card { border: 1px solid color-mix(in srgb, var(--accent) 35%, var(--border)); }
+  .weekly-range { font-weight: 600; color: var(--text-dim); font-size: 11.5px; margin-left: 6px; text-transform: none; letter-spacing: 0; }
+  .weekly-headline { font-size: 16px; font-weight: 800; line-height: 1.35; margin: 4px 0 10px; }
+  .weekly-block { margin-top: 10px; }
+  .weekly-label { font-size: 11.5px; font-weight: 800; color: var(--text-dim); text-transform: uppercase; letter-spacing: .04em; margin-bottom: 4px; }
+  .weekly-item { font-size: 13.5px; line-height: 1.45; margin: 4px 0; }
+  .weekly-next { margin-top: 12px; padding: 10px 12px; border-radius: 12px; background: var(--panel-2); font-size: 13.5px; font-weight: 700; }
+  .weekly-empty { font-size: 13px; color: var(--text-dim); line-height: 1.5; }
+  .mood-strip { display: grid; grid-template-columns: repeat(auto-fill, minmax(34px, 1fr)); gap: 4px; margin: 6px 0 12px; }
+  .mood-day { display: flex; flex-direction: column; align-items: center; font-size: 19px; line-height: 1.2; }
+  .mood-day small { font-size: 9.5px; color: var(--text-dim); }
+  .mood-day.empty span { color: var(--text-dim); opacity: .5; }
+  .mood-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 8px; }
+  .mood-stats div { background: var(--panel-2); border-radius: 12px; padding: 8px; text-align: center; }
+  .mood-stats b { display: block; font-size: 20px; }
+  .mood-stats span { font-size: 11px; color: var(--text-dim); }
+  .locked-preview { filter: blur(3px); opacity: .7; pointer-events: none; user-select: none; margin: 10px 0 12px; }
+  .diary-theme-swatch.locked, .diary-sticker-cat-tab.locked { position: relative; opacity: .6; }
+  .diary-theme-swatch.locked::after, .diary-sticker-cat-tab.locked::after { content: '🔒'; position: absolute; top: -6px; right: -6px; font-size: 11px; }
+  .diary-export-btn { background: var(--panel); border: 1px solid var(--border); color: var(--accent); border-radius: 12px; padding: 8px 12px; font-size: 13px; font-weight: 800; cursor: pointer; white-space: nowrap; }
   .premium-benefits { list-style: none; padding: 0; margin: 0 0 12px; display: flex; flex-direction: column; gap: 6px; font-size: 13.5px; line-height: 1.4; }
   .memory-list { display: flex; flex-direction: column; gap: 6px; }
   .memory-item { display: flex; align-items: flex-start; gap: 8px; background: var(--panel-2); border: 1px solid var(--border); border-radius: 12px; padding: 9px 10px; font-size: 13.5px; line-height: 1.4; }
@@ -1263,6 +1283,16 @@ function recentHistoryFor(promptText) {
   }
   return h;
 }
+// Plan gratis: ~15 mensajes con Bless al día. Al llegar al límite se avisa UNA
+// vez (con el botón de Premium) y Bless sigue con respuestas simples.
+let dailyAiLimitNotified = false;
+function notifyDailyAiLimit() {
+  if (dailyAiLimitNotified || isPremium) return;
+  dailyAiLimitNotified = true;
+  setTimeout(() => {
+    addNote(chatScroll, t('aiLimitNote', PADDLE_PRICE_LABEL), 'agenda-note', () => openPaddleCheckout());
+  }, 600);
+}
 async function callBlessAI(systemPrompt, situationPrompt) {
   if (!aiEnabled()) return null;
   const controller = new AbortController();
@@ -1275,6 +1305,7 @@ async function callBlessAI(systemPrompt, situationPrompt) {
       signal: controller.signal,
     });
     const data = await res.json().catch(() => null);
+    if (res.status === 429 && data && data.limit) { notifyDailyAiLimit(); return null; }
     if (!res.ok || !data || !data.ok) {
       console.warn('[Bless IA] sin respuesta de la IA, se usa la frase de respaldo:', (data && data.error) || res.status);
       return null;
@@ -1293,7 +1324,7 @@ async function callBlessAI(systemPrompt, situationPrompt) {
 // quien llama a esta función recibe null y debe caer al detector por reglas
 // de siempre como respaldo (ver handleUserMessage).
 async function classifyAchievementMessage(text) {
-  if (!aiEnabled()) return null;
+  if (!aiEnabled() || dailyAiLimitNotified) return null;
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), BLESS_AI_TIMEOUT_MS);
   try {
@@ -1337,7 +1368,7 @@ CONTEXTO ACTUAL DE LA PERSONA (úsalo solo para comprenderla, no lo recites como
 - Rachas: ${streakText}
 - Últimas notas del diario: ${recentDiaryText}
 - Logros recientes: ${(state.profile.logros||[]).slice(-5).map(x=>x.text).filter(Boolean).join(' | ') || 'ninguno'}
-- Lo que recuerdas de conversaciones de días anteriores (úsalo con tacto, como una amiga que se acuerda; si algo fue doloroso, pregunta cómo sigue sin forzar): ${(state.blessMemories||[]).map(m => m.text).join(' | ') || 'nada todavía'}
+- Lo que recuerdas de conversaciones de días anteriores (úsalo con tacto, como una amiga que se acuerda; si algo fue doloroso, pregunta cómo sigue sin forzar): ${isPremium ? ((state.blessMemories||[]).map(m => m.text).join(' | ') || 'nada todavía') : 'nada (plan gratis: no hay memoria entre días)'}
 `;
 }
 function blessSystemPrompt() {
@@ -1750,6 +1781,15 @@ const I18N = {
     pinWait: (s) => `Demasiados intentos. Espera ${s} segundos.`, pinConnError: 'Sin conexión. Intenta de nuevo.',
     pinForgot: '¿Olvidaste tu PIN?', pinForgotOk: 'Entrar con Google', pinDelete: 'Borrar',
     pinForgotConfirm: 'Vuelve a iniciar sesión con tu cuenta de Google para quitar el PIN. Luego podrás crear uno nuevo.',
+    aiLimitNote: (price) => `🤍 Hoy ya conversamos un montón. En el plan gratis Bless tiene hasta ~15 mensajes al día; mañana seguimos. Con Premium (${price}) conversamos sin límite y Bless recuerda lo importante de ti. Toca aquí para verlo.`,
+    memoriesFreeTeaser: 'Con Premium, Bless recuerda lo importante de lo que le cuentas (por ejemplo, "quiere retomar la guitarra") y te acompaña con eso los días siguientes. En el plan gratis, cada día empieza desde cero.',
+    habitLimitMsg: (n) => `En el plan gratis puedes tener hasta ${n} hábitos 🌱. Con Premium son ilimitados. ¿Quieres verlo?`,
+    habitLimitOk: 'Ver Premium',
+    habitLimitOnboarding: (n) => `En el plan gratis puedes empezar con hasta ${n} hábitos — es justo lo que mejor funciona al comienzo 🌱. Con Premium son ilimitados.`,
+    diaryPremiumStyleMsg: 'Este estilo es parte de Premium ✨ Incluye temas y stickers exclusivos para tu diario. ¿Quieres verlo?',
+    diaryExportTitle: 'Exportar tu diario a PDF',
+    diaryExportPremiumMsg: 'Con Premium puedes exportar tu diario completo a PDF, con tus fotos, para guardarlo o imprimirlo 📔 ¿Quieres verlo?',
+    diaryExportFail: 'No se pudo preparar la exportación. Intenta de nuevo.',
     memoriesTitle: '🧠 Lo que Bless recuerda de ti',
     memoriesDesc: 'El chat empieza limpio cada día. Bless guarda aquí solo lo importante de sus conversaciones, para acompañarte mejor. Puedes borrar lo que quieras.',
     memoriesEmpty: 'Todavía nada. Cuando conversen, aquí aparecerá lo que Bless quiera recordar de ti 🌱',
@@ -1764,7 +1804,7 @@ const I18N = {
     openConfigBtn: 'Abrir configuración',
     planTitle: 'Plan', premiumBadge: '✨ Bless Habit Premium', cancelSubLink: 'Cancelar suscripción',
     freePlanDesc: 'Estás en el plan gratis. Con Premium tienes:',
-    premiumBenefits: ['🚫 Sin anuncios', '📊 Métricas completas: rachas, patrones por día y ranking de hábitos', '🔒 Bloqueo con PIN (y huella o rostro en Android)', '✨ Tema dorado Premium'],
+    premiumBenefits: ['💬 Conversa con Bless sin límite, y Bless recuerda lo importante de ti', '📬 Cada lunes, tu resumen semanal escrito por Bless', '😊 Tu ánimo en el tiempo y qué hábitos acompañan tus días buenos', '🌱 Hábitos ilimitados (gratis: hasta 3)', '📔 Diario con temas y stickers exclusivos, y exportar a PDF', '🔒 Bloqueo con PIN (y huella o rostro en Android)', '🚫 Sin anuncios · ✨ Tema dorado'],
     premiumCancelNote: 'Pago mensual con Paddle. Cancelas cuando quieras.',
     becomePremiumBtn: (price) => `Hazte Premium — ${price}`,
     notifTitle: 'Notificaciones', consultando: 'Consultando…', logoutLink: 'Cerrar sesión',
@@ -1801,9 +1841,23 @@ const I18N = {
     rankingTitle: 'Ranking de hábitos',
     rankingDesc: 'Bless usa esto para enfocar sus sugerencias en lo que más te cuesta.',
     rachaPorHabitoTitle: 'Racha por hábito', diasSuffix: (n) => `🔥 ${n} días`,
-    lockedTitle: '🔒 Métricas completas',
-    lockedDesc: 'Racha actual, patrones por día de la semana, ranking de hábitos y racha por hábito son parte de Bless Habit Premium.',
-    premiumNote: 'Sin publicidad + métricas completas. Cobro automático vía Paddle, cancelas cuando quieras.',
+    lockedTitle: '🔒 Tu progreso, con sentido',
+    lockedDesc: 'Con Premium, cada lunes Bless te escribe "Tu semana": qué lograste, qué te costó y qué conexiones nota entre tu ánimo y tus hábitos. Además ves tu ánimo en el tiempo, tus rachas y patrones.',
+    lockedSampleHeadline: 'Una semana de pasitos firmes 🌱',
+    lockedSampleInsight: 'Los días que caminaste, tu ánimo fue mucho mejor.',
+    weeklyTitle: '📬 Tu semana con Bless', weeklyWins: 'Lo que lograste', weeklyChallenges: 'Lo que costó', weeklyInsight: 'Lo que noté',
+    weeklyLoading: 'Bless está escribiendo tu resumen de la semana… ✍️',
+    weeklyNoAi: 'El resumen semanal no está disponible en este momento.',
+    weeklyFirst: 'Tu primer resumen llegará el lunes, cuando tengas una semana registrada 🌱',
+    weeklyReadyNote: '📬 Tu resumen de la semana está listo. Toca aquí para leerlo.',
+    moodTitle: '😊 Tu ánimo en el tiempo',
+    moodNotEnough: (n) => `Marca cómo te sientes en tu diario ${n} día${n === 1 ? '' : 's'} más y aquí verás tus patrones de ánimo.`,
+    moodGoodDays: 'días buenos (30 días)', moodHardDays: 'días difíciles', moodTop: (l) => `lo más frecuente${l ? ': ' + l : ''}`,
+    moodBestDow: (d) => { const w = d.toLowerCase(); return `Sueles sentirte mejor los ${w.endsWith('s') ? w : w + 's'}.`; },
+    moodLinksTitle: 'Lo que acompaña tus días buenos',
+    moodHabitLink: (h, g, o) => `${h}: lo cumples ${g}% en tus días buenos vs ${o}% en el resto.`,
+    moodLinksNone: 'Todavía no hay suficientes datos para ver qué hábitos acompañan tus días buenos.',
+    premiumNote: 'Pago mensual con Paddle. Cancelas cuando quieras.',
     noDataTitle: 'No hay datos todavía',
     noDataDesc: 'Bless va a ir guardando tu progreso real cada día que uses la app. Vuelve mañana para empezar a ver tus patrones, tu racha y el ranking de tus hábitos.',
     cumplimientoHoy: 'Cumplimiento hoy', cumplimientoSemana: 'Cumplimiento semana', cumplimientoMes: 'Cumplimiento mes',
@@ -2126,6 +2180,15 @@ const I18N = {
     pinWait: (s) => `Too many attempts. Wait ${s} seconds.`, pinConnError: 'No connection. Try again.',
     pinForgot: 'Forgot your PIN?', pinForgotOk: 'Sign in with Google', pinDelete: 'Delete',
     pinForgotConfirm: 'Sign in again with your Google account to remove the PIN. Then you can create a new one.',
+    aiLimitNote: (price) => `🤍 We've talked a lot today. On the free plan Bless has up to ~15 messages a day; we'll pick it up tomorrow. With Premium (${price.replace('/mes', '/month')}) we talk without limits and Bless remembers what matters to you. Tap here to see it.`,
+    memoriesFreeTeaser: 'With Premium, Bless remembers the important things you share (for example, "wants to get back to guitar") and supports you with that in the following days. On the free plan, each day starts from scratch.',
+    habitLimitMsg: (n) => `On the free plan you can have up to ${n} habits 🌱. With Premium they're unlimited. Want to see it?`,
+    habitLimitOk: 'See Premium',
+    habitLimitOnboarding: (n) => `On the free plan you can start with up to ${n} habits — which is exactly what works best at the beginning 🌱. With Premium they're unlimited.`,
+    diaryPremiumStyleMsg: 'This style is part of Premium ✨ It includes exclusive themes and stickers for your journal. Want to see it?',
+    diaryExportTitle: 'Export your journal to PDF',
+    diaryExportPremiumMsg: 'With Premium you can export your whole journal to PDF, with your photos, to keep or print it 📔 Want to see it?',
+    diaryExportFail: "Couldn't prepare the export. Please try again.",
     memoriesTitle: '🧠 What Bless remembers about you',
     memoriesDesc: 'The chat starts fresh every day. Bless only keeps the important things from your conversations here, to support you better. You can delete anything.',
     memoriesEmpty: "Nothing yet. As you talk, what Bless wants to remember about you will show up here 🌱",
@@ -2140,7 +2203,7 @@ const I18N = {
     openConfigBtn: 'Open settings',
     planTitle: 'Plan', premiumBadge: '✨ Bless Habit Premium', cancelSubLink: 'Cancel subscription',
     freePlanDesc: "You're on the free plan. With Premium you get:",
-    premiumBenefits: ['🚫 No ads', '📊 Full metrics: streaks, day-of-week patterns and habit ranking', '🔒 PIN lock (plus fingerprint or face on Android)', '✨ Premium gold theme'],
+    premiumBenefits: ['💬 Talk with Bless without limits, and Bless remembers what matters to you', '📬 Every Monday, your weekly summary written by Bless', '😊 Your mood over time and which habits come with your good days', '🌱 Unlimited habits (free: up to 3)', '📔 Journal with exclusive themes and stickers, plus PDF export', '🔒 PIN lock (plus fingerprint or face on Android)', '🚫 No ads · ✨ Gold theme'],
     premiumCancelNote: 'Monthly payment via Paddle. Cancel anytime.',
     becomePremiumBtn: (price) => `Go Premium — ${price}`,
     notifTitle: 'Notifications', consultando: 'Checking…', logoutLink: 'Log out',
@@ -2177,9 +2240,23 @@ const I18N = {
     rankingTitle: 'Habit ranking',
     rankingDesc: "Bless uses this to focus its suggestions on what's hardest for you.",
     rachaPorHabitoTitle: 'Streak by habit', diasSuffix: (n) => `🔥 ${n} days`,
-    lockedTitle: '🔒 Full metrics',
-    lockedDesc: 'Current streak, day-of-week patterns, habit ranking and streak by habit are part of Bless Habit Premium.',
-    premiumNote: 'No ads + full metrics. Automatic billing via Paddle, cancel anytime.',
+    lockedTitle: '🔒 Your progress, with meaning',
+    lockedDesc: 'With Premium, every Monday Bless writes you "Your week": what you achieved, what was hard and the connections it notices between your mood and your habits. You also see your mood over time, your streaks and patterns.',
+    lockedSampleHeadline: 'A week of steady little steps 🌱',
+    lockedSampleInsight: 'On the days you walked, your mood was much better.',
+    weeklyTitle: '📬 Your week with Bless', weeklyWins: 'What you achieved', weeklyChallenges: 'What was hard', weeklyInsight: 'What I noticed',
+    weeklyLoading: 'Bless is writing your weekly summary… ✍️',
+    weeklyNoAi: 'The weekly summary is not available right now.',
+    weeklyFirst: "Your first summary arrives on Monday, once you've logged a week 🌱",
+    weeklyReadyNote: '📬 Your weekly summary is ready. Tap here to read it.',
+    moodTitle: '😊 Your mood over time',
+    moodNotEnough: (n) => `Log how you feel in your journal ${n} more day${n === 1 ? '' : 's'} and you'll see your mood patterns here.`,
+    moodGoodDays: 'good days (30 days)', moodHardDays: 'hard days', moodTop: (l) => `most frequent${l ? ': ' + l : ''}`,
+    moodBestDow: (d) => `You tend to feel best on ${d}s.`,
+    moodLinksTitle: 'What comes with your good days',
+    moodHabitLink: (h, g, o) => `${h}: you do it ${g}% on your good days vs ${o}% on the rest.`,
+    moodLinksNone: "There isn't enough data yet to see which habits come with your good days.",
+    premiumNote: 'Monthly payment via Paddle. Cancel anytime.',
     noDataTitle: 'No data yet',
     noDataDesc: 'Bless will keep saving your real progress every day you use the app. Come back tomorrow to start seeing your patterns, your streak, and your habit ranking.',
     cumplimientoHoy: "Today's completion", cumplimientoSemana: "Week's completion", cumplimientoMes: "Month's completion",
@@ -2715,10 +2792,15 @@ function renderHabitPicker() {
   return () => {
     obControls.innerHTML = '';
     const selected = new Set();
+    const customList = [];
     const wrap = document.createElement('div'); wrap.className = 'quick-replies';
     HABIT_PRESETS.forEach(h => {
       const b = document.createElement('button'); b.className = 'qr-btn'; b.textContent = `${h.icon} ${t2(h)}`;
-      b.onclick = () => { if (selected.has(h.key)) { selected.delete(h.key); b.classList.remove('selected'); } else { selected.add(h.key); b.classList.add('selected'); } };
+      b.onclick = () => {
+        if (selected.has(h.key)) { selected.delete(h.key); b.classList.remove('selected'); return; }
+        if (!isPremium && selected.size + customList.length >= FREE_HABIT_LIMIT) { addNote(ob, t('habitLimitOnboarding', FREE_HABIT_LIMIT)); return; }
+        selected.add(h.key); b.classList.add('selected');
+      };
       wrap.appendChild(b);
     });
     obControls.appendChild(wrap);
@@ -2726,9 +2808,9 @@ function renderHabitPicker() {
     const custom = document.createElement('input'); custom.type = 'text'; custom.placeholder = t('otroHabitoPh');
     const addBtn = document.createElement('button'); addBtn.className = 'send-btn'; addBtn.textContent = '+';
     row.appendChild(custom); row.appendChild(addBtn); obControls.appendChild(row);
-    const customList = [];
     addBtn.onclick = async () => {
       const val = custom.value.trim(); if (!val) return;
+      if (!isPremium && selected.size + customList.length >= FREE_HABIT_LIMIT) { addNote(ob, t('habitLimitOnboarding', FREE_HABIT_LIMIT)); return; }
       const entry = { key: pickHabitKey(val), icon: pickIcon(val), label: val };
       customList.push(entry); custom.value = '';
       await agentSay(ob, tp('customHabitAdded', entry.icon, val), 350);
@@ -2749,6 +2831,19 @@ function renderHabitPicker() {
 }
 // Minutos al día sugeridos por tipo de hábito (la persona los puede cambiar);
 // null = hábitos donde no aplica un tiempo (tomar agua, dejar de fumar…).
+// Plan gratis: hasta 3 hábitos. Premium: ilimitados. (Los que ya existían
+// antes de este límite se conservan; solo se frena agregar nuevos.)
+// Invitación genérica a Premium cuando se toca algo exclusivo.
+async function promptPremiumFeature(msg) {
+  if (await uiConfirm(msg, { okText: t('habitLimitOk') })) openPaddleCheckout();
+}
+const FREE_HABIT_LIMIT = 3;
+function canAddHabit(extra = 1) {
+  return isPremium || ((state.profile.habitos || []).length + extra) <= FREE_HABIT_LIMIT;
+}
+async function promptHabitLimit() {
+  if (await uiConfirm(t('habitLimitMsg', FREE_HABIT_LIMIT), { okText: t('habitLimitOk') })) openPaddleCheckout();
+}
 const HABIT_SUGGESTED_MINUTES = { ejercicio: 30, caminar: 20, lectura: 15, meditacion: 10, escritura: 10, estudio: 30, orden: 15, finanzas: 10, gratitud: 5, musica: 20, idioma: 15, familia: 30 };
 function renderHabitSchedule() {
   return () => {
@@ -3427,6 +3522,9 @@ async function bootstrapApp() {
       startChat(false);
       setTimeout(summarizePendingChats, 4000); // resume conversaciones de días anteriores
       setTimeout(preparePaddle, 1500); // deja listo el pago de Premium en segundo plano
+      setTimeout(async () => { // resumen de la semana pasada (Premium), avisado en el chat
+        if (await ensureWeeklySummary()) addNote(chatScroll, t('weeklyReadyNote'), 'agenda-note', () => switchTab('metrics'));
+      }, 5000);
     } else if (stateData.ok && stateData.state && stateData.state.settings && stateData.state.settings.language) {
       Object.assign(state, stateData.state);
       applyTheme(state.settings.theme);
@@ -3822,6 +3920,7 @@ function prepareChatMemoryForToday() {
 }
 let summarizingMemories = false;
 async function summarizePendingChats() {
+  if (!isPremium) { state.chatPendingMemory = []; return; } // sin Premium, el chat de ayer simplemente se descarta
   if (summarizingMemories || !aiEnabled()) return;
   const cutoff = ymd(addDays(new Date(), -7));
   state.chatPendingMemory = (state.chatPendingMemory || []).filter(p => p.date >= cutoff);
@@ -4592,6 +4691,10 @@ async function handleUserMessage(text) {
     if (isAffirmative(text)) {
       state.pending = null;
       const label = pending.task;
+      if (!canAddHabit()) {
+        addNote(chatScroll, t('habitLimitMsg', FREE_HABIT_LIMIT), 'agenda-note', () => openPaddleCheckout());
+        return;
+      }
       if (!state.profile.habitos.some(h => h.label.toLowerCase() === label.toLowerCase())) {
         const entry = {
           key: pickHabitKey(label), icon: pickIcon(label), label,
@@ -4909,7 +5012,9 @@ function renderProfile() {
     <div class="profile-card">
       <h4>${t('memoriesTitle')}</h4>
       <div style="font-size:12.5px;color:var(--text-dim);line-height:1.5;margin-bottom:10px;">${t('memoriesDesc')}</div>
-      ${(state.blessMemories || []).length
+      ${!isPremium
+        ? `<div class="memory-empty">${t('memoriesFreeTeaser')}</div><button class="premium-btn" id="memories-premium-btn" style="margin-top:10px;">${t('becomePremiumBtn', PADDLE_PRICE_LABEL)}</button>`
+        : (state.blessMemories || []).length
         ? `<div class="memory-list">${state.blessMemories.map(m => `<div class="memory-item"><span class="memory-text">${escapeHtml(m.text)}</span><button type="button" class="memory-del" data-id="${m.id}" title="${t('memoryDeleteTitle')}" aria-label="${t('memoryDeleteTitle')}">✕</button></div>`).join('')}</div>
            <div style="text-align:right;margin-top:8px;"><span class="logout-link" id="memories-clear-all">${t('memoriesClearAll')}</span></div>`
         : `<div class="memory-empty">${t('memoriesEmpty')}</div>`}
@@ -4935,6 +5040,8 @@ function renderProfile() {
     pushAdsenseSlots();
   }
   bindAppLockCard();
+  const memPremiumBtn = document.getElementById('memories-premium-btn');
+  if (memPremiumBtn) memPremiumBtn.onclick = openPaddleCheckout;
   const delBtn = document.getElementById('delete-account-btn');
   if (delBtn) delBtn.onclick = deleteMyAccount;
   document.querySelectorAll('.memory-del').forEach(btn => {
@@ -5047,10 +5154,10 @@ const DIARY_THEMES = [
   { key: 'pinkdiary', name: 'Pink Diary', icon: '🎀', gradient: ['#ffe0ec', '#ffb0cf'], text: '#5c1030' },
   { key: 'cozycafe', name: 'Cozy Café', icon: '☕', gradient: ['#f3e3cf', '#d9b98a'], text: '#4a3018' },
   { key: 'dreamysky', name: 'Dreamy Sky', icon: '☁️', gradient: ['#dceeff', '#c9d9ff'], text: '#1c2f5c' },
-  { key: 'scrapbook', name: 'Scrapbook', icon: '📷', gradient: ['#f0e6d2', '#e0c9a0'], text: '#4a3a1a' },
+  { key: 'scrapbook', premium: true, name: 'Scrapbook', icon: '📷', gradient: ['#f0e6d2', '#e0c9a0'], text: '#4a3a1a' },
   { key: 'naturestyle', name: 'Nature', icon: '🌿', gradient: ['#e2f5df', '#bfe8c2'], text: '#1f4d2b' },
-  { key: 'y2kstyle', name: 'Y2K', icon: '💿', gradient: ['#ffd6f5', '#c9e7ff'], text: '#3a1f4d' },
-  { key: 'darkjournal', name: 'Dark Journal', icon: '🌙', gradient: ['#1c1836', '#332a5c'], text: '#e8e3ff' },
+  { key: 'y2kstyle', premium: true, name: 'Y2K', icon: '💿', gradient: ['#ffd6f5', '#c9e7ff'], text: '#3a1f4d' },
+  { key: 'darkjournal', premium: true, name: 'Dark Journal', icon: '🌙', gradient: ['#1c1836', '#332a5c'], text: '#e8e3ff' },
   { key: 'minimalstyle', name: 'Minimal', icon: '🤍', gradient: ['#fbfbf9', '#f0efe9'], text: '#2a2a2a' },
 ];
 function findDiaryTheme(key) { return DIARY_THEMES.find(th => th.key === key) || null; }
@@ -5077,8 +5184,8 @@ const DIARY_STICKER_CATEGORIES = [
   { key: 'journal', icon: '📖', stickers: ['📎', '🎟️', '🏷️', '📮', '✉️', '📷', '🗒️', '📌', '🖇️', '🔖', '📋', '🧷', '🗂️', '📝', '🖊️', '📓'] },
   { key: 'nature', icon: '🌿', stickers: ['☀️', '🌙', '⭐', '☁️', '🌧️', '🌈', '🍃', '🌸', '🏔️', '🌳', '🪴', '🦋', '🌻', '🌷', '🍀', '🌊'] },
   { key: 'lifestyle', icon: '☕', stickers: ['☕', '📚', '💻', '📷', '🎧', '📱', '🎵', '✈️', '🧳', '🚲', '🍽️', '🏋️', '🥐', '🍉', '🍓', '🥾'] },
-  { key: 'y2k', icon: '💿', stickers: ['💿', '📼', '☎️', '✨', '💗', '🦋', '😎', '📻', '🕹️', '💾', '📟', '🌟', '💫', '🪩'] },
-  { key: 'cozy', icon: '🕯️', stickers: ['🕯️', '☕', '📚', '🧣', '💡', '🪟', '🪴', '🐈', '🥐', '🛋️', '🌙', '🧦', '🍵', '🧶'] },
+  { key: 'y2k', premium: true, icon: '💿', stickers: ['💿', '📼', '☎️', '✨', '💗', '🦋', '😎', '📻', '🕹️', '💾', '📟', '🌟', '💫', '🪩'] },
+  { key: 'cozy', premium: true, icon: '🕯️', stickers: ['🕯️', '☕', '📚', '🧣', '💡', '🪟', '🪴', '🐈', '🥐', '🛋️', '🌙', '🧦', '🍵', '🧶'] },
 ];
 const DIARY_STICKER_MAX = 6;
 const DIARY_STICKER_SIZE_MIN = 22;
@@ -5511,7 +5618,7 @@ function renderDiary() {
     ${filterEmptyHtml}
   `;
   el.innerHTML = `
-    <div class="module-heading"><div><h2>${t('diaryTitle')}</h2><p>${t('diarySub')}</p></div><div class="module-icon">📔</div></div>
+    <div class="module-heading"><div><h2>${t('diaryTitle')}</h2><p>${t('diarySub')}</p></div><button type="button" class="diary-export-btn" id="diary-export-btn" title="${t('diaryExportTitle')}">⬇️ PDF${isPremium ? '' : ' 🔒'}</button></div>
     ${viewToggleHtml}
     ${statsHtml}
     ${summaryLineHtml}
@@ -5625,12 +5732,15 @@ function refreshDiaryThemePicker() {
   const themePicker = document.getElementById('diary-theme-picker');
   const noneSwatch = `<span class="diary-theme-swatch none${diaryComposerTheme ? '' : ' selected'}" data-theme="" title="${t('diaryThemeLabel')}">✕</span>`;
   const themeSwatches = DIARY_THEMES.map(th => th.name
-    ? `<span class="diary-theme-swatch named${diaryComposerTheme === th.key ? ' selected' : ''}" data-theme="${th.key}" style="background:linear-gradient(135deg, ${th.gradient[0]}, ${th.gradient[1]});color:${th.text};"><span class="swatch-dot" style="background:linear-gradient(135deg, ${th.gradient[0]}, ${th.gradient[1]});"></span>${th.icon} ${th.name}</span>`
+    ? `<span class="diary-theme-swatch named${diaryComposerTheme === th.key ? ' selected' : ''}${th.premium && !isPremium ? ' locked' : ''}" data-theme="${th.key}" style="background:linear-gradient(135deg, ${th.gradient[0]}, ${th.gradient[1]});color:${th.text};"><span class="swatch-dot" style="background:linear-gradient(135deg, ${th.gradient[0]}, ${th.gradient[1]});"></span>${th.icon} ${th.name}</span>`
     : `<span class="diary-theme-swatch${diaryComposerTheme === th.key ? ' selected' : ''}" data-theme="${th.key}" style="background:linear-gradient(135deg, ${th.gradient[0]}, ${th.gradient[1]});"></span>`
   ).join('');
   themePicker.innerHTML = noneSwatch + themeSwatches;
   themePicker.querySelectorAll('.diary-theme-swatch').forEach(sw => {
-    sw.onclick = () => { diaryComposerTheme = sw.dataset.theme; themePicker.querySelectorAll('.diary-theme-swatch').forEach(s => s.classList.remove('selected')); sw.classList.add('selected'); refreshDiaryStickerStage(); };
+    sw.onclick = () => {
+      if (sw.classList.contains('locked')) { promptPremiumFeature(t('diaryPremiumStyleMsg')); return; }
+      diaryComposerTheme = sw.dataset.theme; themePicker.querySelectorAll('.diary-theme-swatch').forEach(s => s.classList.remove('selected')); sw.classList.add('selected'); refreshDiaryStickerStage();
+    };
   });
 }
 function refreshDiaryTexturePicker() {
@@ -5779,9 +5889,12 @@ function refreshDiaryBlessNote() {
 }
 function refreshDiaryStickerPicker() {
   const tabs = document.getElementById('diary-sticker-cat-tabs');
-  tabs.innerHTML = DIARY_STICKER_CATEGORIES.map(cat => `<span class="diary-sticker-cat-tab${diaryActiveStickerCategory === cat.key ? ' active' : ''}" data-cat="${cat.key}" title="${t('diaryStickerCat_' + cat.key)}">${cat.icon}</span>`).join('');
+  tabs.innerHTML = DIARY_STICKER_CATEGORIES.map(cat => `<span class="diary-sticker-cat-tab${diaryActiveStickerCategory === cat.key ? ' active' : ''}${cat.premium && !isPremium ? ' locked' : ''}" data-cat="${cat.key}" title="${t('diaryStickerCat_' + cat.key)}">${cat.icon}</span>`).join('');
   tabs.querySelectorAll('.diary-sticker-cat-tab').forEach(tab => {
-    tab.onclick = () => { diaryActiveStickerCategory = tab.dataset.cat; refreshDiaryStickerPicker(); };
+    tab.onclick = () => {
+      if (tab.classList.contains('locked')) { promptPremiumFeature(t('diaryPremiumStyleMsg')); return; }
+      diaryActiveStickerCategory = tab.dataset.cat; refreshDiaryStickerPicker();
+    };
   });
   const activeCat = DIARY_STICKER_CATEGORIES.find(c => c.key === diaryActiveStickerCategory) || DIARY_STICKER_CATEGORIES[0];
   const picker = document.getElementById('diary-sticker-picker');
@@ -6064,6 +6177,23 @@ async function migrateDiaryPhotos() {
 }
 
 let diarySaving = false;
+// Exportar el diario a PDF (Premium): abre una página lista para imprimir o
+// "Guardar como PDF". En la app de Android va por el navegador del sistema
+// con un enlace de un solo uso (el WebView no puede imprimir).
+async function exportDiary() {
+  if (!isPremium) { promptPremiumFeature(t('diaryExportPremiumMsg')); return; }
+  if (IS_NATIVE_APP) {
+    try {
+      const data = await (await fetch('/api/diary-export-token?lang=' + currentLang(), { method: 'POST' })).json();
+      const plugins = window.Capacitor && window.Capacitor.Plugins;
+      if (data.ok && plugins && plugins.Browser) { plugins.Browser.open({ url: data.url }); return; }
+    } catch (e) {}
+    uiAlert(t('diaryExportFail'));
+    return;
+  }
+  window.open('/diario/exportar?lang=' + currentLang(), '_blank');
+}
+
 async function saveDiaryEntry() {
   if (!diaryComposerDate || diarySaving) return;
   diarySaving = true;
@@ -6104,6 +6234,7 @@ async function deleteDiaryEntry(dateStr) {
   renderDiary();
 }
 document.getElementById('diary-save-btn').onclick = saveDiaryEntry;
+document.getElementById('view-diary').addEventListener('click', (e) => { if (e.target.closest('#diary-export-btn')) exportDiary(); });
 document.getElementById('diary-composer-cancel-btn').onclick = closeDiaryComposer;
 document.getElementById('diary-favorite-toggle').onclick = () => { diaryComposerFavorite = !diaryComposerFavorite; refreshDiaryFavoriteToggle(); };
 document.getElementById('diary-tag-input').addEventListener('keydown', (e) => {
@@ -6242,6 +6373,7 @@ function addManualHabit({ key, icon, label, repeatDays, sameTimeEveryday, time, 
     setAddHabitStatus(t('alreadyHaveMsg'));
     return;
   }
+  if (!canAddHabit()) { promptHabitLimit(); return; }
   const entry = {
     key, icon, label,
     repeatDays: repeatDays && repeatDays.length ? repeatDays : [0,1,2,3,4,5,6],
@@ -6364,6 +6496,7 @@ function renderPerDayTimeInputs(selectedDays, existingHabit) {
   });
 }
 function openHabitEditor(index) {
+  if ((index === null || index === undefined || index < 0) && !canAddHabit()) { promptHabitLimit(); return; }
   editingHabitIndex = (index === null || index === undefined || index < 0) ? null : index;
   const h = editingHabitIndex !== null ? state.profile.habitos[editingHabitIndex] : null;
   document.getElementById('habit-editor-title').textContent = h ? t('editHabitTitle') : t('newCustomHabitTitle');
@@ -6450,6 +6583,7 @@ function saveHabitEditor() {
   if (!label) { document.getElementById('habit-editor-status').textContent = t('habitNameEmptyMsg'); return; }
   const days = getSelectedEditorDays();
   const isNew = editingHabitIndex === null;
+  if (isNew && !canAddHabit()) { closeHabitEditor(); promptHabitLimit(); return; }
   const dup = state.profile.habitos.some((hh, i) => i !== editingHabitIndex && hh.label.toLowerCase() === label.toLowerCase());
   if (dup) { document.getElementById('habit-editor-status').textContent = t('dupHabitMsg'); return; }
 
@@ -6844,13 +6978,150 @@ function computeMetrics() {
     for (let i = all.length-1; i >= 0; i--) {
       const it = all[i].items.find(x => x.habitKey === h.key);
       if (!it) continue; // no programado ese día, no rompe racha
-      if (it.done) s++; else break;
+      if (it.done) s++;
+      else if (i === all.length - 1) continue; // hoy todavía no lo hizo: no rompe la racha
+      else break;
     }
     habitStreak[h.key] = s;
   });
 
   const hasHistory = (state.history||[]).length > 0;
   return { pctToday, pctWeek, pctMonth, rachaActual, rachaMax, dowPct, bestDow, worstDow, ranking, habitStreak, hasHistory };
+}
+
+/* ============================================================
+   PREMIUM: "TU ÁNIMO EN EL TIEMPO" y "TU SEMANA CON BLESS"
+   ============================================================ */
+// Valencia de cada carita del diario: +1 bien, 0 neutral, -1 difícil.
+const MOOD_VALENCE = {
+  '😊': 1, '🥰': 1, '😌': 1, '😎': 1, '🤩': 1, '😄': 1, '🙏': 1, '😇': 1, '🌟': 1, '🤗': 1,
+  '😐': 0, '🥺': 0,
+  '😔': -1, '😴': -1, '😤': -1, '😟': -1, '😰': -1, '😡': -1, '😨': -1, '🥱': -1, '😢': -1,
+};
+function moodLabel(emoji) {
+  const m = DIARY_MOODS.find(x => x.emoji === emoji);
+  return m ? (currentLang() === 'en' ? m.en : m.es) : '';
+}
+function computeMoodInsights() {
+  const today = new Date();
+  const byDate = {};
+  (state.journal || []).forEach(e => { if (e && e.mood && MOOD_VALENCE[e.mood] !== undefined) byDate[e.date] = e.mood; });
+  const strip = [];
+  for (let i = 13; i >= 0; i--) { const d = ymd(addDays(today, -i)); strip.push({ date: d, mood: byDate[d] || null }); }
+  const cutoff = ymd(addDays(today, -29));
+  const days = Object.entries(byDate).filter(([d]) => d >= cutoff).map(([date, mood]) => ({ date, mood, val: MOOD_VALENCE[mood] }));
+  if (days.length < 3) return { enough: false, strip, count: days.length };
+  const good = days.filter(d => d.val > 0).length, hard = days.filter(d => d.val < 0).length;
+  const counts = {};
+  days.forEach(d => { counts[d.mood] = (counts[d.mood] || 0) + 1; });
+  const topMood = Object.entries(counts).sort((a, b) => b[1] - a[1])[0][0];
+  // Mejor día de la semana según el ánimo promedio.
+  const dow = Array.from({ length: 7 }, () => ({ sum: 0, n: 0 }));
+  days.forEach(d => { const w = new Date(d.date + 'T00:00:00').getDay(); dow[w].sum += d.val; dow[w].n++; });
+  let bestDow = null;
+  dow.forEach((x, i) => { if (x.n >= 1 && (bestDow === null || x.sum / x.n > dow[bestDow].sum / dow[bestDow].n)) bestDow = i; });
+  // ¿Qué hábitos acompañan los días buenos? (cumplimiento en días buenos vs. el resto)
+  const historyByDate = {};
+  fullHistory().forEach(h => { historyByDate[h.date] = h; });
+  const habitLinks = [];
+  (state.profile.habitos || []).forEach(h => {
+    let gDone = 0, gTot = 0, oDone = 0, oTot = 0;
+    days.forEach(d => {
+      const it = historyByDate[d.date] && historyByDate[d.date].items.find(x => x.habitKey === h.key);
+      if (!it) return;
+      if (d.val > 0) { gTot++; if (it.done) gDone++; } else { oTot++; if (it.done) oDone++; }
+    });
+    if (gTot >= 2 && oTot >= 1) {
+      const gp = Math.round(gDone / gTot * 100), op = Math.round(oDone / oTot * 100);
+      if (gp - op >= 15) habitLinks.push({ h, gp, op, diff: gp - op });
+    }
+  });
+  habitLinks.sort((a, b) => b.diff - a.diff);
+  return { enough: true, strip, count: days.length, good, hard, topMood, bestDow, habitLinks: habitLinks.slice(0, 2) };
+}
+
+// Semana = lunes a domingo. El resumen es de la última semana COMPLETA.
+function lastCompletedWeekStart() { return ymd(addDays(startOfWeek(new Date()), -7)); }
+function weekDaysData(weekStartStr) {
+  const historyByDate = {};
+  fullHistory().forEach(h => { historyByDate[h.date] = h; });
+  const days = [];
+  for (let i = 0; i < 7; i++) {
+    const date = ymd(addDays(new Date(weekStartStr + 'T00:00:00'), i));
+    const h = historyByDate[date];
+    const entry = findJournalEntry(date);
+    const items = h ? h.items : [];
+    if (!items.length && !entry) continue;
+    days.push({
+      date,
+      pct: items.length ? pctOf(items) : null,
+      done: items.filter(x => x.done).map(x => x.label),
+      missed: items.filter(x => !x.done).map(x => x.label),
+      mood: entry && entry.mood ? `${entry.mood} ${moodLabel(entry.mood)}` : '',
+      diary: entry && entry.text ? entry.text.slice(0, 300) : '',
+    });
+  }
+  return days;
+}
+let weeklySummaryLoading = false;
+async function ensureWeeklySummary() {
+  if (!isPremium || !aiEnabled() || weeklySummaryLoading) return false;
+  const key = lastCompletedWeekStart();
+  state.weeklySummaries = state.weeklySummaries || {};
+  if (state.weeklySummaries[key]) return false;
+  const days = weekDaysData(key);
+  if (!days.length) return false;
+  weeklySummaryLoading = true;
+  try {
+    const res = await fetch('/api/weekly-summary', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: state.profile.nombre, language: currentLang(), days }) });
+    const data = await res.json().catch(() => null);
+    if (!res.ok || !data || !data.ok) return false;
+    state.weeklySummaries[key] = Object.assign({ createdAt: Date.now() }, data.summary);
+    // Solo se guardan las últimas 8 semanas.
+    Object.keys(state.weeklySummaries).sort().slice(0, -8).forEach(k => delete state.weeklySummaries[k]);
+    saveStateToServer();
+    return true;
+  } catch (e) { return false; }
+  finally { weeklySummaryLoading = false; }
+}
+function weekRangeLabel(weekStartStr) {
+  const a = new Date(weekStartStr + 'T00:00:00'), b = addDays(a, 6);
+  const loc = currentLang() === 'en' ? 'en-US' : 'es-PE';
+  return `${a.toLocaleDateString(loc, { day: 'numeric', month: 'short' })} – ${b.toLocaleDateString(loc, { day: 'numeric', month: 'short' })}`;
+}
+function weeklySummaryHtml() {
+  const key = lastCompletedWeekStart();
+  const sum = (state.weeklySummaries || {})[key];
+  const head = `<h4>${t('weeklyTitle')} <span class="weekly-range">${weekRangeLabel(key)}</span></h4>`;
+  if (sum) {
+    return `<div class="metrics-section weekly-card">${head}
+      <div class="weekly-headline">${escapeHtml(sum.headline || '')}</div>
+      ${(sum.wins || []).length ? `<div class="weekly-block"><div class="weekly-label">${t('weeklyWins')}</div>${sum.wins.map(w => `<div class="weekly-item">✅ ${escapeHtml(w)}</div>`).join('')}</div>` : ''}
+      ${(sum.challenges || []).length ? `<div class="weekly-block"><div class="weekly-label">${t('weeklyChallenges')}</div>${sum.challenges.map(w => `<div class="weekly-item">🌧️ ${escapeHtml(w)}</div>`).join('')}</div>` : ''}
+      ${sum.insight ? `<div class="weekly-block"><div class="weekly-label">${t('weeklyInsight')}</div><div class="weekly-item">💡 ${escapeHtml(sum.insight)}</div></div>` : ''}
+      ${sum.nextStep ? `<div class="weekly-next">👣 ${escapeHtml(sum.nextStep)}</div>` : ''}
+    </div>`;
+  }
+  const hasData = weekDaysData(key).length > 0;
+  return `<div class="metrics-section weekly-card">${head}
+    <div class="weekly-empty">${hasData ? (aiEnabled() ? t('weeklyLoading') : t('weeklyNoAi')) : t('weeklyFirst')}</div></div>`;
+}
+function moodInsightsHtml(mi) {
+  const strip = `<div class="mood-strip">${mi.strip.map(d => `<div class="mood-day${d.mood ? '' : ' empty'}" title="${d.date}"><span>${d.mood || '·'}</span><small>${DAY_NAMES_SHORT[new Date(d.date + 'T00:00:00').getDay()].slice(0, 2)}</small></div>`).join('')}</div>`;
+  if (!mi.enough) {
+    return `<div class="metrics-section"><h4>${t('moodTitle')}</h4>${strip}<div class="weekly-empty">${t('moodNotEnough', 3 - mi.count)}</div></div>`;
+  }
+  const links = mi.habitLinks.map(l => `<div class="weekly-item">${l.h.icon} ${t('moodHabitLink', habitDisplayLabel(l.h), l.gp, l.op)}</div>`).join('');
+  return `<div class="metrics-section"><h4>${t('moodTitle')}</h4>${strip}
+    <div class="mood-stats">
+      <div><b>${mi.good}</b><span>${t('moodGoodDays')}</span></div>
+      <div><b>${mi.hard}</b><span>${t('moodHardDays')}</span></div>
+      <div><b>${mi.topMood}</b><span>${t('moodTop', moodLabel(mi.topMood))}</span></div>
+    </div>
+    ${mi.bestDow !== null ? `<div class="weekly-item">🌤️ ${t('moodBestDow', DAY_NAMES[mi.bestDow])}</div>` : ''}
+    ${links ? `<div class="weekly-block"><div class="weekly-label">${t('moodLinksTitle')}</div>${links}</div>` : `<div class="weekly-item" style="color:var(--text-dim);">${t('moodLinksNone')}</div>`}
+  </div>`;
 }
 
 function renderMetrics() {
@@ -6876,6 +7147,8 @@ function renderMetrics() {
   // Racha actual, patrones semanales, ranking de hábitos y racha por hábito son
   // solo para Premium — el plan gratis se queda con el resumen del día/semana/mes.
   const fullSectionsHtml = `
+      ${weeklySummaryHtml()}
+      ${moodInsightsHtml(computeMoodInsights())}
       <div class="metrics-section">
         <h4>${t('patronesTitle')}</h4>
         <div class="weekday-row">${weekdayBars}</div>
@@ -6900,6 +7173,11 @@ function renderMetrics() {
       <div class="metrics-section premium-lock">
         <h4>${t('lockedTitle')}</h4>
         <div style="font-size:13px;color:var(--text-dim);line-height:1.5;">${t('lockedDesc')}</div>
+        <div class="locked-preview" aria-hidden="true">
+          <div class="weekly-headline">${t('lockedSampleHeadline')}</div>
+          <div class="weekly-item">💡 ${t('lockedSampleInsight')}</div>
+          <div class="mood-strip">${['😊','😌','😔','🙏','😊','😴','🤩'].map(e => `<div class="mood-day"><span>${e}</span></div>`).join('')}</div>
+        </div>
         <button class="premium-btn" id="unlock-premium-btn">${t('becomePremiumBtn', PADDLE_PRICE_LABEL)}</button>
         <div class="premium-note">${t('premiumNote')}</div>
       </div>`;
@@ -6920,7 +7198,7 @@ function renderMetrics() {
         <div class="kpi-tile"><div class="kpi-num">${isPremium ? m.rachaActual+' 🔥' : '🔒'}</div><div class="kpi-lbl">${t('rachaActualLbl')}</div><div class="kpi-sub" style="color:var(--text-dim);">${isPremium ? t('maximaLbl', m.rachaMax) : t('soloPremium')}</div></div>
       </div>
 
-      ${!m.hasHistory ? emptyHistoryHtml : (isPremium ? fullSectionsHtml : lockedSectionHtml)}
+      ${isPremium ? (m.hasHistory ? fullSectionsHtml : weeklySummaryHtml() + moodInsightsHtml(computeMoodInsights()) + emptyHistoryHtml) : ((m.hasHistory ? '' : emptyHistoryHtml) + lockedSectionHtml)}
 
       ${adBannerHtml()}
     </div>
@@ -6929,6 +7207,10 @@ function renderMetrics() {
     const btn = document.getElementById('unlock-premium-btn');
     if (btn) btn.onclick = openPaddleCheckout;
     pushAdsenseSlots();
+  } else if (!(state.weeklySummaries || {})[lastCompletedWeekStart()] && !weeklySummaryLoading) {
+    ensureWeeklySummary().then(created => {
+      if (created && document.getElementById('view-metrics').classList.contains('active')) renderMetrics();
+    });
   }
 }
 </script>
