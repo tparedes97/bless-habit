@@ -1639,6 +1639,7 @@ const I18N = {
     pushSwFail: 'No se pudo registrar el service worker.',
     pushEnableFail: 'No se pudo activar las notificaciones. Intenta de nuevo.',
 
+    paddleOpening: 'Abriendo pago…',
     paddleConnFail: 'No se pudo conectar con el servidor para iniciar el pago. Intenta de nuevo.',
     paddleNotConfigured: 'Los pagos no están disponibles en este momento. Intenta de nuevo más tarde.',
     paddleWidgetFail: 'No se pudo cargar el widget de pago de Paddle. Revisa tu conexión e intenta de nuevo.',
@@ -2014,6 +2015,7 @@ const I18N = {
     pushSwFail: 'Could not register the service worker.',
     pushEnableFail: 'Could not enable notifications. Please try again.',
 
+    paddleOpening: 'Opening checkout…',
     paddleConnFail: 'Could not connect to the server to start the payment. Please try again.',
     paddleNotConfigured: 'Payments are not available right now. Please try again later.',
     paddleWidgetFail: "Could not load Paddle's payment widget. Check your connection and try again.",
@@ -3424,6 +3426,7 @@ async function bootstrapApp() {
       document.getElementById('view-login').classList.remove('active');
       startChat(false);
       setTimeout(summarizePendingChats, 4000); // resume conversaciones de días anteriores
+      setTimeout(preparePaddle, 1500); // deja listo el pago de Premium en segundo plano
     } else if (stateData.ok && stateData.state && stateData.state.settings && stateData.state.settings.language) {
       Object.assign(state, stateData.state);
       applyTheme(state.settings.theme);
@@ -3528,36 +3531,50 @@ async function pollPremiumStatus(attempts = 6, delayMs = 1500) {
 /* Abre el checkout de Paddle para suscribirse a Bless Habit Premium.
    Paddle es "Merchant of Record": cobra a cualquier país y se encarga de los
    impuestos locales — por eso se eligió sobre Culqi para una audiencia internacional. */
-async function openPaddleCheckout() {
+// Paddle se prepara UNA vez en segundo plano (config + Initialize) apenas
+// carga la app, para que al tocar "Hazte Premium" el pago abra al instante
+// (antes se hacía todo recién al tocar el botón y tardaba).
+let paddleReady = null; // Promise<cfg> o null
+function preparePaddle() {
+  if (IS_NATIVE_APP || isPremium) return null;
+  if (paddleReady) return paddleReady;
+  paddleReady = (async () => {
+    const cfg = await (await fetch('/api/paddle-config')).json();
+    if (!cfg.configured || !cfg.clientToken || !cfg.priceId) throw new Error('not_configured');
+    if (typeof Paddle === 'undefined') throw new Error('widget');
+    if (cfg.environment !== 'production') Paddle.Environment.set('sandbox');
+    Paddle.Initialize({
+      token: cfg.clientToken,
+      eventCallback: function (event) {
+        // Solo para feedback visual inmediato — quien de verdad activa el Premium es el
+        // webhook del servidor. Ver pollPremiumStatus().
+        if (event.name === 'checkout.completed') {
+          Paddle.Checkout.close();
+          uiAlert(t('paddleThanks'));
+          pollPremiumStatus();
+        }
+      },
+    });
+    return cfg;
+  })();
+  paddleReady.catch(() => { paddleReady = null; }); // se reintenta al tocar el botón
+  return paddleReady;
+}
+
+async function openPaddleCheckout(ev) {
   if (IS_NATIVE_APP) return openNativePaddleCheckout();
+  const btn = ev && ev.currentTarget;
+  const originalText = btn ? btn.textContent : '';
+  if (btn) { btn.disabled = true; btn.textContent = t('paddleOpening'); }
   let cfg;
   try {
-    cfg = await (await fetch('/api/paddle-config')).json();
+    cfg = await preparePaddle();
   } catch (e) {
-    uiAlert(t('paddleConnFail'));
+    uiAlert(e && e.message === 'not_configured' ? t('paddleNotConfigured') : e && e.message === 'widget' ? t('paddleWidgetFail') : t('paddleConnFail'));
     return;
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = originalText; }
   }
-  if (!cfg.configured || !cfg.clientToken || !cfg.priceId) {
-    uiAlert(t('paddleNotConfigured'));
-    return;
-  }
-  if (typeof Paddle === 'undefined') {
-    uiAlert(t('paddleWidgetFail'));
-    return;
-  }
-  if (cfg.environment !== 'production') Paddle.Environment.set('sandbox');
-  Paddle.Initialize({
-    token: cfg.clientToken,
-    eventCallback: function (event) {
-      // Solo para feedback visual inmediato — quien de verdad activa el Premium es el
-      // webhook del servidor. Ver pollPremiumStatus().
-      if (event.name === 'checkout.completed') {
-        Paddle.Checkout.close();
-        uiAlert(t('paddleThanks'));
-        pollPremiumStatus();
-      }
-    },
-  });
   Paddle.Checkout.open({
     settings: { locale: currentLang() },
     items: [{ priceId: cfg.priceId, quantity: 1 }],
