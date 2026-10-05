@@ -531,6 +531,21 @@
   .day-nav button { background: var(--panel-2); border: 1px solid var(--border); color: var(--text); width: 34px; height: 34px; border-radius: 10px; cursor: pointer; font-size: 15px; }
   .day-nav button:disabled { opacity: .3; cursor: default; }
   .day-nav .day-title { font-size: 14px; font-weight: 700; text-align: center; }
+  .day-section-head { display: flex; align-items: center; justify-content: space-between; margin: 16px 0 8px; font-size: 12.5px; font-weight: 800; color: var(--text-dim); text-transform: uppercase; letter-spacing: .04em; }
+  .day-section-head:first-of-type { margin-top: 4px; }
+  .day-sec-add { background: rgba(124,98,245,.10); color: var(--accent); border: none; border-radius: 999px; padding: 5px 11px; font-size: 12px; font-weight: 800; cursor: pointer; text-transform: none; letter-spacing: 0; }
+  .day-empty { font-size: 12px; color: var(--text-dim); padding: 2px 2px 4px; }
+  .task-item .task-bell { font-size: 12px; opacity: .7; }
+  .day-note { background: #FFF8E1; border: 1px solid #F5E6B8; color: #3a3355; border-radius: 12px; padding: 10px 12px; margin-bottom: 6px; font-size: 13.5px; line-height: 1.45; white-space: pre-wrap; cursor: pointer; }
+  .task-sheet input[type=text], .task-sheet textarea { width: 100%; box-sizing: border-box; padding: 11px 12px; border-radius: 12px; border: 1px solid var(--border); background: var(--panel); color: var(--text); font-size: 15px; font-family: inherit; margin-top: 8px; }
+  .task-sheet textarea { resize: vertical; min-height: 110px; }
+  .task-sheet .tk-row { display: flex; gap: 10px; margin-top: 10px; }
+  .task-sheet .tk-row label { flex: 1; display: flex; flex-direction: column; gap: 4px; font-size: 11.5px; color: var(--text-dim); }
+  .task-sheet .tk-row input { padding: 9px; border-radius: 10px; border: 1px solid var(--border); background: var(--panel); color: var(--text); font-size: 14px; min-height: 40px; }
+  .task-sheet .tk-sub { font-size: 12px; color: var(--text-dim); margin: 12px 0 6px; }
+  .task-sheet .tk-hint { font-size: 11.5px; color: var(--text-dim); margin-top: 6px; }
+  .day-add-choices { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
+  .day-add-choices .qr-btn { width: 100%; text-align: left; padding: 12px 14px; font-size: 15px; }
   .day-nav .day-pct { font-size: 11px; color: var(--accent-2); text-align: center; }
 
   /* Semana */
@@ -1387,6 +1402,7 @@ CONTEXTO ACTUAL DE LA PERSONA (úsalo solo para comprenderla, no lo recites como
 - Hábitos cumplidos hoy: ${completed.join(', ') || 'ninguno'}
 - Hábitos pendientes hoy: ${pendingHabits.join(', ') || 'ninguno'}
 - Agenda de hoy: ${todayAgenda}
+- Tareas de hoy: ${(Array.isArray(state.tasks) ? state.tasks.filter(x => x.date === today) : []).map(x => `${x.done ? '✓' : '○'} ${x.time || ''} ${x.text}`.trim()).join(' | ') || 'ninguna'}
 - Rachas: ${streakText}
 - Últimas notas del diario: ${recentDiaryText}
 - Logros recientes: ${(state.profile.logros||[]).slice(-5).map(x=>x.text).filter(Boolean).join(' | ') || 'ninguno'}
@@ -1430,7 +1446,9 @@ CÓMO DEBES CONVERSAR:
 14. Usa emojis con naturalidad, como en un chat entre amigas: normalmente 1 a 3 por mensaje (🤍 🌱 ✨ 🫂 😊 🙌 💪 🌙 ☕ 😅…), elegidos según la emoción. En momentos tristes usa emojis suaves (🤍 🫂 🌧️), nunca festivos.
 
 SOBRE LA APP (úsalo solo si preguntan; nunca inventes menús, pantallas ni precios):
-- Secciones: Bless (chat), Calendario (día/semana/mes), Métricas, Diario y Perfil.
+- Secciones: Bless (chat), Calendario (día/semana/mes; cada día tiene Hábitos, Tareas con recordatorio y Notas del día), Métricas, Diario y Perfil.
+- La persona puede pedirte tareas o notas escribiendo "recuérdame…" o "anota…" (la app las guarda sola); si pregunta cómo, explícale eso.
+- Plan gratis de tareas y notas: hasta 5 tareas pendientes y 10 notas; Premium ilimitado.
 - Plan gratis: chat con Bless (límite diario de mensajes), hasta 3 hábitos, calendario, diario y recordatorios a la hora de cada hábito.
 - Bless Habit Premium incluye: chat ilimitado y memoria (Bless recuerda lo importante de días anteriores), hábitos ilimitados, resumen semanal escrito por Bless, análisis de ánimo, recordatorios personalizados (avisar 10, 15, 30 o 60 minutos antes), temas y stickers extra para el diario, exportar el diario a PDF y bloqueo con PIN o huella.
 - Esta persona ${isPremium ? 'YA tiene Premium: agradécele y no le ofrezcas comprarlo' : 'todavía no tiene Premium'}.
@@ -1855,9 +1873,27 @@ const I18N = {
     openConfigBtn: 'Abrir configuración',
     planTitle: 'Plan', premiumBadge: '✨ Bless Habit Premium', cancelSubLink: 'Cancelar suscripción',
     freePlanDesc: 'Estás en el plan gratis. Con Premium tienes:',
-    premiumBenefits: ['💬 Conversa con Bless sin límite, y Bless recuerda lo importante de ti', '📬 Cada lunes, tu resumen semanal escrito por Bless', '😊 Tu ánimo en el tiempo y qué hábitos acompañan tus días buenos', '🌱 Hábitos ilimitados (gratis: hasta 3)', '⏰ Recordatorios a tu medida: 10, 15, 30 o 60 min antes', '📔 Diario con temas y stickers exclusivos, y exportar a PDF', '🔒 Bloqueo con PIN (y huella o rostro en Android)', '🚫 Sin anuncios · ✨ Tema dorado'],
+    premiumBenefits: ['💬 Conversa con Bless sin límite, y Bless recuerda lo importante de ti', '📬 Cada lunes, tu resumen semanal escrito por Bless', '😊 Tu ánimo en el tiempo y qué hábitos acompañan tus días buenos', '🌱 Hábitos ilimitados (gratis: hasta 3)', '⏰ Recordatorios a tu medida: 10, 15, 30 o 60 min antes', '✅ Tareas y notas ilimitadas (gratis: 5 tareas pendientes y 10 notas)', '📔 Diario con temas y stickers exclusivos, y exportar a PDF', '🔒 Bloqueo con PIN (y huella o rostro en Android)', '🚫 Sin anuncios · ✨ Tema dorado'],
     premiumCancelNote: 'Pago mensual con Paddle. Cancelas cuando quieras.',
     heRemindQ: '¿Cuándo te aviso?', heRemindPremiumTag: '✨ Premium para más opciones',
+    daySecHabits: 'Hábitos', daySecTasks: 'Tareas', daySecNotes: 'Notas del día', daySecAdd: 'Agregar',
+    daySecHabitOne: 'Hábito', daySecTaskOne: 'Tarea con recordatorio', daySecNoteOne: 'Nota', dayAddWhat: '¿Qué quieres agregar?',
+    noTasksDay: 'Sin tareas para este día. Tócale "Agregar" o dile a Bless: "recuérdame…" ⏰',
+    noNotesDay: 'Sin notas. Tócale "Agregar" o dile a Bless: "anota…" 📝',
+    tomorrowWord: 'mañana', deleteWord: 'Eliminar',
+    newTaskTitle: '✅ Nueva tarea', editTaskTitle: '✅ Editar tarea', taskTextPh: '¿Qué tienes que hacer?',
+    taskDateLabel: 'Día', taskTimeLabel: 'Hora (para avisarte)', taskNoTimeHint: 'Sin hora, la tarea queda en el día pero no te aviso.',
+    deleteTaskConfirm: '¿Eliminar esta tarea?', newNoteTitle: '📝 Nueva nota', editNoteTitle: '📝 Editar nota', noteTextPh: 'Escribe tu nota…',
+    deleteNoteConfirm: '¿Eliminar esta nota?',
+    taskReminderBody: ['Es la hora de esto ⏰', 'Te lo recuerdo como quedamos 🤍', '¡Ahora sí! Tú puedes ✨'],
+    taskLimitMsg: (n) => `En el plan gratis puedes tener hasta ${n} tareas pendientes ✅. Completa o borra alguna, o hazte Premium para tenerlas ilimitadas. ¿Quieres verlo?`,
+    noteLimitMsg: (n) => `En el plan gratis puedes guardar hasta ${n} notas 📝. Borra alguna o hazte Premium para tenerlas ilimitadas. ¿Quieres verlo?`,
+    taskLimitChat: (n) => `Llegaste al máximo de ${n} tareas pendientes del plan gratis 🌱 Si completas o borras alguna, la agrego al toque. Con Premium son ilimitadas ✨`,
+    noteLimitChat: (n) => `Llegaste al máximo de ${n} notas del plan gratis 📝 Si borras alguna, guardo esta. Con Premium son ilimitadas ✨`,
+    taskSavedChat: (text, date, time) => `¡Listo! ✅ Te recordaré «${text}» ${date} a las ${time} ⏰`,
+    taskSavedNoTimeChat: (text, date) => `¡Anotado! ✅ «${text}» quedó en tus tareas de ${date}. Si quieres que te avise, dime a qué hora 🤍`,
+    noteSavedChat: (date) => `Guardé tu nota en el día de ${date} 📝`,
+    seeInCalendarNote: '📅 Ver en el calendario',
     remindAtTime: 'A la hora', remindBefore: (m) => m >= 60 ? '1 h antes' : `${m} min antes`,
     remindPremiumMsg: 'Con Premium eliges cuándo te aviso: 10, 15, 30 o 60 minutos antes ⏰✨',
     remindSoonTitle: (m, label) => `En ${m >= 60 ? '1 hora' : m + ' min'}: ${label}`,
@@ -2281,9 +2317,27 @@ const I18N = {
     openConfigBtn: 'Open settings',
     planTitle: 'Plan', premiumBadge: '✨ Bless Habit Premium', cancelSubLink: 'Cancel subscription',
     freePlanDesc: "You're on the free plan. With Premium you get:",
-    premiumBenefits: ['💬 Talk with Bless without limits, and Bless remembers what matters to you', '📬 Every Monday, your weekly summary written by Bless', '😊 Your mood over time and which habits come with your good days', '🌱 Unlimited habits (free: up to 3)', '⏰ Reminders your way: 10, 15, 30 or 60 min before', '📔 Journal with exclusive themes and stickers, plus PDF export', '🔒 PIN lock (plus fingerprint or face on Android)', '🚫 No ads · ✨ Gold theme'],
+    premiumBenefits: ['💬 Talk with Bless without limits, and Bless remembers what matters to you', '📬 Every Monday, your weekly summary written by Bless', '😊 Your mood over time and which habits come with your good days', '🌱 Unlimited habits (free: up to 3)', '⏰ Reminders your way: 10, 15, 30 or 60 min before', '✅ Unlimited tasks and notes (free: 5 pending tasks and 10 notes)', '📔 Journal with exclusive themes and stickers, plus PDF export', '🔒 PIN lock (plus fingerprint or face on Android)', '🚫 No ads · ✨ Gold theme'],
     premiumCancelNote: 'Monthly payment via Paddle. Cancel anytime.',
     heRemindQ: 'When should I remind you?', heRemindPremiumTag: '✨ Premium for more options',
+    daySecHabits: 'Habits', daySecTasks: 'Tasks', daySecNotes: "Today's notes", daySecAdd: 'Add',
+    daySecHabitOne: 'Habit', daySecTaskOne: 'Task with reminder', daySecNoteOne: 'Note', dayAddWhat: 'What do you want to add?',
+    noTasksDay: 'No tasks for this day. Tap "Add" or tell Bless: "remind me…" ⏰',
+    noNotesDay: 'No notes. Tap "Add" or tell Bless: "take a note…" 📝',
+    tomorrowWord: 'tomorrow', deleteWord: 'Delete',
+    newTaskTitle: '✅ New task', editTaskTitle: '✅ Edit task', taskTextPh: 'What do you need to do?',
+    taskDateLabel: 'Day', taskTimeLabel: 'Time (to remind you)', taskNoTimeHint: "Without a time, the task stays on the day but I won't remind you.",
+    deleteTaskConfirm: 'Delete this task?', newNoteTitle: '📝 New note', editNoteTitle: '📝 Edit note', noteTextPh: 'Write your note…',
+    deleteNoteConfirm: 'Delete this note?',
+    taskReminderBody: ["It's time for this ⏰", 'Reminding you, just like we said 🤍', 'Now is the moment! You got this ✨'],
+    taskLimitMsg: (n) => `On the free plan you can have up to ${n} pending tasks ✅. Complete or delete one, or go Premium for unlimited tasks. Want to see it?`,
+    noteLimitMsg: (n) => `On the free plan you can keep up to ${n} notes 📝. Delete one or go Premium for unlimited notes. Want to see it?`,
+    taskLimitChat: (n) => `You've reached the free plan limit of ${n} pending tasks 🌱 Complete or delete one and I'll add it right away. With Premium they're unlimited ✨`,
+    noteLimitChat: (n) => `You've reached the free plan limit of ${n} notes 📝 Delete one and I'll save this. With Premium they're unlimited ✨`,
+    taskSavedChat: (text, date, time) => `Done! ✅ I'll remind you to "${text}" ${date} at ${time} ⏰`,
+    taskSavedNoTimeChat: (text, date) => `Got it! ✅ "${text}" is in your tasks for ${date}. If you want a reminder, tell me what time 🤍`,
+    noteSavedChat: (date) => `I saved your note on ${date} 📝`,
+    seeInCalendarNote: '📅 See it in the calendar',
     remindAtTime: 'On time', remindBefore: (m) => m >= 60 ? '1 h before' : `${m} min before`,
     remindPremiumMsg: 'With Premium you choose when I remind you: 10, 15, 30 or 60 minutes before ⏰✨',
     remindSoonTitle: (m, label) => `In ${m >= 60 ? '1 hour' : m + ' min'}: ${label}`,
@@ -2719,7 +2773,7 @@ const progressFill = document.getElementById('onboarding-progress-fill');
 const avatarEl = document.getElementById('agent-avatar');
 const fabEl = null; // Bless se abre exclusivamente desde la pestaña Bless
 const dayAddFabEl = document.getElementById('day-add-fab');
-dayAddFabEl.onclick = () => openAddHabitPicker();
+dayAddFabEl.onclick = () => openDayAddChooser();
 function badgeHtml() { return ''; }
 
 const MOODS = { default: '🌱', thinking: '🤔', happy: '🎉', caring: '🤍', proud: '🌟' };
@@ -4150,6 +4204,24 @@ async function scheduleNativeReminders() {
         });
       });
     });
+    // Tareas con hora: un aviso puntual (a la hora; Premium además X min antes).
+    let taskId = 500000;
+    const now = Date.now();
+    tasksList().forEach(tk => {
+      if (tk.done || !tk.time || !tk.date) return;
+      const offsets = isPremium && Array.isArray(tk.reminderOffsets) && tk.reminderOffsets.length ? tk.reminderOffsets : [0];
+      offsets.forEach(offset => {
+        const at = new Date(`${tk.date}T${tk.time}:00`);
+        at.setMinutes(at.getMinutes() - offset);
+        if (isNaN(at) || at.getTime() <= now) return;
+        notifications.push({
+          id: taskId++,
+          title: offset ? `✅ ${t('remindSoonTitle', offset, tk.text)}` : `✅ ${tk.text}`,
+          body: offset ? tp('reminderSoonBody') : tp('taskReminderBody'),
+          schedule: { at, allowWhileIdle: true },
+        });
+      });
+    });
     const comeBack = addDays(new Date(), 3);
     comeBack.setHours(19, 0, 0, 0);
     notifications.push({ id: NATIVE_REENGAGE_ID, title: 'Bless Habit 🤍', body: tp('reengageBody'), schedule: { at: comeBack, allowWhileIdle: true } });
@@ -4912,16 +4984,174 @@ async function respondWithHabitSuggestions() {
   await say(chatScroll, `La persona quiere que le recomiendes/sugieras un hábito nuevo para construir. Sugiérele estas opciones concretas con calidez, mencionando sus nombres tal cual: ${names}. Pregúntale si alguna le llama la atención, o si prefiere agregar otra cosa distinta (puede tocar el botón "+" del calendario para elegir).`, t('habitRecommendationFallback', names));
 }
 
+/* ---- Tareas y notas por chat ----
+   Reconoce pedidos explícitos ("recuérdame…", "agrega una tarea…", "anota…",
+   "remind me…", "take a note…") y saca de la frase el día y la hora. Todo lo
+   demás sigue al flujo normal de conversación. */
+const TASK_TRIGGER_RE = /^\s*(?:(?:oye|bless|porfa|por favor)[,\s]+)*(recu[eé]rdame|recordarme|ponme un recordatorio(?: para)?|crea(?:me)? un recordatorio(?: para)?|recordatorio(?: para)?\s*:?|ag[eé]ndame|agrega(?:me)? (?:una )?tarea|a[nñ]ade (?:una )?tarea|nueva tarea|tarea\s*:|remind me(?: to)?|add (?:a )?task|new task|task\s*:)\s*(?:de |que |a |to |:\s*)?/i;
+const NOTE_TRIGGER_RE = /^\s*(?:(?:oye|bless|porfa|por favor)[,\s]+)*(anota(?:me)?|apunta(?:me)?|toma nota(?: de)?|guarda (?:una |esta )?nota|agrega (?:una )?nota|nueva nota|nota\s*:|take a note|write down|add a note|jot down|note\s*:)\s*(?:que |de |:\s*|that )?/i;
+const WEEKDAYS_ES = ['domingo','lunes','martes','mi[eé]rcoles','jueves','viernes','s[aá]bado'];
+const WEEKDAYS_EN = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'];
+const MONTHS_ES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+const MONTHS_EN = ['january','february','march','april','may','june','july','august','september','october','november','december'];
+function parseWhenFromText(raw) {
+  let text = ' ' + raw + ' ';
+  const now = new Date();
+  let date = null, time = null;
+  const cut = (re) => { text = text.replace(re, ' '); };
+  let m;
+  // "en 2 horas" / "en 30 minutos" / "in 2 hours"
+  if ((m = text.match(/\b(?:en|in|dentro de)\s+(\d{1,3})\s*(horas?|hrs?|h|minutos?|mins?|min|hours?|minutes?)\b/i))) {
+    const n = parseInt(m[1], 10), isH = /^h/i.test(m[2]);
+    const at = new Date(now.getTime() + n * (isH ? 3600000 : 60000));
+    date = ymd(at); time = String(at.getHours()).padStart(2, '0') + ':' + String(at.getMinutes()).padStart(2, '0');
+    cut(m[0]);
+  }
+  // Día
+  if (!date && (m = text.match(/\b(pasado\s+ma[ñn]ana|day after tomorrow)\b/i))) { date = ymd(addDays(now, 2)); cut(m[0]); }
+  if (!date && (m = text.match(/(?<!(?:de|en|por|la)\s)\b(ma[ñn]ana|tomorrow)\b/i))) { date = ymd(addDays(now, 1)); cut(m[0]); }
+  if (!date && (m = text.match(/\b(hoy|today|esta noche|tonight|esta tarde|this evening|this afternoon)\b/i))) {
+    date = ymd(now);
+    if (/noche|tonight|evening/i.test(m[1]) && !/\d/.test(text)) time = '20:00';
+    if (/tarde|afternoon/i.test(m[1]) && !/\d/.test(text)) time = '16:00';
+    cut(m[0]);
+  }
+  if (!date) {
+    const wdRe = new RegExp('\\b(?:el\\s+|este\\s+|pr[oó]ximo\\s+|on\\s+|next\\s+|this\\s+)?(' + WEEKDAYS_ES.join('|') + '|' + WEEKDAYS_EN.join('|') + ')\\b', 'i');
+    if ((m = text.match(wdRe))) {
+      const w = m[1].toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+      let idx = ['domingo','lunes','martes','miercoles','jueves','viernes','sabado'].indexOf(w);
+      if (idx < 0) idx = WEEKDAYS_EN.indexOf(w);
+      let diff = (idx - now.getDay() + 7) % 7; if (diff === 0) diff = 7;
+      date = ymd(addDays(now, diff)); cut(m[0]);
+    }
+  }
+  if (!date) {
+    const monRe = new RegExp('\\b(?:el\\s+|on\\s+(?:the\\s+)?)?(\\d{1,2})(?:st|nd|rd|th)?(?:\\s+de)?\\s+(' + MONTHS_ES.join('|') + ')\\b|\\b(' + MONTHS_EN.join('|') + ')\\s+(\\d{1,2})(?:st|nd|rd|th)?\\b', 'i');
+    if ((m = text.match(monRe))) {
+      const day = parseInt(m[1] || m[4], 10);
+      let mon = m[2] ? MONTHS_ES.indexOf(m[2].toLowerCase()) : MONTHS_EN.indexOf(m[3].toLowerCase());
+      let d = new Date(now.getFullYear(), mon, day);
+      if (ymd(d) < ymd(now)) d = new Date(now.getFullYear() + 1, mon, day);
+      date = ymd(d); cut(m[0]);
+    } else if ((m = text.match(/\b(?:el\s+)?(\d{1,2})\/(\d{1,2})(?:\/(\d{2,4}))?\b/))) {
+      // día/mes (formato de Perú y casi toda Latinoamérica)
+      const day = parseInt(m[1], 10), mon = parseInt(m[2], 10) - 1;
+      let year = m[3] ? parseInt(m[3].length === 2 ? '20' + m[3] : m[3], 10) : now.getFullYear();
+      let d = new Date(year, mon, day);
+      if (!m[3] && ymd(d) < ymd(now)) d = new Date(year + 1, mon, day);
+      if (!isNaN(d)) { date = ymd(d); cut(m[0]); }
+    } else if ((m = text.match(/\b(?:el\s+(?:d[ií]a\s+)?|on the\s+)(\d{1,2})(?:st|nd|rd|th)?\b(?!\s*(?::|h\b|hrs?\b|am|pm|a\.m|p\.m|de la|in the))/i))) {
+      const day = parseInt(m[1], 10);
+      let d = new Date(now.getFullYear(), now.getMonth(), day);
+      if (ymd(d) < ymd(now)) d = new Date(now.getFullYear(), now.getMonth() + 1, day);
+      if (day >= 1 && day <= 31) { date = ymd(d); cut(m[0]); }
+    }
+  }
+  // "en la mañana / por la tarde / in the evening" → pista para la hora
+  let partHint = null;
+  if ((m = text.match(/\b(?:en|por)\s+la\s+(ma[ñn]ana|tarde|noche)\b|\bin the (morning|afternoon|evening)\b|\bat night\b/i))) {
+    const w = (m[1] || m[2] || 'night').toLowerCase();
+    partHint = /ma|morning/.test(w) ? 'am' : 'pm';
+    if (!/\d/.test(text.replace(m[0], ''))) time = /ma|morning/.test(w) ? '09:00' : /tarde|afternoon/.test(w) ? '16:00' : '20:00';
+    cut(m[0]);
+  }
+  // Hora
+  if (!time) {
+    if ((m = text.match(/\b(?:al\s+)?(mediod[ií]a|noon|medianoche|midnight)\b/i))) {
+      time = /noche|night/i.test(m[1]) ? '00:00' : '12:00'; cut(m[0]);
+    } else if ((m = [...text.matchAll(/(?:\b(?:a\s+las?|a\s+eso\s+de\s+las?|tipo|at|por\s+las?)\s+|@\s*|\b)(\d{1,2})(?:[:.h](\d{2}))?\s*(a\.?\s?m\.?|p\.?\s?m\.?|hrs?\.?|h\b)?\s*(de la (?:ma[ñn]ana|tarde|noche|madrugada)|in the (?:morning|afternoon|evening)|at night)?/gi)]
+               .find(x => x[2] || x[3] || x[4] || /a\s+las?|at\s|@|por\s+las?|tipo/i.test(x[0])))) {
+      let h = parseInt(m[1], 10); const min = m[2] ? parseInt(m[2], 10) : 0;
+      const mer = (m[3] || '').toLowerCase().replace(/[\s.]/g, ''), part = (m[4] || '').toLowerCase();
+      if (mer.startsWith('p') || /tarde|noche|afternoon|evening|night/.test(part)) { if (h < 12) h += 12; }
+      else if (mer.startsWith('a') || /ma[ñn]ana|madrugada|morning/.test(part)) { if (h === 12) h = 0; }
+      else if (partHint === 'pm') { if (h < 12) h += 12; }
+      else if (partHint === 'am') { if (h === 12) h = 0; }
+      else if (!/h/.test(mer) && h >= 1 && h <= 7) h += 12; // "a las 6" casi siempre es de la tarde
+      if (h <= 23 && min <= 59) { time = String(h).padStart(2, '0') + ':' + String(min).padStart(2, '0'); cut(m[0]); }
+    }
+  }
+  if (!date) {
+    const nowHM = String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
+    date = (time && time <= nowHM) ? ymd(addDays(now, 1)) : ymd(now);
+  }
+  return { date, time, rest: text };
+}
+function cleanTaskText(t0) {
+  let x = t0.replace(/\s+/g, ' ').trim()
+    .replace(/^(?:que|de|a|to|that|para|por favor|porfa)\s+/i, '')
+    .replace(/\s+(?:a|para|el|la|on|at|por|de)$/i, '')
+    .replace(/[\s,.;:!?¡¿]+$/, '').replace(/^[\s,.;:¡¿]+/, '').trim();
+  return x ? x.charAt(0).toUpperCase() + x.slice(1) : '';
+}
+function parseTaskOrNoteRequest(text) {
+  let m = text.match(TASK_TRIGGER_RE);
+  if (m) {
+    const when = parseWhenFromText(text.slice(m[0].length));
+    const body = cleanTaskText(when.rest);
+    if (body) return { kind: 'task', text: body, date: when.date, time: when.time };
+  }
+  m = text.match(NOTE_TRIGGER_RE);
+  if (m) {
+    let body = text.slice(m[0].length);
+    let date = ymd(new Date());
+    const dm = body.match(/^\s*(?:para\s+)?(ma[ñn]ana|tomorrow)[,:]?\s+/i);
+    if (dm) { date = ymd(addDays(new Date(), 1)); body = body.slice(dm[0].length); }
+    body = body.trim().replace(/^[:,\s]+/, '');
+    if (body) return { kind: 'note', text: body.charAt(0).toUpperCase() + body.slice(1), date };
+  }
+  return null;
+}
+function openCalendarDay(dateStr) {
+  const today = new Date(ymd(new Date()) + 'T00:00:00');
+  calDayOffset = Math.round((new Date(dateStr + 'T00:00:00') - today) / 86400000);
+  calSubTab = 'day';
+  document.querySelectorAll('.cal-subtab').forEach(x => x.classList.toggle('active', x.dataset.calsub === 'day'));
+  switchTab('calendar');
+}
+async function handleTaskOrNoteRequest(req) {
+  if (req.kind === 'task') {
+    if (!canAddTask()) {
+      await agentSay(chatScroll, t('taskLimitChat', FREE_TASK_LIMIT));
+      addNote(chatScroll, t('seePremiumNote'), 'agenda-note', () => openPremiumSheet());
+      return;
+    }
+    const tk = addTask({ text: req.text, date: req.date, time: req.time });
+    setAvatarMood('happy', 1500);
+    await agentSay(chatScroll, req.time
+      ? t('taskSavedChat', tk.text, friendlyDateLabel(tk.date), tk.time)
+      : t('taskSavedNoTimeChat', tk.text, friendlyDateLabel(tk.date)), 300, '✅');
+    if (req.time) maybeEnableRemindersForTask();
+    addNote(chatScroll, t('seeInCalendarNote'), 'agenda-note', () => openCalendarDay(tk.date));
+  } else {
+    if (!canAddNote()) {
+      await agentSay(chatScroll, t('noteLimitChat', FREE_NOTE_LIMIT));
+      addNote(chatScroll, t('seePremiumNote'), 'agenda-note', () => openPremiumSheet());
+      return;
+    }
+    const n = addNote_({ text: req.text, date: req.date });
+    await agentSay(chatScroll, t('noteSavedChat', friendlyDateLabel(n.date)), 300, '📝');
+    addNote(chatScroll, t('seeInCalendarNote'), 'agenda-note', () => openCalendarDay(n.date));
+  }
+}
+
 // Si la persona pregunta por Premium, además de la respuesta de Bless aparece
 // un acceso directo a la tarjeta de Premium (con su botón de compra).
 async function handleUserMessage(text) {
-  const asksPremium = !isPremium && /premium|suscrip|subscri|membres|\bpagar\b|\bpago\b|\bpay\b/i.test(text);
+  const asksPremium = !isPremium && /premium|suscrip|subscri|membres[ií]a|membership|versi[oó]n (?:pagada|completa|pro)|plan (?:pagado|de pago)|paid (?:plan|version)/i.test(text);
   await handleUserMessageInner(text);
   if (asksPremium) addNote(chatScroll, t('seePremiumNote'), 'agenda-note', () => openPremiumSheet());
 }
 async function handleUserMessageInner(text) {
   addBubble(chatScroll, text, 'user');
   pushChatMemory('user', text);
+
+  // "Recuérdame X el viernes a las 6" / "anota que…" → tarea o nota del día.
+  if (!state.pending) {
+    const req = parseTaskOrNoteRequest(text);
+    if (req) { await handleTaskOrNoteRequest(req); return; }
+  }
 
   // Bless pudo haber ofrecido proactivamente sugerir algo (al saludar, o tras una
   // respuesta genérica). Es una oferta "suave": no debe bloquear los detectores de
@@ -7210,20 +7440,252 @@ function renderCalDay() {
       <span class="edit" data-cal-edit="${idx}" title="${t('editRemoveTitle')}">✏️</span>
     </div>`).join('') : `<div style="font-size:12px;color:var(--text-dim);">${t('sinActividades')}</div>`;
   const pctLabel = day.pct !== null ? t('pctCumplido', day.pct) : (day.items.length ? t('programadoConBless') : t('sinDatos'));
+  const isPast = dateStr < ymd(new Date());
+  const tasks = tasksForDate(dateStr);
+  const notes = notesForDate(dateStr);
+  const tasksHtml = tasks.length ? tasks.map(tk => `
+    <div class="agenda-item task-item ${tk.done ? 'done' : ''}" data-task-id="${tk.id}">
+      <span class="check" data-task-check="${tk.id}" style="cursor:pointer;">${tk.done ? '✓' : ''}</span>
+      ${tk.time ? `<span class="time">${tk.time}</span>` : ''}
+      <span class="task">${escapeHtml(tk.text)}</span>
+      ${tk.time && !tk.done ? '<span class="task-bell" title="⏰">⏰</span>' : ''}
+      <span class="edit" data-task-edit="${tk.id}" title="${t('editRemoveTitle')}">✏️</span>
+    </div>`).join('') : `<div class="day-empty">${t('noTasksDay')}</div>`;
+  const notesHtml = notes.length ? notes.map(n => `
+    <div class="day-note" data-note-id="${n.id}">${escapeHtml(n.text)}</div>`).join('') : `<div class="day-empty">${t('noNotesDay')}</div>`;
   calBody.innerHTML = `
     <div class="day-nav">
       <button id="day-prev">‹</button>
       <div><div class="day-title">${label}</div><div class="day-pct">${pctLabel}</div></div>
-      <button id="day-next" ${calDayOffset >= 6 ? 'disabled' : ''}>›</button>
+      <button id="day-next" ${calDayOffset >= CAL_DAY_MAX_AHEAD ? 'disabled' : ''}>›</button>
     </div>
+    <div class="day-section-head"><span>🌱 ${t('daySecHabits')}</span><button type="button" class="day-sec-add" id="day-add-habit">＋ ${t('daySecAdd')}</button></div>
     <div id="day-items">${itemsHtml}</div>
+    <div class="day-section-head"><span>✅ ${t('daySecTasks')}</span>${isPast ? '' : `<button type="button" class="day-sec-add" id="day-add-task">＋ ${t('daySecAdd')}</button>`}</div>
+    <div id="day-tasks">${tasksHtml}</div>
+    <div class="day-section-head"><span>📝 ${t('daySecNotes')}</span><button type="button" class="day-sec-add" id="day-add-note">＋ ${t('daySecAdd')}</button></div>
+    <div id="day-notes">${notesHtml}</div>
   `;
   document.getElementById('day-prev').onclick = () => { calDayOffset--; renderCalDay(); };
-  document.getElementById('day-next').onclick = () => { if (calDayOffset < 6) { calDayOffset++; renderCalDay(); } };
+  document.getElementById('day-next').onclick = () => { if (calDayOffset < CAL_DAY_MAX_AHEAD) { calDayOffset++; renderCalDay(); } };
+  document.getElementById('day-add-habit').onclick = () => openAddHabitPicker();
+  const addTaskBtn = document.getElementById('day-add-task');
+  if (addTaskBtn) addTaskBtn.onclick = () => openTaskEditor(null, dateStr);
+  document.getElementById('day-add-note').onclick = () => openNoteEditor(null, dateStr);
   dayAddFabEl.classList.add('show');
   calBody.querySelectorAll('[data-cal-edit]').forEach(btn => {
     btn.onclick = () => promptDeleteDayItem(dateStr, day.items[parseInt(btn.dataset.calEdit, 10)]);
   });
+  calBody.querySelectorAll('[data-task-check]').forEach(el => { el.onclick = () => toggleTaskDone(el.dataset.taskCheck); });
+  calBody.querySelectorAll('[data-task-edit]').forEach(el => { el.onclick = () => openTaskEditor(el.dataset.taskEdit); });
+  calBody.querySelectorAll('[data-note-id]').forEach(el => { el.onclick = () => openNoteEditor(el.dataset.noteId); });
+}
+
+/* ============================================================
+   TAREAS Y NOTAS DEL DÍA
+   - Tareas: algo puntual con fecha (y hora opcional) que avisa con una
+     notificación de la app a esa hora. Se marcan como hechas aparte de los
+     hábitos (no cuentan para el % del día).
+   - Notas: texto libre ligado a un día.
+   Se crean desde el Calendario (Día) o pidiéndoselo a Bless en el chat.
+   Plan gratis: hasta FREE_TASK_LIMIT tareas pendientes y FREE_NOTE_LIMIT notas.
+   ============================================================ */
+const CAL_DAY_MAX_AHEAD = 60;
+const FREE_TASK_LIMIT = 5;
+const FREE_NOTE_LIMIT = 10;
+function newItemId() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
+function tasksList() { if (!Array.isArray(state.tasks)) state.tasks = []; return state.tasks; }
+function notesList() { if (!Array.isArray(state.notes)) state.notes = []; return state.notes; }
+function tasksForDate(dateStr) {
+  return tasksList().filter(tk => tk.date === dateStr)
+    .sort((a, b) => (a.time || '99:99').localeCompare(b.time || '99:99'));
+}
+function notesForDate(dateStr) { return notesList().filter(n => n.date === dateStr).sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0)); }
+function pendingTasksCount() { const today = ymd(new Date()); return tasksList().filter(tk => !tk.done && tk.date >= today).length; }
+function canAddTask() { return isPremium || pendingTasksCount() < FREE_TASK_LIMIT; }
+function canAddNote() { return isPremium || notesList().length < FREE_NOTE_LIMIT; }
+function afterTasksOrNotesChanged() {
+  saveStateToServer(); // también reprograma los recordatorios
+  if (calSubTab === 'day' && document.getElementById('view-calendar').classList.contains('active')) renderCalDay();
+}
+function addTask({ text, date, time, reminderOffsets }) {
+  const tk = { id: newItemId(), text: String(text).trim().slice(0, 200), date, time: time || null, done: false, reminderOffsets: reminderOffsets || [0], createdAt: Date.now() };
+  tasksList().push(tk);
+  afterTasksOrNotesChanged();
+  return tk;
+}
+function addNote_({ text, date }) {
+  const n = { id: newItemId(), text: String(text).trim().slice(0, 2000), date, createdAt: Date.now() };
+  notesList().push(n);
+  afterTasksOrNotesChanged();
+  return n;
+}
+function toggleTaskDone(id) {
+  const tk = tasksList().find(x => x.id === id);
+  if (!tk) return;
+  tk.done = !tk.done;
+  if (tk.done) { setAvatarMood('happy', 1500); }
+  afterTasksOrNotesChanged();
+}
+function friendlyDateLabel(dateStr) {
+  const today = ymd(new Date());
+  if (dateStr === today) return t('hoy').toLowerCase();
+  if (dateStr === ymd(addDays(new Date(), 1))) return t('tomorrowWord');
+  const d = new Date(dateStr + 'T00:00:00');
+  return d.toLocaleDateString(currentLang() === 'en' ? 'en-US' : 'es-ES', { weekday: 'long', day: 'numeric', month: 'long' });
+}
+async function promptTaskLimit() {
+  if (await uiConfirm(t('taskLimitMsg', FREE_TASK_LIMIT), { okText: t('habitLimitOk') })) openPremiumSheet();
+}
+async function promptNoteLimit() {
+  if (await uiConfirm(t('noteLimitMsg', FREE_NOTE_LIMIT), { okText: t('habitLimitOk') })) openPremiumSheet();
+}
+
+// Hoja inferior para crear/editar una tarea (texto, día, hora, recordatorio).
+function openTaskEditor(id, defaultDate) {
+  const existing = id ? tasksList().find(x => x.id === id) : null;
+  if (!existing && !canAddTask()) { promptTaskLimit(); return; }
+  document.querySelectorAll('.task-sheet-overlay').forEach(x => x.remove());
+  const overlay = document.createElement('div');
+  overlay.className = 'ui-dialog-overlay task-sheet-overlay';
+  overlay.innerHTML = `
+    <div class="ui-dialog task-sheet" role="dialog" aria-modal="true">
+      <div class="premium-sheet-title">${existing ? t('editTaskTitle') : t('newTaskTitle')}</div>
+      <input type="text" id="tk-text" maxlength="200" placeholder="${t('taskTextPh')}">
+      <div class="tk-row">
+        <label>${t('taskDateLabel')}<input type="date" id="tk-date"></label>
+        <label>${t('taskTimeLabel')}<input type="time" id="tk-time"></label>
+      </div>
+      <div class="tk-sub"><span>${t('heRemindQ')}</span> ${isPremium ? '' : `<span class="he-remind-premium">${t('heRemindPremiumTag')}</span>`}</div>
+      <div class="quick-replies he-remind" id="tk-remind"></div>
+      <div class="tk-hint" id="tk-hint">${t('taskNoTimeHint')}</div>
+      <div class="ui-dialog-actions">
+        ${existing ? `<button type="button" class="ui-dialog-cancel tk-delete">${t('deleteWord')}</button>` : `<button type="button" class="ui-dialog-cancel tk-cancel">${t('dialogCancel')}</button>`}
+        <button type="button" class="ui-dialog-ok tk-save">${t('dialogSave')}</button>
+      </div>
+    </div>`;
+  const textEl = overlay.querySelector('#tk-text'), dateEl = overlay.querySelector('#tk-date'), timeEl = overlay.querySelector('#tk-time');
+  textEl.value = existing ? existing.text : '';
+  dateEl.value = existing ? existing.date : (defaultDate || ymd(new Date()));
+  dateEl.min = ymd(new Date());
+  timeEl.value = existing && existing.time ? existing.time : '';
+  const remindWrap = overlay.querySelector('#tk-remind');
+  const current = existing ? (isPremium && Array.isArray(existing.reminderOffsets) && existing.reminderOffsets.length ? existing.reminderOffsets : [0]) : [0];
+  REMIND_OFFSET_OPTIONS.forEach(m => {
+    const b = document.createElement('button'); b.type = 'button';
+    const locked = !isPremium && m !== 0;
+    b.className = 'qr-btn' + (current.includes(m) ? ' selected' : '') + (locked ? ' locked' : '');
+    b.dataset.offset = m;
+    b.textContent = m === 0 ? t('remindAtTime') : t('remindBefore', m);
+    b.onclick = () => {
+      if (locked) { promptPremiumFeature(t('remindPremiumMsg')); return; }
+      b.classList.toggle('selected');
+      if (!remindWrap.querySelector('.qr-btn.selected')) b.classList.add('selected');
+    };
+    remindWrap.appendChild(b);
+  });
+  const syncHint = () => { overlay.querySelector('#tk-hint').style.display = timeEl.value ? 'none' : ''; remindWrap.style.opacity = timeEl.value ? '1' : '.45'; };
+  timeEl.oninput = syncHint; syncHint();
+  const close = () => { overlay.remove(); if (uiDialogClose === close) uiDialogClose = null; };
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
+  const cancelBtn = overlay.querySelector('.tk-cancel'); if (cancelBtn) cancelBtn.onclick = close;
+  const delBtn = overlay.querySelector('.tk-delete');
+  if (delBtn) delBtn.onclick = async () => {
+    close();
+    if (!(await uiConfirm(t('deleteTaskConfirm'), { danger: true, okText: t('deleteWord') }))) return;
+    state.tasks = tasksList().filter(x => x.id !== id);
+    afterTasksOrNotesChanged();
+  };
+  overlay.querySelector('.tk-save').onclick = () => {
+    const text = textEl.value.trim();
+    if (!text) { textEl.focus(); return; }
+    const date = dateEl.value || ymd(new Date());
+    const offsets = isPremium ? Array.from(remindWrap.querySelectorAll('.qr-btn.selected')).map(b => parseInt(b.dataset.offset, 10)).sort((a, b) => b - a) : [0];
+    if (existing) {
+      Object.assign(existing, { text: text.slice(0, 200), date, time: timeEl.value || null, reminderOffsets: offsets });
+      afterTasksOrNotesChanged();
+    } else {
+      addTask({ text, date, time: timeEl.value || null, reminderOffsets: offsets });
+      if (timeEl.value) maybeEnableRemindersForTask();
+    }
+    close();
+  };
+  uiDialogClose = close;
+  document.body.appendChild(overlay);
+  if (!existing) setTimeout(() => textEl.focus(), 50);
+}
+function openNoteEditor(id, defaultDate) {
+  const existing = id ? notesList().find(x => x.id === id) : null;
+  if (!existing && !canAddNote()) { promptNoteLimit(); return; }
+  document.querySelectorAll('.task-sheet-overlay').forEach(x => x.remove());
+  const overlay = document.createElement('div');
+  overlay.className = 'ui-dialog-overlay task-sheet-overlay';
+  overlay.innerHTML = `
+    <div class="ui-dialog task-sheet" role="dialog" aria-modal="true">
+      <div class="premium-sheet-title">${existing ? t('editNoteTitle') : t('newNoteTitle')}</div>
+      <textarea id="nt-text" rows="5" maxlength="2000" placeholder="${t('noteTextPh')}"></textarea>
+      <div class="ui-dialog-actions">
+        ${existing ? `<button type="button" class="ui-dialog-cancel nt-delete">${t('deleteWord')}</button>` : `<button type="button" class="ui-dialog-cancel nt-cancel">${t('dialogCancel')}</button>`}
+        <button type="button" class="ui-dialog-ok nt-save">${t('dialogSave')}</button>
+      </div>
+    </div>`;
+  const textEl = overlay.querySelector('#nt-text');
+  textEl.value = existing ? existing.text : '';
+  const close = () => { overlay.remove(); if (uiDialogClose === close) uiDialogClose = null; };
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
+  const cancelBtn = overlay.querySelector('.nt-cancel'); if (cancelBtn) cancelBtn.onclick = close;
+  const delBtn = overlay.querySelector('.nt-delete');
+  if (delBtn) delBtn.onclick = async () => {
+    close();
+    if (!(await uiConfirm(t('deleteNoteConfirm'), { danger: true, okText: t('deleteWord') }))) return;
+    state.notes = notesList().filter(x => x.id !== id);
+    afterTasksOrNotesChanged();
+  };
+  overlay.querySelector('.nt-save').onclick = () => {
+    const text = textEl.value.trim();
+    if (!text) { textEl.focus(); return; }
+    if (existing) { existing.text = text.slice(0, 2000); afterTasksOrNotesChanged(); }
+    else addNote_({ text, date: defaultDate || ymd(new Date()) });
+    close();
+  };
+  uiDialogClose = close;
+  document.body.appendChild(overlay);
+  if (!existing) setTimeout(() => textEl.focus(), 50);
+}
+// En la app, la primera tarea con hora activa los recordatorios (pide permiso).
+async function maybeEnableRemindersForTask() {
+  if (!nativeNotifications() || (state.settings && state.settings.nativeReminders)) return;
+  try { await enableNativeReminders(); } catch (e) {}
+}
+
+// El botón ＋ del Día ofrece qué agregar.
+async function openDayAddChooser() {
+  const dateStr = ymd(addDays(new Date(), calDayOffset));
+  const isPast = dateStr < ymd(new Date());
+  document.querySelectorAll('.task-sheet-overlay').forEach(x => x.remove());
+  const overlay = document.createElement('div');
+  overlay.className = 'ui-dialog-overlay task-sheet-overlay';
+  overlay.innerHTML = `
+    <div class="ui-dialog task-sheet" role="dialog" aria-modal="true">
+      <div class="premium-sheet-title">${t('dayAddWhat')}</div>
+      <div class="day-add-choices">
+        <button type="button" class="qr-btn" data-add="habit">🌱 ${t('daySecHabitOne')}</button>
+        ${isPast ? '' : `<button type="button" class="qr-btn" data-add="task">✅ ${t('daySecTaskOne')}</button>`}
+        <button type="button" class="qr-btn" data-add="note">📝 ${t('daySecNoteOne')}</button>
+      </div>
+      <div style="text-align:center;margin-top:10px;"><button type="button" class="pin-link" id="day-add-cancel">${t('dialogCancel')}</button></div>
+    </div>`;
+  const close = () => { overlay.remove(); if (uiDialogClose === close) uiDialogClose = null; };
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
+  overlay.querySelector('#day-add-cancel').onclick = close;
+  overlay.querySelectorAll('[data-add]').forEach(b => b.onclick = () => {
+    close();
+    if (b.dataset.add === 'habit') openAddHabitPicker();
+    else if (b.dataset.add === 'task') openTaskEditor(null, dateStr);
+    else openNoteEditor(null, dateStr);
+  });
+  uiDialogClose = close;
+  document.body.appendChild(overlay);
 }
 
 function startOfWeek(d) { const r = new Date(d); const dow = r.getDay(); const diff = dow === 0 ? -6 : 1 - dow; return addDays(r, diff); } // lunes

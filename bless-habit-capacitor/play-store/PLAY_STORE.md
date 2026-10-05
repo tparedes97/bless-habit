@@ -62,8 +62,11 @@ Escríbele lo que quieres hacer hoy o cómo te sientes. Bless entiende, te respo
 📅 AGENDA Y HÁBITOS
 Crea hábitos con días, hora y minutos por día. Marca lo que vas cumpliendo y mira tu racha crecer.
 
+✅ TAREAS Y NOTAS DEL DÍA
+Cada día tiene tus hábitos, tus tareas y tus notas. Escríbele a Bless "recuérdame pagar la luz el viernes a las 6" o "anota que…" y ella lo guarda por ti.
+
 ⏰ RECORDATORIOS
-Notificaciones a la hora de tus hábitos para que no se te pase nada.
+Notificaciones a la hora de tus hábitos y tareas para que no se te pase nada.
 
 📔 DIARIO PERSONAL
 Escribe cómo fue tu día, elige tu ánimo, agrega una foto y stickers. Tu espacio, a tu estilo.
@@ -72,7 +75,7 @@ Escribe cómo fue tu día, elige tu ánimo, agrega una foto y stickers. Tu espac
 Ve tu progreso semanal y cómo ha ido tu estado de ánimo.
 
 ✨ PREMIUM
-Resumen semanal hecho por Bless, análisis de tu ánimo, chat y memoria ilimitados, hábitos ilimitados, temas y stickers extra para el diario, exportar el diario a PDF y bloqueo con PIN o huella.
+Resumen semanal hecho por Bless, análisis de tu ánimo, chat y memoria ilimitados, hábitos, tareas y notas ilimitados, recordatorios minutos antes, temas y stickers extra para el diario, exportar el diario a PDF y bloqueo con PIN o huella.
 
 🔒 PRIVACIDAD
 Tus datos son tuyos. Puedes borrar tu cuenta y todo tu contenido desde la app cuando quieras.
@@ -102,8 +105,11 @@ Tell her what you want to do today or how you feel. Bless understands, answers k
 📅 SCHEDULE & HABITS
 Create habits with days, time and minutes per day. Check them off and watch your streak grow.
 
+✅ DAILY TASKS & NOTES
+Every day has your habits, tasks and notes. Tell Bless "remind me to pay the bill Friday at 6" or "take a note…" and she saves it for you.
+
 ⏰ REMINDERS
-Notifications at your habit times so nothing slips by.
+Notifications at your habit and task times so nothing slips by.
 
 📔 PERSONAL JOURNAL
 Write about your day, pick your mood, add a photo and stickers. Your space, your style.
@@ -112,7 +118,7 @@ Write about your day, pick your mood, add a photo and stickers. Your space, your
 See your weekly progress and how your mood has been.
 
 ✨ PREMIUM
-Weekly summary written by Bless, mood insights, unlimited chat and memory, unlimited habits, extra journal themes and stickers, journal PDF export and PIN or fingerprint lock.
+Weekly summary written by Bless, mood insights, unlimited chat and memory, unlimited habits, tasks and notes, reminders minutes ahead, extra journal themes and stickers, journal PDF export and PIN or fingerprint lock.
 
 🔒 PRIVACY
 Your data is yours. You can delete your account and all your content from the app at any time.
