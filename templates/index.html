@@ -306,6 +306,14 @@
   .diary-theme-swatch.locked, .diary-sticker-cat-tab.locked { position: relative; opacity: .6; }
   .diary-theme-swatch.locked::after, .diary-sticker-cat-tab.locked::after { content: '🔒'; position: absolute; top: -6px; right: -6px; font-size: 11px; }
   .diary-export-btn { background: var(--panel); border: 1px solid var(--border); color: var(--accent); border-radius: 12px; padding: 8px 12px; font-size: 13px; font-weight: 800; cursor: pointer; white-space: nowrap; }
+  .premium-sheet { max-width: 400px; max-height: 90vh; overflow-y: auto; }
+  .premium-sheet-title { font-size: 19px; font-weight: 850; margin-bottom: 12px; }
+  .plan-options { display: flex; flex-direction: column; gap: 8px; margin: 4px 0 12px; }
+  .plan-option { display: flex; align-items: center; justify-content: space-between; gap: 10px; width: 100%; padding: 14px; border-radius: 14px; border: 2px solid var(--border); background: var(--panel); color: var(--text); cursor: pointer; text-align: left; font-size: 15px; }
+  .plan-option.selected { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 8%, var(--panel)); }
+  .plan-name { font-weight: 800; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .plan-save { font-size: 11px; font-weight: 800; color: #fff; background: #2fb37b; padding: 2px 8px; border-radius: 999px; }
+  .plan-price { font-weight: 800; white-space: nowrap; }
   .premium-benefits { list-style: none; padding: 0; margin: 0 0 12px; display: flex; flex-direction: column; gap: 6px; font-size: 13.5px; line-height: 1.4; }
   .memory-list { display: flex; flex-direction: column; gap: 6px; }
   .memory-item { display: flex; align-items: flex-start; gap: 8px; background: var(--panel-2); border: 1px solid var(--border); border-radius: 12px; padding: 9px 10px; font-size: 13.5px; line-height: 1.4; }
@@ -1290,7 +1298,7 @@ function notifyDailyAiLimit() {
   if (dailyAiLimitNotified || isPremium) return;
   dailyAiLimitNotified = true;
   setTimeout(() => {
-    addNote(chatScroll, t('aiLimitNote', PADDLE_PRICE_LABEL), 'agenda-note', () => openPaddleCheckout());
+    addNote(chatScroll, t('aiLimitNote', monthlyPriceLabel()), 'agenda-note', () => openPremiumSheet());
   }, 600);
 }
 async function callBlessAI(systemPrompt, situationPrompt) {
@@ -1671,6 +1679,9 @@ const I18N = {
     pushEnableFail: 'No se pudo activar las notificaciones. Intenta de nuevo.',
 
     paddleOpening: 'Abriendo pago…',
+    perMonth: 'mes', perYear: 'año', fromPrice: (p) => p,
+    planMonthly: 'Mensual', planYearly: 'Anual', planSave: (n) => `Ahorra ${n}%`,
+    planContinue: 'Continuar al pago', planNote: 'Pago seguro con Paddle, en tu moneda local cuando está disponible. Cancelas cuando quieras.',
     paddleConnFail: 'No se pudo conectar con el servidor para iniciar el pago. Intenta de nuevo.',
     paddleNotConfigured: 'Los pagos no están disponibles en este momento. Intenta de nuevo más tarde.',
     paddleWidgetFail: 'No se pudo cargar el widget de pago de Paddle. Revisa tu conexión e intenta de nuevo.',
@@ -2070,6 +2081,9 @@ const I18N = {
     pushEnableFail: 'Could not enable notifications. Please try again.',
 
     paddleOpening: 'Opening checkout…',
+    perMonth: 'month', perYear: 'year', fromPrice: (p) => p,
+    planMonthly: 'Monthly', planYearly: 'Yearly', planSave: (n) => `Save ${n}%`,
+    planContinue: 'Continue to payment', planNote: 'Secure payment with Paddle, in your local currency when available. Cancel anytime.',
     paddleConnFail: 'Could not connect to the server to start the payment. Please try again.',
     paddleNotConfigured: 'Payments are not available right now. Please try again later.',
     paddleWidgetFail: "Could not load Paddle's payment widget. Check your connection and try again.",
@@ -2835,14 +2849,14 @@ function renderHabitPicker() {
 // antes de este límite se conservan; solo se frena agregar nuevos.)
 // Invitación genérica a Premium cuando se toca algo exclusivo.
 async function promptPremiumFeature(msg) {
-  if (await uiConfirm(msg, { okText: t('habitLimitOk') })) openPaddleCheckout();
+  if (await uiConfirm(msg, { okText: t('habitLimitOk') })) openPremiumSheet();
 }
 const FREE_HABIT_LIMIT = 3;
 function canAddHabit(extra = 1) {
   return isPremium || ((state.profile.habitos || []).length + extra) <= FREE_HABIT_LIMIT;
 }
 async function promptHabitLimit() {
-  if (await uiConfirm(t('habitLimitMsg', FREE_HABIT_LIMIT), { okText: t('habitLimitOk') })) openPaddleCheckout();
+  if (await uiConfirm(t('habitLimitMsg', FREE_HABIT_LIMIT), { okText: t('habitLimitOk') })) openPremiumSheet();
 }
 const HABIT_SUGGESTED_MINUTES = { ejercicio: 30, caminar: 20, lectura: 15, meditacion: 10, escritura: 10, estudio: 30, orden: 15, finanzas: 10, gratitud: 5, musica: 20, idioma: 15, familia: 30 };
 function renderHabitSchedule() {
@@ -3210,11 +3224,11 @@ function setupNativeBrowserFinishedListener() {
   });
 }
 
-async function openNativePaddleCheckout() {
+async function openNativePaddleCheckout(plan) {
   const plugins = window.Capacitor && window.Capacitor.Plugins;
   let data;
   try {
-    data = await (await fetch('/api/native-checkout-token?lang=' + currentLang(), { method: 'POST' })).json();
+    data = await (await fetch('/api/native-checkout-token?lang=' + currentLang() + '&plan=' + (plan === 'yearly' ? 'yearly' : 'monthly'), { method: 'POST' })).json();
   } catch (e) {
     uiAlert(t('paddleConnFail'));
     return;
@@ -3395,7 +3409,7 @@ document.addEventListener('visibilitychange', async () => {
   }
 });
 async function setupAppLock() {
-  if (!isPremium) { openPaddleCheckout(); return; }
+  if (!isPremium) { openPremiumSheet(); return; }
   const first = await pinPad({ title: t('pinNewTitle'), sub: t('pinNewSub'), cancellable: true });
   if (!first) return;
   const second = await pinPad({ title: t('pinRepeatTitle'), cancellable: true });
@@ -3443,7 +3457,7 @@ function appLockCardHtml() {
   }
   return `<div class="profile-card">${title}
     <div style="font-size:13px;color:var(--text-dim);margin-bottom:10px;">${isPremium ? t('pinCardOff') : t('pinCardFree')}</div>
-    <button class="premium-btn" id="pin-enable-btn">${isPremium ? t('pinEnableBtn') : t('becomePremiumBtn', PADDLE_PRICE_LABEL)}</button></div>`;
+    <button class="premium-btn" id="pin-enable-btn">${isPremium ? t('pinEnableBtn') : t('becomePremiumBtn', hasYearlyPlan() ? t('fromPrice', monthlyPriceLabel()) : monthlyPriceLabel())}</button></div>`;
 }
 function bindAppLockCard() {
   const en = document.getElementById('pin-enable-btn'); if (en) en.onclick = setupAppLock;
@@ -3634,7 +3648,7 @@ async function pollPremiumStatus(attempts = 6, delayMs = 1500) {
 // (antes se hacía todo recién al tocar el botón y tardaba).
 let paddleReady = null; // Promise<cfg> o null
 function preparePaddle() {
-  if (IS_NATIVE_APP || isPremium) return null;
+  if (isPremium) return null; // en la app nativa se usa solo para mostrar el precio local; el pago va por el navegador
   if (paddleReady) return paddleReady;
   paddleReady = (async () => {
     const cfg = await (await fetch('/api/paddle-config')).json();
@@ -3653,14 +3667,113 @@ function preparePaddle() {
         }
       },
     });
+    paddleCfg = cfg;
+    loadLocalPrices(cfg);
     return cfg;
   })();
   paddleReady.catch(() => { paddleReady = null; }); // se reintenta al tocar el botón
   return paddleReady;
 }
 
-async function openPaddleCheckout(ev) {
-  if (IS_NATIVE_APP) return openNativePaddleCheckout();
+/* ---- Precio en la moneda local ----
+   Paddle.PricePreview calcula el precio final (con impuestos y en la moneda
+   que Paddle usa para ese país) a partir del país de la persona (Ajustes).
+   Si no se puede, se muestran los textos en dólares de las variables de Render. */
+let paddleCfg = null;
+const localPrices = {}; // { monthly: { text, amount }, yearly: { text, amount } }
+const COUNTRY_CODES = ['PE','MX','CO','CL','AR','EC','BO','PY','UY','VE','CR','PA','GT','HN','SV','NI','DO','PR','CU','ES','US','CA','GB','BR','PT','FR','DE','IT'];
+function countryCodeFromSettings() {
+  const name = ((state.settings && state.settings.country) || '').trim();
+  if (!name) return null;
+  const norm = (x) => x.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+  try {
+    for (const lang of ['es', 'en']) {
+      const dn = new Intl.DisplayNames([lang], { type: 'region' });
+      const hit = COUNTRY_CODES.find(c => norm(dn.of(c)) === norm(name));
+      if (hit) return hit;
+    }
+  } catch (e) {}
+  return /^[A-Za-z]{2}$/.test(name) ? name.toUpperCase() : null;
+}
+async function loadLocalPrices(cfg) {
+  try {
+    if (typeof Paddle === 'undefined' || !Paddle.PricePreview) return;
+    const items = [{ priceId: cfg.priceId, quantity: 1 }];
+    if (cfg.priceIdYearly) items.push({ priceId: cfg.priceIdYearly, quantity: 1 });
+    const code = countryCodeFromSettings();
+    const req = { items };
+    if (code) req.address = { countryCode: code };
+    const res = await Paddle.PricePreview(req);
+    const lines = (res && res.data && res.data.details && res.data.details.lineItems) || [];
+    lines.forEach(li => {
+      const plan = li.price && li.price.id === cfg.priceIdYearly ? 'yearly' : 'monthly';
+      const text = li.formattedTotals && li.formattedTotals.total;
+      const amount = li.totals && Number(li.totals.total);
+      if (text) localPrices[plan] = { text, amount };
+    });
+    refreshPremiumPriceTexts();
+  } catch (e) { /* se quedan los precios en dólares */ }
+}
+function monthlyPriceLabel() {
+  if (localPrices.monthly) return `${localPrices.monthly.text}/${t('perMonth')}`;
+  return currentLang() === 'en' ? PADDLE_PRICE_LABEL.replace('/mes', '/month') : PADDLE_PRICE_LABEL;
+}
+function yearlyPriceLabel() {
+  if (localPrices.yearly) return `${localPrices.yearly.text}/${t('perYear')}`;
+  const fallback = (paddleCfg && paddleCfg.priceLabelYearly) || '';
+  return currentLang() === 'en' ? fallback.replace('/año', '/year') : fallback;
+}
+function yearlySavingsPct() {
+  const m = localPrices.monthly && localPrices.monthly.amount, y = localPrices.yearly && localPrices.yearly.amount;
+  if (m && y) return Math.max(0, Math.round((1 - y / (m * 12)) * 100));
+  return 30;
+}
+function hasYearlyPlan() { return !!(paddleCfg && paddleCfg.priceIdYearly); }
+// Cuando llegan los precios locales, se redibujan las pantallas que los muestran.
+function refreshPremiumPriceTexts() {
+  const active = document.querySelector('.tab.active-tab');
+  if (!active) return;
+  if (active.dataset.tab === 'profile') renderProfile();
+  if (active.dataset.tab === 'metrics') renderMetrics();
+}
+
+/* ---- Ventana "Elige tu plan" ----
+   Todos los botones de Premium abren esta ventana: beneficios, plan mensual o
+   anual (con el ahorro) y un solo botón para pagar. */
+async function openPremiumSheet() {
+  if (isPremium) return;
+  try { await preparePaddle(); } catch (e) { /* igual se muestra con precios de respaldo */ }
+  document.querySelectorAll('.premium-sheet-overlay').forEach(x => x.remove());
+  const yearly = hasYearlyPlan();
+  let plan = yearly ? 'yearly' : 'monthly';
+  const overlay = document.createElement('div');
+  overlay.className = 'ui-dialog-overlay premium-sheet-overlay';
+  const benefits = (I18N[currentLang()].premiumBenefits || I18N.es.premiumBenefits);
+  overlay.innerHTML = `
+    <div class="ui-dialog premium-sheet" role="dialog" aria-modal="true">
+      <div class="premium-sheet-title">✨ Bless Habit Premium</div>
+      <ul class="premium-benefits">${benefits.map(b => `<li>${b}</li>`).join('')}</ul>
+      <div class="plan-options">
+        ${yearly ? `<button type="button" class="plan-option" data-plan="yearly"><span class="plan-name">${t('planYearly')} <span class="plan-save">${t('planSave', yearlySavingsPct())}</span></span><span class="plan-price">${yearlyPriceLabel()}</span></button>` : ''}
+        <button type="button" class="plan-option" data-plan="monthly"><span class="plan-name">${t('planMonthly')}</span><span class="plan-price">${monthlyPriceLabel()}</span></button>
+      </div>
+      <button type="button" class="premium-btn" id="premium-sheet-pay">${t('planContinue')}</button>
+      <div class="premium-note">${t('planNote')}</div>
+      <div style="text-align:center;margin-top:6px;"><button type="button" class="pin-link" id="premium-sheet-close">${t('dialogCancel')}</button></div>
+    </div>`;
+  const paint = () => overlay.querySelectorAll('.plan-option').forEach(b => b.classList.toggle('selected', b.dataset.plan === plan));
+  overlay.querySelectorAll('.plan-option').forEach(b => { b.onclick = () => { plan = b.dataset.plan; paint(); }; });
+  const close = () => { overlay.remove(); if (uiDialogClose === close) uiDialogClose = null; };
+  overlay.querySelector('#premium-sheet-close').onclick = close;
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
+  overlay.querySelector('#premium-sheet-pay').onclick = (ev) => { const p = plan; close(); openPaddleCheckout(ev, p); };
+  uiDialogClose = close; // el botón "atrás" de Android la cierra
+  paint();
+  document.body.appendChild(overlay);
+}
+
+async function openPaddleCheckout(ev, plan) {
+  if (IS_NATIVE_APP) return openNativePaddleCheckout(plan);
   const btn = ev && ev.currentTarget;
   const originalText = btn ? btn.textContent : '';
   if (btn) { btn.disabled = true; btn.textContent = t('paddleOpening'); }
@@ -3673,9 +3786,10 @@ async function openPaddleCheckout(ev) {
   } finally {
     if (btn) { btn.disabled = false; btn.textContent = originalText; }
   }
+  const priceId = plan === 'yearly' && cfg.priceIdYearly ? cfg.priceIdYearly : cfg.priceId;
   Paddle.Checkout.open({
     settings: { locale: currentLang() },
-    items: [{ priceId: cfg.priceId, quantity: 1 }],
+    items: [{ priceId, quantity: 1 }],
     customer: currentUserEmail ? { email: currentUserEmail } : undefined,
     customData: { app_user_email: currentUserEmail },
   });
@@ -4692,7 +4806,7 @@ async function handleUserMessage(text) {
       state.pending = null;
       const label = pending.task;
       if (!canAddHabit()) {
-        addNote(chatScroll, t('habitLimitMsg', FREE_HABIT_LIMIT), 'agenda-note', () => openPaddleCheckout());
+        addNote(chatScroll, t('habitLimitMsg', FREE_HABIT_LIMIT), 'agenda-note', () => openPremiumSheet());
         return;
       }
       if (!state.profile.habitos.some(h => h.label.toLowerCase() === label.toLowerCase())) {
@@ -5005,7 +5119,7 @@ function renderProfile() {
         ? `<div class="premium-badge">${t('premiumBadge')}</div><div style="margin-top:10px;"><span class="logout-link" id="cancel-premium-link">${t('cancelSubLink')}</span></div>`
         : `<div style="font-size:13px;color:var(--text-dim);margin-bottom:10px;">${t('freePlanDesc')}</div>
            <ul class="premium-benefits">${(I18N[currentLang()].premiumBenefits || I18N.es.premiumBenefits).map(b => `<li>${b}</li>`).join('')}</ul>
-           <button class="premium-btn" id="profile-unlock-premium-btn">${t('becomePremiumBtn', PADDLE_PRICE_LABEL)}</button>
+           <button class="premium-btn" id="profile-unlock-premium-btn">${t('becomePremiumBtn', hasYearlyPlan() ? t('fromPrice', monthlyPriceLabel()) : monthlyPriceLabel())}</button>
            <div class="premium-note">${t('premiumCancelNote')}</div>`}
     </div>
     ${appLockCardHtml()}
@@ -5013,7 +5127,7 @@ function renderProfile() {
       <h4>${t('memoriesTitle')}</h4>
       <div style="font-size:12.5px;color:var(--text-dim);line-height:1.5;margin-bottom:10px;">${t('memoriesDesc')}</div>
       ${!isPremium
-        ? `<div class="memory-empty">${t('memoriesFreeTeaser')}</div><button class="premium-btn" id="memories-premium-btn" style="margin-top:10px;">${t('becomePremiumBtn', PADDLE_PRICE_LABEL)}</button>`
+        ? `<div class="memory-empty">${t('memoriesFreeTeaser')}</div><button class="premium-btn" id="memories-premium-btn" style="margin-top:10px;">${t('becomePremiumBtn', hasYearlyPlan() ? t('fromPrice', monthlyPriceLabel()) : monthlyPriceLabel())}</button>`
         : (state.blessMemories || []).length
         ? `<div class="memory-list">${state.blessMemories.map(m => `<div class="memory-item"><span class="memory-text">${escapeHtml(m.text)}</span><button type="button" class="memory-del" data-id="${m.id}" title="${t('memoryDeleteTitle')}" aria-label="${t('memoryDeleteTitle')}">✕</button></div>`).join('')}</div>
            <div style="text-align:right;margin-top:8px;"><span class="logout-link" id="memories-clear-all">${t('memoriesClearAll')}</span></div>`
@@ -5036,12 +5150,12 @@ function renderProfile() {
     if (cancelLink) cancelLink.onclick = cancelPremium;
   } else {
     const btn = document.getElementById('profile-unlock-premium-btn');
-    if (btn) btn.onclick = openPaddleCheckout;
+    if (btn) btn.onclick = () => openPremiumSheet();
     pushAdsenseSlots();
   }
   bindAppLockCard();
   const memPremiumBtn = document.getElementById('memories-premium-btn');
-  if (memPremiumBtn) memPremiumBtn.onclick = openPaddleCheckout;
+  if (memPremiumBtn) memPremiumBtn.onclick = () => openPremiumSheet();
   const delBtn = document.getElementById('delete-account-btn');
   if (delBtn) delBtn.onclick = deleteMyAccount;
   document.querySelectorAll('.memory-del').forEach(btn => {
@@ -7179,7 +7293,7 @@ function renderMetrics() {
           <div class="weekly-item">💡 ${t('lockedSampleInsight')}</div>
           <div class="mood-strip">${['😊','😌','😔','🙏','😊','😴','🤩'].map(e => `<div class="mood-day"><span>${e}</span></div>`).join('')}</div>
         </div>
-        <button class="premium-btn" id="unlock-premium-btn">${t('becomePremiumBtn', PADDLE_PRICE_LABEL)}</button>
+        <button class="premium-btn" id="unlock-premium-btn">${t('becomePremiumBtn', hasYearlyPlan() ? t('fromPrice', monthlyPriceLabel()) : monthlyPriceLabel())}</button>
         <div class="premium-note">${t('premiumNote')}</div>
       </div>`;
 
@@ -7206,7 +7320,7 @@ function renderMetrics() {
   `;
   if (!isPremium) {
     const btn = document.getElementById('unlock-premium-btn');
-    if (btn) btn.onclick = openPaddleCheckout;
+    if (btn) btn.onclick = () => openPremiumSheet();
     pushAdsenseSlots();
   } else if (!weeklySummaryLoading && (!(state.weeklySummaries || {})[lastCompletedWeekStart()] || ((state.weeklySummaries[lastCompletedWeekStart()].lang || 'es') !== currentLang()))) {
     ensureWeeklySummary().then(created => {

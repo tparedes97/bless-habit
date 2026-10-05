@@ -22,8 +22,8 @@
   {% if error %}
     <p>{{ error }}</p>
   {% else %}
-    <p id="msg">{{ t.intro.format(price=price_label if lang == 'es' else price_label.replace('/mes', '/month')) }}</p>
-    <button class="btn" id="pay-btn">{{ t.pay.format(price=price_label if lang == 'es' else price_label.replace('/mes', '/month')) }}</button>
+    <p id="msg">{{ t.intro.format(price=price_label if lang == 'es' else price_label.replace('/mes', '/month').replace('/año', '/year')) }}</p>
+    <button class="btn" id="pay-btn">{{ t.pay.format(price=price_label if lang == 'es' else price_label.replace('/mes', '/month').replace('/año', '/year')) }}</button>
   {% endif %}
   <a class="btn secondary" id="return-btn" href="{{ return_url }}">{{ t.back }}</a>
 </div>

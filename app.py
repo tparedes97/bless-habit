@@ -70,7 +70,8 @@ def get_client():
 # pero sin poder confirmarlo con una llamada real.
 PADDLE_API_KEY = os.environ.get("PADDLE_API_KEY")  # secreta, server-side (Bearer token)
 PADDLE_CLIENT_TOKEN = os.environ.get("PADDLE_CLIENT_TOKEN")  # pública, para Paddle.js en el navegador
-PADDLE_PRICE_ID = os.environ.get("PADDLE_PRICE_ID")  # el price_id del plan de $4.99/mes, se crea en el catálogo de Paddle
+PADDLE_PRICE_ID = os.environ.get("PADDLE_PRICE_ID")  # price_id del plan MENSUAL, se crea en el catálogo de Paddle
+PADDLE_PRICE_ID_YEARLY = os.environ.get("PADDLE_PRICE_ID_YEARLY", "")  # price_id del plan ANUAL (opcional)
 PADDLE_WEBHOOK_SECRET = os.environ.get("PADDLE_WEBHOOK_SECRET")  # de Dashboard → Developer Tools → Notifications
 # "sandbox" (por defecto, para no cobrar de verdad por accidente) o "production"
 PADDLE_ENV = os.environ.get("PADDLE_ENV", "sandbox")
@@ -105,7 +106,10 @@ def verify_paddle_webhook_signature(raw_body, signature_header, secret):
 # Texto del precio que se muestra en la interfaz (botón de upgrade, tarjeta de
 # bloqueo de Métricas, etc.) — se puede cambiar en Secrets sin tocar código,
 # justo para que el precio y el código no queden pegados uno al otro.
-PADDLE_PRICE_LABEL = os.environ.get("PADDLE_PRICE_LABEL", "$4.99/mes")
+PADDLE_PRICE_LABEL = os.environ.get("PADDLE_PRICE_LABEL", "$2.99/mes")
+# Texto de respaldo del plan anual (en la app se reemplaza por el precio en la
+# moneda local que calcula Paddle).
+PADDLE_PRICE_LABEL_YEARLY = os.environ.get("PADDLE_PRICE_LABEL_YEARLY", "$24.99/año")
 
 # Google AdSense — solo se muestra a usuarios del plan gratuito.
 ADSENSE_CLIENT_ID = os.environ.get("ADSENSE_CLIENT_ID", "")
@@ -960,9 +964,11 @@ def api_paddle_config():
     return jsonify({
         "clientToken": PADDLE_CLIENT_TOKEN or "",
         "priceId": PADDLE_PRICE_ID or "",
+        "priceIdYearly": PADDLE_PRICE_ID_YEARLY or "",
         "environment": PADDLE_ENV,
         "configured": paddle_configured(),
         "priceLabel": PADDLE_PRICE_LABEL,
+        "priceLabelYearly": PADDLE_PRICE_LABEL_YEARLY if PADDLE_PRICE_ID_YEARLY else "",
     })
 
 
@@ -1048,7 +1054,8 @@ def api_native_checkout_token():
         return jsonify({"ok": False, "error": "No autenticado"}), 401
     token = create_one_time_token(user_id, "checkout", NATIVE_TOKEN_TTL_SECONDS)
     lang = "en" if request.args.get("lang") == "en" else "es"
-    return jsonify({"ok": True, "url": url_for("native_checkout", token=token, lang=lang, _external=True)})
+    plan = "yearly" if request.args.get("plan") == "yearly" and PADDLE_PRICE_ID_YEARLY else "monthly"
+    return jsonify({"ok": True, "url": url_for("native_checkout", token=token, lang=lang, plan=plan, _external=True)})
 
 
 @app.route("/premium/native-checkout")
@@ -1074,9 +1081,9 @@ def native_checkout():
         error=error,
         email=(user["email"] if user else "") or "",
         client_token=PADDLE_CLIENT_TOKEN or "",
-        price_id=PADDLE_PRICE_ID or "",
+        price_id=(PADDLE_PRICE_ID_YEARLY if request.args.get("plan") == "yearly" and PADDLE_PRICE_ID_YEARLY else PADDLE_PRICE_ID) or "",
         paddle_env=PADDLE_ENV,
-        price_label=PADDLE_PRICE_LABEL,
+        price_label=(PADDLE_PRICE_LABEL_YEARLY if request.args.get("plan") == "yearly" and PADDLE_PRICE_ID_YEARLY else PADDLE_PRICE_LABEL),
         return_url=f"{NATIVE_APP_URL_SCHEME}://premium-done",
         lang=lang,
         t=msgs,
@@ -1305,6 +1312,8 @@ def render_legal(page, lang):
         price_label=PADDLE_PRICE_LABEL,
         price_label_en=PADDLE_PRICE_LABEL.replace("/mes", "/month"),
         price_label_num=price_num,
+        yearly_label=PADDLE_PRICE_LABEL_YEARLY if PADDLE_PRICE_ID_YEARLY else "",
+        yearly_label_en=PADDLE_PRICE_LABEL_YEARLY.replace("/año", "/year") if PADDLE_PRICE_ID_YEARLY else "",
         updated=LEGAL_UPDATED[lang],
         year=time.strftime("%Y"),
     )
