@@ -151,7 +151,7 @@
     <li><strong>Google AdSense</strong> (anuncios en la versión web del plan gratis).</li>
   </ul>
   <h2>Cuánto tiempo los guardamos</h2>
-  <p>Mientras tengas tu cuenta. Puedes borrar entradas del diario, recuerdos y hábitos cuando quieras desde la app. Si pides borrar tu cuenta, eliminamos tus datos en un plazo de 30 días, salvo lo que la ley nos obligue a conservar (por ejemplo, registros de pagos, que conserva Paddle).</p>
+  <p>Mientras tengas tu cuenta. Puedes borrar entradas del diario, recuerdos y hábitos cuando quieras desde la app. Puedes eliminar tu cuenta y todos tus datos desde la app (Perfil → Eliminar mi cuenta) o pedirlo por correo (ver <a href="/eliminar-cuenta">cómo eliminar tu cuenta</a>); por correo, eliminamos tus datos en un plazo de 30 días, salvo lo que la ley nos obligue a conservar (por ejemplo, registros de pagos, que conserva Paddle).</p>
   <h2>Tus derechos</h2>
   <p>Puedes pedir acceso, corrección o eliminación de tus datos, o retirar tu consentimiento, escribiendo a <a href="mailto:{{ support_email }}">{{ support_email }}</a>. Te responderemos en un plazo razonable.</p>
   <h2>Menores</h2>
@@ -183,7 +183,7 @@
     <li><strong>Google AdSense</strong> (ads on the web version of the free plan).</li>
   </ul>
   <h2>How long we keep it</h2>
-  <p>For as long as you have your account. You can delete journal entries, memories and habits anytime in the app. If you ask us to delete your account, we delete your data within 30 days, except what the law requires us to keep (for example, payment records, kept by Paddle).</p>
+  <p>For as long as you have your account. You can delete journal entries, memories and habits anytime in the app. You can delete your account and all your data in the app (Profile → Delete my account) or by email (see <a href="/delete-account">how to delete your account</a>); by email, we delete your data within 30 days, except what the law requires us to keep (for example, payment records, kept by Paddle).</p>
   <h2>Your rights</h2>
   <p>You can request access, correction or deletion of your data, or withdraw your consent, by emailing <a href="mailto:{{ support_email }}">{{ support_email }}</a>. We will reply within a reasonable time.</p>
   <h2>Children</h2>
@@ -217,6 +217,40 @@
   <p>You can cancel anytime in the app (Profile → Plan → Cancel subscription). You won't be charged again and keep Premium until the end of the paid period.</p>
   <h2>Timing</h2>
   <p>Once approved, the refund goes back to the original payment method. Depending on your bank it may take 5–10 business days to show up.</p>
+  {% endif %}
+{% elif page == 'delete' %}
+  {% if lang == 'es' %}
+  <h1>Eliminar tu cuenta de Bless Habit</h1>
+  <div class="updated">Última actualización: {{ updated }}</div>
+  <h2>Desde la app (inmediato)</h2>
+  <ol>
+    <li>Abre Bless Habit e inicia sesión.</li>
+    <li>Ve a <strong>Perfil</strong> y baja hasta el final.</li>
+    <li>Toca <strong>Eliminar mi cuenta</strong> y confirma escribiendo ELIMINAR.</li>
+  </ol>
+  <p>Si tienes Premium, la suscripción se cancela en ese momento y no se te vuelve a cobrar.</p>
+  <h2>Por correo</h2>
+  <p>Si no puedes entrar a la app, escribe a <a href="mailto:{{ support_email }}?subject=Eliminar%20mi%20cuenta">{{ support_email }}</a> desde el correo de tu cuenta de Google con el asunto "Eliminar mi cuenta". Lo hacemos en un plazo máximo de 30 días.</p>
+  <h2>Qué se elimina</h2>
+  <p>Tu perfil, hábitos, agenda, métricas, logros, chat, recuerdos de Bless, entradas y fotos del diario, PIN y suscripciones a notificaciones. Se eliminan de forma permanente y no se pueden recuperar.</p>
+  <h2>Qué se conserva</h2>
+  <p>Los registros de pagos los conserva Paddle (nuestro procesador de pagos) durante el tiempo que exige la ley tributaria.</p>
+  {% else %}
+  <h1>Delete your Bless Habit account</h1>
+  <div class="updated">Last updated: {{ updated }}</div>
+  <h2>In the app (immediate)</h2>
+  <ol>
+    <li>Open Bless Habit and sign in.</li>
+    <li>Go to <strong>Profile</strong> and scroll to the bottom.</li>
+    <li>Tap <strong>Delete my account</strong> and confirm by typing ELIMINAR.</li>
+  </ol>
+  <p>If you have Premium, the subscription is cancelled at that moment and you won't be charged again.</p>
+  <h2>By email</h2>
+  <p>If you can't access the app, email <a href="mailto:{{ support_email }}?subject=Delete%20my%20account">{{ support_email }}</a> from your Google account's email with the subject "Delete my account". We do it within 30 days at most.</p>
+  <h2>What is deleted</h2>
+  <p>Your profile, habits, planner, metrics, achievements, chat, Bless's memories, journal entries and photos, PIN and notification subscriptions. They are permanently deleted and cannot be recovered.</p>
+  <h2>What is kept</h2>
+  <p>Payment records are kept by Paddle (our payment processor) for as long as tax law requires.</p>
   {% endif %}
 {% endif %}
 </div></main>

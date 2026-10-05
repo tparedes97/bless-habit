@@ -283,6 +283,7 @@
   .pin-link { background: none; border: none; color: var(--accent); font-size: 14px; font-weight: 600; padding: 10px; cursor: pointer; }
   .pin-link:empty { visibility: hidden; }
   .premium-tag { font-size: 10px; font-weight: 800; color: var(--on-accent); background: linear-gradient(135deg, var(--accent), var(--accent-2)); padding: 2px 7px; border-radius: 999px; vertical-align: middle; margin-left: 6px; }
+  .delete-account-link { background: none; border: none; color: #d9534f; font-size: 13px; text-decoration: underline; cursor: pointer; padding: 8px; }
   .login-legal { margin-top: 22px; font-size: 12.5px; color: var(--text-dim); }
   .login-legal a { color: var(--text-dim); }
   .memory-list { display: flex; flex-direction: column; gap: 6px; }
@@ -1713,6 +1714,15 @@ const I18N = {
     bioOffer: '¿Quieres desbloquear Bless Habit también con tu huella o tu rostro? 👆 El PIN seguirá funcionando.',
     bioOfferOk: 'Sí, activar', bioToggleLabel: 'Desbloquear con huella o rostro en este teléfono',
     bioEnableFail: 'No se pudo activar la huella o el rostro. Puedes seguir usando tu PIN.',
+    deleteAccountLink: 'Eliminar mi cuenta',
+    deleteAccountWarn: 'Se borrarán para siempre tu perfil, hábitos, chat, recuerdos, diario y fotos. No se puede deshacer.',
+    deleteAccountWarnPremium: 'Se cancelará tu suscripción Premium ahora mismo y se borrarán para siempre tu perfil, hábitos, chat, recuerdos, diario y fotos. No se puede deshacer.',
+    deleteAccountContinue: 'Continuar',
+    deleteAccountTypePrompt: 'Para confirmar, escribe ELIMINAR',
+    deleteAccountTypeMismatch: 'No coincide. Tu cuenta no se eliminó.',
+    deleteAccountFail: 'No se pudo eliminar tu cuenta. Revisa tu conexión e intenta de nuevo.',
+    deleteAccountPaddleFail: 'No pudimos cancelar tu suscripción en Paddle, así que no borramos nada (para que no se te siga cobrando). Intenta de nuevo en un rato.',
+    deleteAccountDone: 'Tu cuenta y todos tus datos se eliminaron. Gracias por haber sido parte de Bless Habit 🤍',
     pinCardTitle: '🔒 Bloqueo con PIN',
     pinCardOff: 'Pide un PIN de 4 dígitos cada vez que abres Bless Habit, para que nadie más lea tu chat, tu diario ni tus recuerdos.',
     pinCardFree: 'Protege tu chat, tu diario y tus recuerdos con un PIN de 4 dígitos. Disponible con Bless Habit Premium.',
@@ -2071,6 +2081,15 @@ const I18N = {
     bioOffer: 'Want to unlock Bless Habit with your fingerprint or face too? 👆 Your PIN will keep working.',
     bioOfferOk: 'Yes, turn on', bioToggleLabel: 'Unlock with fingerprint or face on this phone',
     bioEnableFail: "Couldn't turn on fingerprint or face. You can keep using your PIN.",
+    deleteAccountLink: 'Delete my account',
+    deleteAccountWarn: 'Your profile, habits, chat, memories, journal and photos will be deleted forever. This cannot be undone.',
+    deleteAccountWarnPremium: 'Your Premium subscription will be cancelled right now and your profile, habits, chat, memories, journal and photos will be deleted forever. This cannot be undone.',
+    deleteAccountContinue: 'Continue',
+    deleteAccountTypePrompt: 'To confirm, type ELIMINAR',
+    deleteAccountTypeMismatch: "That doesn't match. Your account was not deleted.",
+    deleteAccountFail: "Couldn't delete your account. Check your connection and try again.",
+    deleteAccountPaddleFail: "We couldn't cancel your subscription with Paddle, so nothing was deleted (so you won't keep being charged). Please try again later.",
+    deleteAccountDone: 'Your account and all your data were deleted. Thank you for being part of Bless Habit 🤍',
     pinCardTitle: '🔒 PIN lock',
     pinCardOff: 'Ask for a 4-digit PIN every time you open Bless Habit, so nobody else reads your chat, journal or memories.',
     pinCardFree: 'Protect your chat, journal and memories with a 4-digit PIN. Available with Bless Habit Premium.',
@@ -3317,6 +3336,30 @@ function bindAppLockCard() {
       };
     });
   }
+}
+
+/* ============================================================
+   ELIMINAR MI CUENTA — Google Play exige poder hacerlo desde la app.
+   Dos pasos para evitar accidentes: aviso de qué se borra + escribir ELIMINAR.
+   ============================================================ */
+async function deleteMyAccount() {
+  if (!(await uiConfirm(isPremium ? t('deleteAccountWarnPremium') : t('deleteAccountWarn'), { danger: true, okText: t('deleteAccountContinue') }))) return;
+  const typed = await uiPrompt(t('deleteAccountTypePrompt'), '');
+  if (typed === null) return;
+  if (typed.trim().toUpperCase() !== 'ELIMINAR') { uiAlert(t('deleteAccountTypeMismatch')); return; }
+  let res, data;
+  try {
+    res = await fetch('/api/delete-account', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ confirm: 'ELIMINAR' }) });
+    data = await res.json();
+  } catch (e) { uiAlert(t('deleteAccountFail')); return; }
+  if (res.status === 423) { await requireAppUnlock(); return deleteMyAccount(); }
+  if (!data || !data.ok) { uiAlert(data && data.error === 'paddle_cancel_failed' ? t('deleteAccountPaddleFail') : t('deleteAccountFail')); return; }
+  // Limpieza del propio teléfono: recordatorios programados y llave de huella/rostro.
+  appLockEnabled = false;
+  try { state.settings.nativeReminders = false; await scheduleNativeReminders(); } catch (e) {}
+  try { await disableBiometricUnlock(); } catch (e) {}
+  await uiAlert(t('deleteAccountDone'));
+  window.location.href = '/';
 }
 
 async function bootstrapApp() {
@@ -4828,6 +4871,7 @@ function renderProfile() {
     </div>
     ${adBannerHtml()}
     <div style="text-align:center; margin-top: 14px;"><a href="/auth/logout" class="logout-link">${t('logoutLink')}</a></div>
+    <div style="text-align:center; margin-top: 18px;"><button type="button" class="delete-account-link" id="delete-account-btn">${t('deleteAccountLink')}</button></div>
     <div class="login-legal" style="text-align:center;">${currentLang() === 'en'
       ? '<a href="/pricing" target="_blank">Pricing</a> · <a href="/terms" target="_blank">Terms</a> · <a href="/privacy" target="_blank">Privacy</a> · <a href="/refunds" target="_blank">Refunds</a>'
       : '<a href="/precios" target="_blank">Precios</a> · <a href="/terminos" target="_blank">Términos</a> · <a href="/privacidad" target="_blank">Privacidad</a> · <a href="/reembolsos" target="_blank">Reembolsos</a>'}</div>
@@ -4841,6 +4885,8 @@ function renderProfile() {
     pushAdsenseSlots();
   }
   bindAppLockCard();
+  const delBtn = document.getElementById('delete-account-btn');
+  if (delBtn) delBtn.onclick = deleteMyAccount;
   document.querySelectorAll('.memory-del').forEach(btn => {
     btn.onclick = () => {
       state.blessMemories = (state.blessMemories || []).filter(m => m.id !== btn.dataset.id);

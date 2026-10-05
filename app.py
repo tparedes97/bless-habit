@@ -612,6 +612,50 @@ def auth_native_exchange():
     return redirect("/")
 
 
+# ============================================================
+# ELIMINAR CUENTA (lo exige Google Play: debe poder hacerse desde la app).
+# Si hay una suscripción activa, primero se cancela en Paddle; si eso falla
+# no se borra nada (si no, se le seguiría cobrando a alguien sin cuenta).
+# ============================================================
+def delete_user_everything(user_id):
+    conn = get_db()
+    for table in ("user_state", "push_subscriptions", "diary_photos", "one_time_tokens", "biometric_keys"):
+        conn.execute(f"DELETE FROM {table} WHERE user_id = ?", (user_id,))
+    conn.execute("DELETE FROM users WHERE id = ?", (user_id,))
+    conn.commit()
+    conn.close()
+
+
+@app.route("/api/delete-account", methods=["POST"])
+def api_delete_account():
+    user_id = session.get("user_id")
+    if not user_id:
+        return jsonify({"ok": False, "error": "No autenticado"}), 401
+    if app_lock_blocks(user_id):
+        return locked_response()
+    if (request.get_json(force=True) or {}).get("confirm") != "ELIMINAR":
+        return jsonify({"ok": False, "error": "Falta la confirmación"}), 400
+    user = get_user(user_id)
+    subscription_id = user.get("paddle_subscription_id") if user else None
+    if user and user["is_premium"] and subscription_id and paddle_configured():
+        try:
+            resp = requests.post(
+                f"{PADDLE_API_BASE}/subscriptions/{subscription_id}/cancel",
+                json={"effective_from": "immediately"},
+                headers=paddle_headers(),
+                timeout=15,
+            )
+            ok = resp.status_code < 300
+        except Exception as e:
+            print(f"[paddle] error al cancelar antes de borrar la cuenta: {e}")
+            ok = False
+        if not ok:
+            return jsonify({"ok": False, "error": "paddle_cancel_failed"}), 502
+    delete_user_everything(user_id)
+    session.clear()
+    return jsonify({"ok": True})
+
+
 @app.route("/auth/logout")
 def auth_logout():
     session.pop("user_id", None)
@@ -1125,12 +1169,14 @@ LEGAL_PAGES = {
     "terms": {"es": ("/terminos", "Términos"), "en": ("/terms", "Terms")},
     "privacy": {"es": ("/privacidad", "Privacidad"), "en": ("/privacy", "Privacy")},
     "refunds": {"es": ("/reembolsos", "Reembolsos"), "en": ("/refunds", "Refunds")},
+    "delete": {"es": ("/eliminar-cuenta", "Eliminar cuenta"), "en": ("/delete-account", "Delete account")},
 }
 LEGAL_TITLES = {
     "pricing": {"es": "Precios", "en": "Pricing"},
     "terms": {"es": "Términos y condiciones", "en": "Terms of Service"},
     "privacy": {"es": "Política de privacidad", "en": "Privacy Policy"},
     "refunds": {"es": "Política de reembolsos", "en": "Refund Policy"},
+    "delete": {"es": "Eliminar tu cuenta", "en": "Delete your account"},
 }
 COUNTRY_EN = {"Perú": "Peru", "Peru": "Peru", "México": "Mexico", "España": "Spain", "Colombia": "Colombia", "Chile": "Chile", "Argentina": "Argentina"}
 LEGAL_UPDATED = {"es": "5 de octubre de 2026", "en": "October 5, 2026"}
