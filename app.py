@@ -1027,6 +1027,17 @@ def webhook_paddle():
             user = find_user_by_paddle_customer(customer_id)
         if not user and subscription_id:
             user = find_user_by_paddle_subscription(subscription_id)
+        if not user and customer_id and paddle_configured():
+            # Respaldo: si el evento no trae nuestro custom_data, se le pide a
+            # Paddle el correo del cliente y se busca la cuenta con ese correo.
+            try:
+                resp = requests.get(f"{PADDLE_API_BASE}/customers/{customer_id}", headers=paddle_headers(), timeout=10)
+                if resp.status_code < 300:
+                    user = find_user_by_email((resp.json().get("data") or {}).get("email"))
+            except Exception as e:
+                print(f"[paddle] no se pudo consultar el cliente {customer_id}: {e}")
+        if not user:
+            print(f"[paddle] evento {event_type} sin cuenta asociada (customer {customer_id}, subscription {subscription_id})")
 
         if user:
             # subscription.updated llega tanto al activar como al cancelar/pausar,
