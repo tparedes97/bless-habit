@@ -113,7 +113,8 @@
   .diag-card .diag-body { font-size: 13.5px; color: var(--diag-text); line-height: 1.5; }
   .reengage-note { align-self: center; font-size: 13px; background: var(--panel-3); border: 1px solid var(--border); padding: 10px 16px; border-radius: 14px; animation: popIn .45s; text-align: center; }
 
-  .typing-bubble { align-self: flex-start; background: var(--agent-bubble); padding: 12px 16px; border-radius: var(--radius); border-bottom-left-radius: 4px; display: flex; gap: 4px; animation: bubbleIn .2s; }
+  .typing-bubble { align-self: flex-start; background: var(--agent-bubble); padding: 12px 16px; border-radius: var(--radius); border-bottom-left-radius: 4px; display: flex; align-items: center; gap: 4px; animation: bubbleIn .2s; }
+  .typing-bubble .typing-label { margin-left: 8px; font-size: 12.5px; color: var(--text-dim); }
   .typing-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--text-dim); animation: typingBounce 1.1s infinite; }
   .typing-dot:nth-child(2) { animation-delay: .15s; }
   .typing-dot:nth-child(3) { animation-delay: .3s; }
@@ -1464,7 +1465,7 @@ SOBRE LA APP (úsalo solo si preguntan; nunca inventes menús, pantallas ni prec
 - Secciones: Bless (chat), Calendario (día/semana/mes; cada día tiene Hábitos, Tareas con recordatorio y Notas del día), Métricas, Diario y Perfil.
 - La persona puede pedirte tareas o notas escribiendo "recuérdame…" o "anota…" (la app las guarda sola); si pregunta cómo, explícale eso.
 - NUNCA digas que agendaste, anotaste, guardaste o programaste algo, ni "te recordaré" o "te aviso": tú no puedes hacerlo, lo hace la app sola y ella misma lo confirma. Si la persona quiere guardar algo, dile que te lo pida empezando con "recuérdame…" o "anota…".
-- Plan gratis de tareas y notas: hasta 5 tareas pendientes y 10 notas; Premium ilimitado.
+- Plan gratis de tareas y notas: hasta 3 tareas (al llegar al límite se pueden editar para reutilizarlas, no borrar) y 10 notas; Premium ilimitado.
 - Plan gratis: chat con Bless (límite diario de mensajes), hasta 3 hábitos, calendario, diario y recordatorios a la hora de cada hábito.
 - Bless Habit Premium incluye: chat ilimitado y memoria (Bless recuerda lo importante de días anteriores), hábitos ilimitados, resumen semanal escrito por Bless, análisis de ánimo, recordatorios personalizados (avisar 10, 15, 30 o 60 minutos antes), temas y stickers extra para el diario, exportar el diario a PDF y bloqueo con PIN o huella.
 - Esta persona ${isPremium ? 'YA tiene Premium: agradécele y no le ofrezcas comprarlo' : 'todavía no tiene Premium'}.
@@ -1485,7 +1486,11 @@ Responde solo con el mensaje que Bless le diría ahora. No uses listas ni encabe
 // necesita, por fuera del mensaje del usuario.
 async function say(container, situationDesc, fallbackText, delay, reactionEmoji, extraSystem) {
   const sys = extraSystem ? `${blessSystemPrompt()}\n\n${extraSystem}` : blessSystemPrompt();
+  showTyping(container); // "Bless está escribiendo…" mientras la IA piensa
+  const started = Date.now();
   const aiReply = await callBlessAI(sys, situationDesc);
+  // Si la IA ya tardó, no se suma otra pausa larga encima.
+  if (delay === undefined && Date.now() - started > 800) delay = 250;
   await agentSay(container, aiReply || fallbackText, delay, reactionEmoji);
 }
 
@@ -1889,7 +1894,7 @@ const I18N = {
     openConfigBtn: 'Abrir configuración',
     planTitle: 'Plan', premiumBadge: '✨ Bless Habit Premium', cancelSubLink: 'Cancelar suscripción',
     freePlanDesc: 'Estás en el plan gratis. Con Premium tienes:',
-    premiumBenefits: ['💬 Conversa con Bless sin límite, y Bless recuerda lo importante de ti', '📬 Cada lunes, tu resumen semanal escrito por Bless', '😊 Tu ánimo en el tiempo y qué hábitos acompañan tus días buenos', '🌱 Hábitos ilimitados (gratis: hasta 3)', '⏰ Recordatorios a tu medida: 10, 15, 30 o 60 min antes', '✅ Tareas y notas ilimitadas (gratis: 5 tareas pendientes y 10 notas)', '📔 Diario con temas y stickers exclusivos, y exportar a PDF', '🔒 Bloqueo con PIN (y huella o rostro en Android)', '🚫 Sin anuncios · ✨ Tema dorado'],
+    premiumBenefits: ['💬 Conversa con Bless sin límite, y Bless recuerda lo importante de ti', '📬 Cada lunes, tu resumen semanal escrito por Bless', '😊 Tu ánimo en el tiempo y qué hábitos acompañan tus días buenos', '🌱 Hábitos ilimitados (gratis: hasta 3)', '⏰ Recordatorios a tu medida: 10, 15, 30 o 60 min antes', '✅ Tareas y notas ilimitadas (gratis: 3 tareas y 10 notas)', '📔 Diario con temas y stickers exclusivos, y exportar a PDF', '🔒 Bloqueo con PIN (y huella o rostro en Android)', '🚫 Sin anuncios · ✨ Tema dorado'],
     premiumCancelNote: 'Pago mensual con Paddle. Cancelas cuando quieras.',
     heRemindQ: '¿Cuándo te aviso?', heRemindPremiumTag: '✨ Premium para más opciones',
     daySecHabits: 'Hábitos', daySecTasks: 'Tareas', daySecNotes: 'Notas del día', daySecAdd: 'Agregar',
@@ -1919,15 +1924,17 @@ const I18N = {
     deleteTaskConfirm: '¿Eliminar esta tarea?', newNoteTitle: '📝 Nueva nota', editNoteTitle: '📝 Editar nota', noteTextPh: 'Escribe tu nota…',
     deleteNoteConfirm: '¿Eliminar esta nota?',
     taskReminderBody: ['Es la hora de esto ⏰', 'Te lo recuerdo como quedamos 🤍', '¡Ahora sí! Tú puedes ✨'],
-    taskLimitMsg: (n) => `En el plan gratis puedes tener hasta ${n} tareas pendientes ✅. Completa o borra alguna, o hazte Premium para tenerlas ilimitadas. ¿Quieres verlo?`,
+    taskLimitMsg: (n) => `En el plan gratis puedes tener hasta ${n} tareas ✅. Puedes editar una de las que ya tienes para reutilizarla (cambiar texto, día u hora), o hacerte Premium para tenerlas ilimitadas. ¿Quieres verlo?`,
+    taskLockedDeleteHint: (n) => `Plan gratis: con ${n} tareas no puedes borrarlas, pero sí editarlas para reutilizarlas. Con Premium son ilimitadas ✨`,
     noteLimitMsg: (n) => `En el plan gratis puedes guardar hasta ${n} notas 📝. Borra alguna o hazte Premium para tenerlas ilimitadas. ¿Quieres verlo?`,
-    taskLimitChat: (n) => `Llegaste al máximo de ${n} tareas pendientes del plan gratis 🌱 Si completas o borras alguna, la agrego al toque. Con Premium son ilimitadas ✨`,
+    taskLimitChat: (n) => `Llegaste al máximo de ${n} tareas del plan gratis 🌱 Puedes editar una de tus tareas en el Calendario para reutilizarla (cambiar texto, día u hora). Con Premium son ilimitadas ✨`,
     noteLimitChat: (n) => `Llegaste al máximo de ${n} notas del plan gratis 📝 Si borras alguna, guardo esta. Con Premium son ilimitadas ✨`,
     taskSavedChat: (text, date, time) => `¡Listo! ✅ Te recordaré «${text}» ${date} a las ${time} ⏰`,
     taskSavedNoTimeChat: (text, date) => `¡Anotado! ✅ «${text}» quedó en tus tareas de ${date}. Si quieres que te avise, dime a qué hora 🤍`,
     noteSavedChat: (date) => `Guardé tu nota en el día de ${date} 📝`,
-    seeInCalendarNote: '📅 Ver en el calendario',
+    seeInCalendarNote: '📅 Ver en el calendario', typingLabel: 'Bless está escribiendo…',
     taskTimeNotUnderstood: 'Mmm, no entendí la hora 😅 Dímela así: "a las 5pm", "a las 17:30" o "en 10 minutos" ⏰',
+    askTaskForTimeChat: (time) => `¿Qué tarea programo para las ${time}? 😊`,
     askTaskChat: '¡Claro! ¿Qué tarea agrego? Si quieres que te avise, dime también el día y la hora 😊 (por ejemplo: "pagar la luz el viernes a las 6")',
     remindAtTime: 'A la hora', remindBefore: (m) => m >= 60 ? '1 h antes' : `${m} min antes`,
     remindPremiumMsg: 'Con Premium eliges cuándo te aviso: 10, 15, 30 o 60 minutos antes ⏰✨',
@@ -2352,7 +2359,7 @@ const I18N = {
     openConfigBtn: 'Open settings',
     planTitle: 'Plan', premiumBadge: '✨ Bless Habit Premium', cancelSubLink: 'Cancel subscription',
     freePlanDesc: "You're on the free plan. With Premium you get:",
-    premiumBenefits: ['💬 Talk with Bless without limits, and Bless remembers what matters to you', '📬 Every Monday, your weekly summary written by Bless', '😊 Your mood over time and which habits come with your good days', '🌱 Unlimited habits (free: up to 3)', '⏰ Reminders your way: 10, 15, 30 or 60 min before', '✅ Unlimited tasks and notes (free: 5 pending tasks and 10 notes)', '📔 Journal with exclusive themes and stickers, plus PDF export', '🔒 PIN lock (plus fingerprint or face on Android)', '🚫 No ads · ✨ Gold theme'],
+    premiumBenefits: ['💬 Talk with Bless without limits, and Bless remembers what matters to you', '📬 Every Monday, your weekly summary written by Bless', '😊 Your mood over time and which habits come with your good days', '🌱 Unlimited habits (free: up to 3)', '⏰ Reminders your way: 10, 15, 30 or 60 min before', '✅ Unlimited tasks and notes (free: 3 tasks and 10 notes)', '📔 Journal with exclusive themes and stickers, plus PDF export', '🔒 PIN lock (plus fingerprint or face on Android)', '🚫 No ads · ✨ Gold theme'],
     premiumCancelNote: 'Monthly payment via Paddle. Cancel anytime.',
     heRemindQ: 'When should I remind you?', heRemindPremiumTag: '✨ Premium for more options',
     daySecHabits: 'Habits', daySecTasks: 'Tasks', daySecNotes: "Today's notes", daySecAdd: 'Add',
@@ -2382,15 +2389,17 @@ const I18N = {
     deleteTaskConfirm: 'Delete this task?', newNoteTitle: '📝 New note', editNoteTitle: '📝 Edit note', noteTextPh: 'Write your note…',
     deleteNoteConfirm: 'Delete this note?',
     taskReminderBody: ["It's time for this ⏰", 'Reminding you, just like we said 🤍', 'Now is the moment! You got this ✨'],
-    taskLimitMsg: (n) => `On the free plan you can have up to ${n} pending tasks ✅. Complete or delete one, or go Premium for unlimited tasks. Want to see it?`,
+    taskLimitMsg: (n) => `On the free plan you can have up to ${n} tasks ✅. You can edit one of yours to reuse it (change text, day or time), or go Premium for unlimited tasks. Want to see it?`,
+    taskLockedDeleteHint: (n) => `Free plan: with ${n} tasks you can't delete them, but you can edit them to reuse them. With Premium they're unlimited ✨`,
     noteLimitMsg: (n) => `On the free plan you can keep up to ${n} notes 📝. Delete one or go Premium for unlimited notes. Want to see it?`,
-    taskLimitChat: (n) => `You've reached the free plan limit of ${n} pending tasks 🌱 Complete or delete one and I'll add it right away. With Premium they're unlimited ✨`,
+    taskLimitChat: (n) => `You've reached the free plan limit of ${n} tasks 🌱 You can edit one of your tasks in the Calendar to reuse it (change text, day or time). With Premium they're unlimited ✨`,
     noteLimitChat: (n) => `You've reached the free plan limit of ${n} notes 📝 Delete one and I'll save this. With Premium they're unlimited ✨`,
     taskSavedChat: (text, date, time) => `Done! ✅ I'll remind you to "${text}" ${date} at ${time} ⏰`,
     taskSavedNoTimeChat: (text, date) => `Got it! ✅ "${text}" is in your tasks for ${date}. If you want a reminder, tell me what time 🤍`,
     noteSavedChat: (date) => `I saved your note on ${date} 📝`,
-    seeInCalendarNote: '📅 See it in the calendar',
+    seeInCalendarNote: '📅 See it in the calendar', typingLabel: 'Bless is typing…',
     taskTimeNotUnderstood: 'Hmm, I didn\'t get the time 😅 Try: "at 5pm", "at 17:30" or "in 10 minutes" ⏰',
+    askTaskForTimeChat: (time) => `What task should I set for ${time}? 😊`,
     askTaskChat: 'Sure! What task should I add? If you want a reminder, tell me the day and time too 😊 (e.g. "pay the bill Friday at 6")',
     remindAtTime: 'On time', remindBefore: (m) => m >= 60 ? '1 h before' : `${m} min before`,
     remindPremiumMsg: 'With Premium you choose when I remind you: 10, 15, 30 or 60 minutes before ⏰✨',
@@ -2883,8 +2892,10 @@ function addDiagCard(container, diag) {
 }
 function showTyping(container) {
   setAvatarMood('thinking');
+  const existing = document.getElementById('typing-indicator');
+  if (existing) { if (existing.parentElement !== container) existing.remove(); else return; }
   const div = document.createElement('div'); div.className = 'typing-bubble'; div.id = 'typing-indicator';
-  div.innerHTML = '<span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span>';
+  div.innerHTML = `<span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-label">${t('typingLabel')}</span>`;
   container.appendChild(div); container.scrollTop = container.scrollHeight;
 }
 function hideTyping() { const d = document.getElementById('typing-indicator'); if (d) d.remove(); }
@@ -4655,7 +4666,14 @@ function timeToMinutes(hhmm) { const [h,m] = hhmm.split(':').map(Number); return
 function minutesToTime(mins) { mins = ((mins % 1440) + 1440) % 1440; const h = Math.floor(mins/60), m = mins%60; return String(h).padStart(2,'0')+':'+String(m).padStart(2,'0'); }
 function extractTime(text) {
   text = text.toLowerCase().trim();
-  let m = text.match(/(\d{1,2}):(\d{2})/); if (m) return String(m[1]).padStart(2,'0')+':'+m[2];
+  let m = text.match(/(\d{1,2}):(\d{2})\s*(a\.?\s?m\.?|p\.?\s?m\.?)?/);
+  if (m) {
+    let h = parseInt(m[1], 10); const mer = (m[3] || '').replace(/[\s.]/g, '');
+    if (mer === 'pm' && h < 12) h += 12;
+    if (mer === 'am' && h === 12) h = 0;
+    if (!mer && (text.includes('tarde') || text.includes('noche')) && h < 12) h += 12;
+    return String(h).padStart(2,'0')+':'+m[2];
+  }
   m = text.match(/(\d{1,2})\s*(am|pm)/);
   if (m) { let h = parseInt(m[1]); if (m[2]==='pm' && h<12) h+=12; if (m[2]==='am' && h===12) h=0; return String(h).padStart(2,'0')+':00'; }
   m = text.match(/a las (\d{1,2})/);
@@ -5194,7 +5212,7 @@ async function respondWithHabitSuggestions() {
    Reconoce pedidos explícitos ("recuérdame…", "agrega una tarea…", "anota…",
    "remind me…", "take a note…") y saca de la frase el día y la hora. Todo lo
    demás sigue al flujo normal de conversación. */
-const TASK_TRIGGER_RE = /^\s*(?:(?:oye|bless|porfa|por favor|ok|okay|okey|vale|ya|y|tambi[eé]n|ahora|bueno|ah|hola|please|also|and|hey|hi)[,!.\s]+)*(recu[eé]rdame|recordarme|ponme un recordatorio(?: para)?|crea(?:me)? un recordatorio(?: para)?|recordatorio(?: para)?\s*:?|ag[eé]ndame|agrega(?:me)? (?:una )?tarea|a[nñ]ade (?:una )?tarea|nueva tarea|tarea\s*:|remind me(?: to)?|add (?:a )?task|new task|task\s*:)\s*(?:de |que |a |to |:\s*)?/i;
+const TASK_TRIGGER_RE = /^\s*(?:(?:oye|bless|porfa|por favor|ok|okay|okey|vale|ya|y|tambi[eé]n|ahora|bueno|ah|hola|please|also|and|hey|hi)[,!.\s]+)*(recu[eé]rdame|recordarme|ponme un recordatorio(?: para)?|crea(?:me)? un recordatorio(?: para)?|recordatorio(?: para)?\s*:?|ag[eé]ndame|agrega(?:me)? (?:una )?tarea|a[nñ]ade (?:una )?tarea|nueva tarea|tarea\s*:|programa(?:me)? (?:una )?tarea|ag[eé]nda(?:me)? (?:una )?tarea|crea(?:me)? (?:una )?tarea|pon(?:me)? (?:una )?tarea|remind me(?: to)?|add (?:a )?task|new task|task\s*:)\s*(?:de |que |a |to |:\s*)?/i;
 const NOTE_TRIGGER_RE = /^\s*(?:(?:oye|bless|porfa|por favor|ok|okay|okey|vale|ya|y|tambi[eé]n|ahora|bueno|ah|hola|please|also|and|hey|hi)[,!.\s]+)*(anota(?:me)?|apunta(?:me)?|toma nota(?: de)?|guarda (?:una |esta )?nota|agrega (?:una )?nota|nueva nota|nota\s*:|take a note|write down|add a note|jot down|note\s*:)\s*(?:que |de |:\s*|that )?/i;
 const WEEKDAYS_ES = ['domingo','lunes','martes','mi[eé]rcoles','jueves','viernes','s[aá]bado'];
 const WEEKDAYS_EN = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'];
@@ -5298,6 +5316,7 @@ function cleanTaskText(t0) {
     .replace(/^(?:que|de|a|to|that|para|por favor|porfa)\s+/i, '')
     .replace(/\s+(?:a|para|el|la|on|at|por|de)$/i, '')
     .replace(/[\s,.;:!?¡¿]+$/, '').replace(/^[\s,.;:¡¿]+/, '').trim();
+  if (/^(?:que|de|a|to|that|para|por|el|la|las|los|for|at|on|y|and|algo|something|una cosa)$/i.test(x)) x = '';
   return x ? x.charAt(0).toUpperCase() + x.slice(1) : '';
 }
 function parseTaskOrNoteRequest(text) {
@@ -5306,7 +5325,7 @@ function parseTaskOrNoteRequest(text) {
     const when = parseWhenFromText(text.slice(m[0].length));
     const body = cleanTaskText(when.rest.replace(/^\s*(?:algo|something|una cosa)\s*$/i, ''));
     if (body) return { kind: 'task', text: body, date: when.date, time: when.time };
-    return { kind: 'askTask' };
+    return { kind: 'askTask', date: when.date, time: when.time };
   }
   m = text.match(NOTE_TRIGGER_RE);
   if (m) {
@@ -5354,14 +5373,29 @@ function scheduleFromChat(time, rawText) {
   if (!when.explicitDate && time && time <= nowHM) date = ymd(addDays(now, 1)); // esa hora ya pasó hoy
   return addTask({ text, date, time });
 }
+async function applyTimeToRecentTask(time, date) {
+  const recent = tasksList().filter(x => !x.time && !x.done && Date.now() - (x.createdAt || 0) < 2 * 3600000)
+    .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0))[0];
+  if (!recent) return false;
+  recent.time = time;
+  if (date) recent.date = date;
+  afterTasksOrNotesChanged();
+  maybeEnableRemindersForTask();
+  await agentSay(chatScroll, t('taskSavedChat', recent.text, friendlyDateLabel(recent.date), recent.time), 300, '⏰');
+  return true;
+}
 async function sayTaskLimit() {
   await agentSay(chatScroll, t('taskLimitChat', FREE_TASK_LIMIT));
   addNote(chatScroll, t('seePremiumNote'), 'agenda-note', () => openPremiumSheet());
 }
 async function handleTaskOrNoteRequest(req) {
   if (req.kind === 'askTask') {
-    state.pending = { type: 'taskNew' };
-    await agentSay(chatScroll, t('askTaskChat'), 300);
+    // Solo dio la hora ("programa tarea para las 3:25"): si hay una tarea
+    // reciente sin hora, se le pone; si no, se pregunta cuál.
+    if (req.time && await applyTimeToRecentTask(req.time, req.date)) return;
+    if (!canAddTask()) { await sayTaskLimit(); return; }
+    state.pending = { type: 'taskNew', time: req.time || null, date: req.time ? req.date : null };
+    await agentSay(chatScroll, req.time ? t('askTaskForTimeChat', req.time) : t('askTaskChat'), 300);
     return;
   }
   if (req.kind === 'task') {
@@ -5394,7 +5428,9 @@ async function handleTaskOrNoteRequest(req) {
 // un acceso directo a la tarjeta de Premium (con su botón de compra).
 async function handleUserMessage(text) {
   const asksPremium = !isPremium && /premium|suscrip|subscri|membres[ií]a|membership|versi[oó]n (?:pagada|completa|pro)|plan (?:pagado|de pago)|paid (?:plan|version)/i.test(text);
-  await handleUserMessageInner(text);
+  const typingTimer = setTimeout(() => showTyping(chatScroll), 300);
+  try { await handleUserMessageInner(text); }
+  finally { clearTimeout(typingTimer); hideTyping(); }
   if (asksPremium) addNote(chatScroll, t('seePremiumNote'), 'agenda-note', () => openPremiumSheet());
 }
 async function handleUserMessageInner(text) {
@@ -5409,10 +5445,18 @@ async function handleUserMessageInner(text) {
   }
   // Respuesta a "¿qué tarea agrego?"
   if (state.pending && state.pending.type === 'taskNew') {
-    state.pending = null;
+    const prev = state.pending; state.pending = null;
     const when = parseWhenFromText(text);
     const body = cleanTaskText(when.rest);
-    if (body) { await handleTaskOrNoteRequest({ kind: 'task', text: body, date: when.date, time: when.time }); return; }
+    if (body) {
+      await handleTaskOrNoteRequest({ kind: 'task', text: body, date: when.time ? when.date : (prev.date || when.date), time: when.time || prev.time });
+      return;
+    }
+  }
+  // Solo una hora ("A las 3:22 pm", "en 10 minutos"): va a la última tarea sin hora.
+  if (!state.pending) {
+    const when = parseWhenFromText(text);
+    if (when.time && !cleanTaskText(when.rest) && await applyTimeToRecentTask(when.time, when.explicitDate ? when.date : null)) return;
   }
   // Respuesta a "¿a qué hora te aviso?" de una tarea recién creada sin hora.
   if (state.pending && state.pending.type === 'taskTime') {
@@ -7779,7 +7823,7 @@ function renderCalDay() {
    Plan gratis: hasta FREE_TASK_LIMIT tareas pendientes y FREE_NOTE_LIMIT notas.
    ============================================================ */
 const CAL_DAY_MAX_AHEAD = 60;
-const FREE_TASK_LIMIT = 5;
+const FREE_TASK_LIMIT = 3;
 const FREE_NOTE_LIMIT = 10;
 function newItemId() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
 function tasksList() { if (!Array.isArray(state.tasks)) state.tasks = []; return state.tasks; }
@@ -7789,8 +7833,10 @@ function tasksForDate(dateStr) {
     .sort((a, b) => (a.time || '99:99').localeCompare(b.time || '99:99'));
 }
 function notesForDate(dateStr) { return notesList().filter(n => n.date === dateStr).sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0)); }
-function pendingTasksCount() { const today = ymd(new Date()); return tasksList().filter(tk => !tk.done && tk.date >= today).length; }
-function canAddTask() { return isPremium || pendingTasksCount() < FREE_TASK_LIMIT; }
+// Plan gratis: hasta 3 tareas en total. Al llegar al límite no se pueden borrar
+// (para no "rotarlas"), solo editar: cambiar texto, día u hora para reutilizarlas.
+function canAddTask() { return isPremium || tasksList().length < FREE_TASK_LIMIT; }
+function canDeleteTask() { return isPremium || tasksList().length < FREE_TASK_LIMIT; }
 function canAddNote() { return isPremium || notesList().length < FREE_NOTE_LIMIT; }
 function afterTasksOrNotesChanged() {
   saveStateToServer(); // también reprograma los recordatorios
@@ -7847,8 +7893,9 @@ function openTaskEditor(id, defaultDate) {
       <div class="tk-sub">${t('heRemindQ')}</div>
       ${isPremium ? '<div class="quick-replies he-remind" id="tk-remind"></div>' : `<div class="tk-free-remind">⏰ ${t('taskFreeRemind')} <button type="button" id="tk-premium-link">${t('taskFreeRemindMore')}</button></div>`}
       <div class="tk-hint" id="tk-hint">${t('taskNoTimeHint')}</div>
+      ${existing && !canDeleteTask() ? `<div class="tk-hint">🔒 ${t('taskLockedDeleteHint', FREE_TASK_LIMIT)}</div>` : ''}
       <div class="ui-dialog-actions">
-        ${existing ? `<button type="button" class="ui-dialog-cancel tk-delete">${t('deleteWord')}</button>` : `<button type="button" class="ui-dialog-cancel tk-cancel">${t('dialogCancel')}</button>`}
+        ${existing && canDeleteTask() ? `<button type="button" class="ui-dialog-cancel tk-delete">${t('deleteWord')}</button>` : `<button type="button" class="ui-dialog-cancel tk-cancel">${t('dialogCancel')}</button>`}
         <button type="button" class="ui-dialog-ok tk-save">${t('dialogSave')}</button>
       </div>
     </div>`;
