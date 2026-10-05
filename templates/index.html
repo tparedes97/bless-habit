@@ -536,6 +536,7 @@
   .day-sec-add { background: rgba(124,98,245,.10); color: var(--accent); border: none; border-radius: 999px; padding: 5px 11px; font-size: 12px; font-weight: 800; cursor: pointer; text-transform: none; letter-spacing: 0; }
   .day-empty { font-size: 12px; color: var(--text-dim); padding: 2px 2px 4px; }
   .task-item .task-bell { font-size: 12px; opacity: .7; }
+  html[data-theme="dark"] .day-note, html[data-theme="premium"] .day-note { background: #3a3320 !important; border-color: #5a4c25 !important; color: #f3e7c4 !important; }
   .day-note { background: #FFF8E1; border: 1px solid #F5E6B8; color: #3a3355; border-radius: 12px; padding: 10px 12px; margin-bottom: 6px; font-size: 13.5px; line-height: 1.45; white-space: pre-wrap; cursor: pointer; }
   .task-sheet input[type=text], .task-sheet textarea { width: 100%; box-sizing: border-box; padding: 11px 12px; border-radius: 12px; border: 1px solid var(--border); background: var(--panel); color: var(--text); font-size: 15px; font-family: inherit; margin-top: 8px; }
   .task-sheet textarea { resize: vertical; min-height: 110px; }
@@ -895,19 +896,23 @@
      Chat is intentionally the only conversational surface. Agenda,
      levels, metrics and configuration belong to their own modules.
      ============================================================ */
-  html[data-theme="light"] .profile-top-card {
+  .profile-top-card {
     display:flex; align-items:center; justify-content:space-between; gap:12px;
-    padding:16px; margin:0 0 12px; border:1px solid #E9E6F2; border-radius:22px;
+    padding:16px; margin:0 0 12px; border:1px solid var(--border); border-radius:22px;
+    background:var(--panel);
+  }
+  html[data-theme="light"] .profile-top-card {
+    border-color:#E9E6F2;
     background:linear-gradient(135deg,#F8F5FF 0%,#FFFFFF 62%,#F1FFF9 100%);
     box-shadow:0 8px 24px rgba(57,49,104,.055);
   }
   .profile-top-main { display:flex; align-items:center; gap:11px; min-width:0; }
   .profile-mini-avatar { width:46px; height:46px; border-radius:50%; flex:0 0 46px; overflow:hidden; box-shadow:0 5px 14px rgba(82,91,190,.18); }
   .profile-mini-avatar .bless-logo-svg { width:100%; height:100%; display:block; }
-  .profile-greeting { font-size:15px; font-weight:800; color:#20283A; line-height:1.2; }
-  .profile-greeting-sub { font-size:11.5px; color:#7B8192; margin-top:4px; line-height:1.35; }
-  .settings-icon-btn { width:42px; height:42px; border-radius:14px; border:1px solid #E5E2EE; background:#fff; color:#6657D9; display:flex; align-items:center; justify-content:center; font-size:19px; cursor:pointer; box-shadow:0 4px 12px rgba(57,49,104,.06); transition:.15s; flex:0 0 42px; }
-  .settings-icon-btn:hover { transform:translateY(-1px); border-color:#CFC7F7; background:#F8F5FF; }
+  .profile-greeting { font-size:15px; font-weight:800; color:var(--text); line-height:1.2; }
+  .profile-greeting-sub { font-size:11.5px; color:var(--text-dim); margin-top:4px; line-height:1.35; }
+  .settings-icon-btn { width:42px; height:42px; border-radius:14px; border:1px solid var(--border); background:var(--panel-2); color:var(--accent); display:flex; align-items:center; justify-content:center; font-size:19px; cursor:pointer; box-shadow:0 4px 12px rgba(57,49,104,.06); transition:.15s; flex:0 0 42px; }
+  .settings-icon-btn:hover { transform:translateY(-1px); border-color:var(--accent); }
   .settings-icon-btn:active { transform:scale(.95); }
 
   /* Botones de acción: una sola jerarquía visual en toda la app. */
@@ -927,22 +932,23 @@
 
   /* Encabezados de módulos: menos sensación de formulario, más producto. */
   .module-heading { display:flex; align-items:flex-end; justify-content:space-between; gap:12px; margin:2px 0 14px; }
-  .module-heading h2 { margin:0; font-size:20px; line-height:1.15; font-weight:850; color:#20283A; }
-  .module-heading p { margin:4px 0 0; font-size:11.5px; color:#858B9C; }
-  .module-heading .module-icon { width:40px; height:40px; border-radius:13px; display:flex; align-items:center; justify-content:center; background:#F4F1FF; border:1px solid #E4DFFC; font-size:19px; }
+  .module-heading h2 { margin:0; font-size:20px; line-height:1.15; font-weight:850; color:var(--text); }
+  .module-heading p { margin:4px 0 0; font-size:11.5px; color:var(--text-dim); }
+  .module-heading .module-icon { width:40px; height:40px; border-radius:13px; display:flex; align-items:center; justify-content:center; background:var(--panel-3); border:1px solid var(--border); font-size:19px; }
 
   /* Configuración: una hoja de preferencias, no una tarjeta genérica perdida. */
   html[data-theme="light"] .settings-overlay { background:rgba(27,31,48,.30) !important; backdrop-filter:blur(12px); }
   html[data-theme="light"] .settings-modal { background:#fff !important; border:1px solid #E7E4EF; border-radius:26px !important; padding:20px !important; box-shadow:0 28px 80px rgba(35,30,70,.20) !important; }
   .modal-heading { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; margin-bottom:16px; }
-  .modal-heading h4 { margin:0 0 3px !important; font-size:16px !important; color:#222A3B !important; text-transform:none !important; letter-spacing:0 !important; }
-  .modal-kicker { font-size:11px; color:#8A90A1; }
-  .modal-close-btn { width:34px; height:34px; border:1px solid #E6E3ED; background:#FAF9FD; color:#70778A; border-radius:11px; font-size:22px; line-height:1; cursor:pointer; }
+  .modal-heading h4 { margin:0 0 3px !important; font-size:16px !important; color:var(--text) !important; text-transform:none !important; letter-spacing:0 !important; }
+  .modal-kicker { font-size:11px; color:var(--text-dim); }
+  .modal-close-btn { width:34px; height:34px; border:1px solid var(--border); background:var(--panel-2); color:var(--text-dim); border-radius:11px; font-size:22px; line-height:1; cursor:pointer; }
   .modal-close-btn:hover { background:#F1EEFF; color:#6657D9; }
 
   /* El calendario contiene agenda y edición: no duplicarla en Bless. */
   html[data-theme="light"] .cal-body { padding:4px 16px 24px; }
-  html[data-theme="light"] #day-items .agenda-item { min-height:58px; border-radius:16px; background:#fff; box-shadow:0 5px 16px rgba(57,49,104,.045); }
+  html[data-theme="light"] #day-items .agenda-item, html[data-theme="light"] #day-tasks .agenda-item { min-height:58px; border-radius:16px; background:#fff; box-shadow:0 5px 16px rgba(57,49,104,.045); }
+  #day-tasks .agenda-item .edit { width:32px; height:32px; border-radius:10px; background:var(--panel-3); display:flex; align-items:center; justify-content:center; }
   html[data-theme="light"] #day-items .agenda-item .edit { width:32px; height:32px; border-radius:10px; background:#F6F3FF; display:flex; align-items:center; justify-content:center; }
 
   /* Métricas: encabezado propio para que el contenido no empiece abruptamente. */
@@ -952,10 +958,11 @@
   /* Ocultar el FAB de Bless definitivamente: no hay chat fuera de Bless. */
   .bless-fab { display:none !important; }
 
-  html[data-theme="light"] .calendar-module-heading { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:16px 16px 8px; background:#fff; }
-  .calendar-module-title { font-size:20px; font-weight:850; color:#20283A; line-height:1.15; }
-  .calendar-module-sub { margin-top:4px; font-size:11.5px; color:#858B9C; }
-  .calendar-module-icon { width:40px; height:40px; border-radius:13px; background:#F4F1FF; border:1px solid #E4DFFC; display:flex; align-items:center; justify-content:center; font-size:19px; }
+  .calendar-module-heading { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:16px 16px 8px; }
+  html[data-theme="light"] .calendar-module-heading { background:#fff; }
+  .calendar-module-title { font-size:20px; font-weight:850; color:var(--text); line-height:1.15; }
+  .calendar-module-sub { margin-top:4px; font-size:11.5px; color:var(--text-dim); }
+  .calendar-module-icon { flex:0 0 40px; width:40px; height:40px; border-radius:13px; background:var(--panel-3); border:1px solid var(--border); display:flex; align-items:center; justify-content:center; font-size:19px; }
 </style>
 
 <script>document.documentElement.setAttribute('data-theme', 'light');</script>
@@ -1754,7 +1761,7 @@ const I18N = {
     reminderBody: ['Es un buen momento para esto 🌱', 'Tu yo de mañana te lo agradece 🤍', 'Un pasito más hoy ✨', 'Cuando quieras, aquí estoy 🌱'],
     reengageBody: ['Hola de nuevo 🤍. No te sientas culpable — siempre se puede comenzar de nuevo. ¿Retomamos hoy, aunque sea con algo pequeño?', 'Te extrañé 🤍. Esto no se trata de ser perfecto, se trata de volver. ¿Empezamos de nuevo, sin presión?'],
 
-    tareasHoy: 'Tareas hoy', habitosActivos: 'Hábitos activos', rachaTotal: 'Racha total 🔥',
+    tareasHoy: 'Hábitos de hoy', habitosActivos: 'Hábitos activos', rachaTotal: 'Racha total 🔥',
 
     basicDataTitle: 'Datos básicos', nombreLabel: 'Nombre', edadLabel: 'Edad',
     aniosSuffix: (n) => `${n} años`, noCompartida: 'No compartida',
@@ -2198,7 +2205,7 @@ const I18N = {
     reminderBody: ['Good time for this 🌱', 'Future you says thanks 🤍', 'One more small step today ✨', "Whenever you're ready, I'm here 🌱"],
     reengageBody: ["Hi again 🤍. Don't feel guilty — you can always start over. Shall we pick it back up today, even with something small?", "Missed you 🤍. This isn't about being perfect, it's about coming back. Start again, no pressure?"],
 
-    tareasHoy: "Today's tasks", habitosActivos: 'Active habits', rachaTotal: 'Total streak 🔥',
+    tareasHoy: "Today's habits", habitosActivos: 'Active habits', rachaTotal: 'Total streak 🔥',
 
     basicDataTitle: 'Basic info', nombreLabel: 'Name', edadLabel: 'Age',
     aniosSuffix: (n) => `${n} yrs`, noCompartida: 'Not shared',
@@ -3187,12 +3194,48 @@ CUERPO: <2-3 frases que conecten los datos con una lectura real del patrón (no 
   return { title, body };
 }
 
+/* El diagnóstico se escribe una vez, en el idioma de ese momento. Si la
+   persona cambia de idioma, se traduce una sola vez con la IA y se guarda. */
+function guessTextLang(txt) {
+  const es = (String(txt).match(/\b(de|que|la|el|con|su|para|los|las|una|por|y)\b/gi) || []).length;
+  const en = (String(txt).match(/\b(the|and|with|her|his|their|to|of|for|a|is)\b/gi) || []).length;
+  return en > es ? 'en' : 'es';
+}
+let diagTranslating = false;
+function diagnosticForLang() {
+  const d = state.diagnostic;
+  const lang = currentLang();
+  if (!d.lang) d.lang = guessTextLang(d.title + ' ' + d.body);
+  if (d.lang === lang) return d;
+  if (d.i18n && d.i18n[lang]) return d.i18n[lang];
+  translateDiagnostic(lang);
+  return d;
+}
+async function translateDiagnostic(lang) {
+  if (diagTranslating) return;
+  diagTranslating = true;
+  try {
+    const d = state.diagnostic;
+    const target = lang === 'en' ? 'English' : 'español';
+    const raw = await callBlessAI(`Eres un traductor. Traduce al ${target} manteniendo el tono cálido y el nombre de la persona. Responde EXACTAMENTE en dos líneas, sin nada más:\nTITULO: <título traducido>\nCUERPO: <texto traducido>`,
+      `TITULO: ${d.title}\nCUERPO: ${d.body}`);
+    const tm = raw && raw.match(/T[IÍ]TULO:\s*(.+)/i), bm = raw && raw.match(/CUERPO:\s*([\s\S]+)/i);
+    if (tm && bm) {
+      d.i18n = d.i18n || {};
+      d.i18n[lang] = { title: tm[1].split('\n')[0].trim(), body: bm[1].trim() };
+      saveStateToServer();
+      if (document.getElementById('view-profile').classList.contains('active')) renderProfile();
+    }
+  } finally { diagTranslating = false; }
+}
+
 async function finishOnboarding() {
   progressFill.style.width = '100%';
   setAvatarMood('thinking');
   await agentSay(ob, t('diagnosingMsg', state.profile.nombre), 500);
   await new Promise(r => setTimeout(r, 1100));
   state.diagnostic = (await buildDiagnosticAI(state.profile)) || buildDiagnostic(state.profile);
+  state.diagnostic.lang = currentLang();
   state.history = [];
   state.lastActiveDate = ymd(new Date());
   lastCelebratedPct = 0;
@@ -5553,7 +5596,7 @@ function renderProfile() {
       </div>
       <button class="settings-icon-btn" id="open-settings-top-btn" title="${t('openConfigBtn')}" aria-label="${t('openConfigBtn')}">⚙️</button>
     </div>
-    ${state.diagnostic ? `<div class="diag-card" style="margin-bottom:14px;"><div class="diag-label">${t('diagLabel')}</div><div class="diag-title">${state.diagnostic.title}</div><div class="diag-body">${state.diagnostic.body}</div></div>` : ''}
+    ${state.diagnostic ? (() => { const dg = diagnosticForLang(); return `<div class="diag-card" style="margin-bottom:14px;"><div class="diag-label">${t('diagLabel')}</div><div class="diag-title">${escapeHtml(dg.title)}</div><div class="diag-body">${escapeHtml(dg.body)}</div></div>`; })() : ''}
     <div class="stats-row" style="margin-bottom:14px;">
       <div class="stat-box"><div class="num">${done}/${total||0}</div><div class="lbl">${t('tareasHoy')}</div></div>
       <div class="stat-box"><div class="num">${p.habitos.length}</div><div class="lbl">${t('habitosActivos')}</div></div>
