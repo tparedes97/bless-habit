@@ -1899,6 +1899,12 @@ const I18N = {
     tomorrowWord: 'mañana', deleteWord: 'Eliminar',
     newTaskTitle: '✅ Nueva tarea', editTaskTitle: '✅ Editar tarea', taskTextPh: '¿Qué tienes que hacer?',
     taskFreeRemind: 'Te aviso a la hora de la tarea.', taskFreeRemindMore: '✨ Avisos antes con Premium',
+    notifTestLink: '🔔 Probar notificaciones', notifTestOnlyApp: 'La prueba funciona en la app de Android.',
+    notifTestPerm: 'Permiso de notificaciones', notifTestExact: 'Alarmas exactas', notifTestBattery: 'Sin restricción de batería',
+    notifTestScheduled: 'Avisos programados en el teléfono', notifTestTasks: 'Avisos de tareas programados',
+    notifTestNowBody: 'Prueba inmediata: si ves esto, las notificaciones funcionan ✅',
+    notifTestLaterBody: 'Prueba de 1 minuto: si ves esto con la app cerrada, todo está bien ✅',
+    notifTestHowTo: 'En 3 segundos llega una prueba. Luego cierra Bless y bloquea el teléfono: en 1 minuto debe llegar otra. Si la primera llega y la segunda no, el teléfono está cerrando la app (revisa "Permitir segundo plano"). Mándale una captura de esto a soporte si algo sale con ❌.',
     bgPromptMsg: '🔔 Para que tus recordatorios lleguen aunque cierres Bless, tu teléfono tiene que dejarla funcionar en segundo plano.',
     bgPromptOk: 'Abrir ajustes',
     bgSettingsLink: '¿No te llegan los avisos? Permitir segundo plano',
@@ -2355,6 +2361,12 @@ const I18N = {
     tomorrowWord: 'tomorrow', deleteWord: 'Delete',
     newTaskTitle: '✅ New task', editTaskTitle: '✅ Edit task', taskTextPh: 'What do you need to do?',
     taskFreeRemind: "I'll remind you at the task time.", taskFreeRemindMore: '✨ Earlier reminders with Premium',
+    notifTestLink: '🔔 Test notifications', notifTestOnlyApp: 'The test works in the Android app.',
+    notifTestPerm: 'Notification permission', notifTestExact: 'Exact alarms', notifTestBattery: 'No battery restriction',
+    notifTestScheduled: 'Reminders scheduled on the phone', notifTestTasks: 'Task reminders scheduled',
+    notifTestNowBody: 'Instant test: if you see this, notifications work ✅',
+    notifTestLaterBody: '1-minute test: if you see this with the app closed, all is good ✅',
+    notifTestHowTo: 'A test arrives in 3 seconds. Then close Bless and lock the phone: another one should arrive in 1 minute. If the first arrives and the second does not, the phone is killing the app (check "Allow background"). Send a screenshot of this to support if anything shows ❌.',
     bgPromptMsg: '🔔 For your reminders to arrive even when Bless is closed, your phone has to let it run in the background.',
     bgPromptOk: 'Open settings',
     bgSettingsLink: 'Not getting reminders? Allow background',
@@ -4252,8 +4264,9 @@ async function scheduleNativeReminders() {
   if (!LN || !state.profile || !state.profile.nombre) return;
   try {
     const pending = await LN.getPending();
-    if (pending.notifications && pending.notifications.length) {
-      await LN.cancel({ notifications: pending.notifications.map(n => ({ id: n.id })) });
+    const toCancel = (pending.notifications || []).filter(n => n.id < 990000); // las de prueba no se tocan
+    if (toCancel.length) {
+      await LN.cancel({ notifications: toCancel.map(n => ({ id: n.id })) });
     }
     if (!(state.settings && state.settings.nativeReminders)) return;
     const perm = await LN.checkPermissions();
@@ -4303,8 +4316,61 @@ async function scheduleNativeReminders() {
     const comeBack = addDays(new Date(), 3);
     comeBack.setHours(19, 0, 0, 0);
     notifications.push({ id: NATIVE_REENGAGE_ID, title: 'Bless Habit 🤍', body: tp('reengageBody'), schedule: { at: comeBack, allowWhileIdle: true } });
-    await LN.schedule({ notifications });
-  } catch (e) { /* sin recordatorios no se rompe nada más */ }
+    try {
+      await LN.schedule({ notifications });
+    } catch (e) {
+      // Si una falla, se programan una por una para no perder las demás.
+      lastReminderError = String((e && e.message) || e);
+      console.warn('[recordatorios] error al programar en bloque:', lastReminderError);
+      for (const n of notifications) { try { await LN.schedule({ notifications: [n] }); } catch (e2) { lastReminderError = String((e2 && e2.message) || e2); } }
+    }
+  } catch (e) { lastReminderError = String((e && e.message) || e); console.warn('[recordatorios]', lastReminderError); }
+}
+let lastReminderError = null;
+
+/* ---- Prueba de notificaciones (Perfil → Notificaciones) ----
+   Revisa cada paso y lo muestra en pantalla: permiso, alarmas exactas,
+   segundo plano, una notificación inmediata y otra programada para 1 minuto
+   (para probar con la app cerrada). Así se sabe exactamente dónde falla. */
+async function runNotificationTest() {
+  const LN = nativeNotifications();
+  if (!LN) { uiAlert(t('notifTestOnlyApp')); return; }
+  const lines = [];
+  const ok = (b) => b ? '✅' : '❌';
+  try {
+    let perm = await LN.checkPermissions();
+    if (perm.display !== 'granted') perm = await LN.requestPermissions();
+    lines.push(`${ok(perm.display === 'granted')} ${t('notifTestPerm')}: ${perm.display}`);
+    if (perm.display !== 'granted') { uiAlert(lines.join('\n')); return; }
+    if (!(state.settings && state.settings.nativeReminders)) { state.settings.nativeReminders = true; saveStateToServer(); }
+    let exact = null;
+    try { if (LN.checkExactNotificationSetting) exact = (await LN.checkExactNotificationSetting()).exact_alarm; } catch (e) {}
+    if (exact) lines.push(`${ok(exact === 'granted')} ${t('notifTestExact')}: ${exact}`);
+    const BD = blessDevice();
+    if (BD) {
+      try {
+        const st = await BD.getBackgroundStatus();
+        lines.push(`${ok(st.ignoringBatteryOptimizations)} ${t('notifTestBattery')} (${st.manufacturer || '?'})`);
+      } catch (e) {}
+    }
+    const now = Date.now();
+    await LN.schedule({ notifications: [
+      { id: 990001, title: 'Bless Habit 🔔', body: t('notifTestNowBody'), schedule: { at: new Date(now + 3000), allowWhileIdle: true } },
+      { id: 990002, title: 'Bless Habit ⏰', body: t('notifTestLaterBody'), schedule: { at: new Date(now + 60000), allowWhileIdle: true } },
+    ] });
+    const pending = await LN.getPending();
+    const ids = (pending.notifications || []).map(n => n.id);
+    lines.push(`${ok(ids.includes(990002))} ${t('notifTestScheduled')}: ${ids.length}`);
+    await scheduleNativeReminders();
+    const after = await LN.getPending();
+    const taskCount = (after.notifications || []).filter(n => n.id >= 500000 && n.id < 900000).length;
+    lines.push(`ℹ️ ${t('notifTestTasks')}: ${taskCount}`);
+    if (lastReminderError) lines.push(`⚠️ ${lastReminderError}`);
+  } catch (e) {
+    lines.push(`❌ ${String((e && e.message) || e)}`);
+  }
+  lines.push('', t('notifTestHowTo'));
+  uiAlert(lines.join('\n'));
 }
 let scheduleNativeRemindersTimer = null;
 function scheduleNativeRemindersSoon() {
@@ -4383,6 +4449,14 @@ function refreshNativeRemindersUI(textEl, btnEl) {
     bgLink.onclick = () => maybePromptBackground(true);
     btnEl.insertAdjacentElement('afterend', bgLink);
   } else if (!on && bgLink) bgLink.remove();
+  if (!document.getElementById('notif-test-link')) {
+    const testLink = document.createElement('div');
+    testLink.id = 'notif-test-link';
+    testLink.style.cssText = 'text-align:center;margin-top:10px;';
+    testLink.innerHTML = `<span class="logout-link">${t('notifTestLink')}</span>`;
+    testLink.onclick = () => runNotificationTest();
+    (document.getElementById('bg-settings-link') || btnEl).insertAdjacentElement('afterend', testLink);
+  }
   btnEl.style.display = '';
   btnEl.textContent = on ? t('pushDisableBtn') : t('pushEnableBtn');
   btnEl.onclick = async () => {
