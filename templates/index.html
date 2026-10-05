@@ -944,7 +944,7 @@
     <a href="/auth/login" class="google-btn" id="google-login-btn" data-i18n="loginBtn">Continuar con Google</a>
     <div class="login-loading" id="login-loading" style="display:none;" data-i18n="loginLoading">Cargando tu información…</div>
     <!-- Enlaces públicos (Paddle los revisa para aprobar los cobros). -->
-    <div class="login-legal"><a href="/precios">Precios</a> · <a href="/terminos">Términos</a> · <a href="/privacidad">Privacidad</a> · <a href="/reembolsos">Reembolsos</a></div>
+    <div class="login-legal" id="login-legal"><a href="/precios">Precios</a> · <a href="/terminos">Términos</a> · <a href="/privacidad">Privacidad</a> · <a href="/reembolsos">Reembolsos</a></div>
   </div>
 
   <div id="view-onboarding">
@@ -961,7 +961,7 @@
   </div>
 
   <div id="view-calendar">
-    <div class="calendar-module-heading"><div><div class="calendar-module-title">Tu agenda</div><div class="calendar-module-sub">Organiza tus hábitos y mira tu constancia.</div></div><div class="calendar-module-icon">📅</div></div>
+    <div class="calendar-module-heading"><div><div class="calendar-module-title" data-i18n="calTitle">Tu agenda</div><div class="calendar-module-sub" data-i18n="calSub">Organiza tus hábitos y mira tu constancia.</div></div><div class="calendar-module-icon">📅</div></div>
     <div class="cal-subtabs">
       <div class="cal-subtab active" data-calsub="day" data-i18n="calDay">Día</div>
       <div class="cal-subtab" data-calsub="week" data-i18n="calWeek">Semana</div>
@@ -1068,7 +1068,7 @@
 
   <div id="settings-overlay" class="settings-overlay" style="display:none;position:fixed;inset:0;z-index:85;align-items:center;justify-content:center;padding:16px;">
     <div class="profile-card settings-modal" style="max-width:380px;width:100%;max-height:85vh;overflow-y:auto;margin:0;">
-      <div class="modal-heading"><div><h4 data-i18n="settingsTitle">⚙️ Configuración</h4><div class="modal-kicker">Personaliza tu experiencia</div></div><button type="button" class="modal-close-btn" id="settings-x-btn" aria-label="Cerrar">×</button></div>
+      <div class="modal-heading"><div><h4 data-i18n="settingsTitle">⚙️ Configuración</h4><div class="modal-kicker" data-i18n="settingsKicker">Personaliza tu experiencia</div></div><button type="button" class="modal-close-btn" id="settings-x-btn" aria-label="Cerrar">×</button></div>
       <div style="font-size:12px;color:var(--text-dim);margin:10px 0 6px;" data-i18n="settingsTheme">Tema</div>
       <div class="quick-replies" id="settings-theme-options"></div>
       <div style="font-size:12px;color:var(--text-dim);margin:14px 0 6px;" data-i18n="settingsLang">Idioma</div>
@@ -1427,7 +1427,13 @@ const state = {
    diccionario pueden ser: string, función (para interpolar variables) o
    array (banco de frases, se elige una al azar con pick()).
    ============================================================ */
-function currentLang() { return (state.settings && state.settings.language === 'en') ? 'en' : 'es'; }
+// Idioma elegido por la persona; mientras no haya elegido (pantalla de login),
+// el del teléfono/navegador.
+function currentLang() {
+  const chosen = state.settings && state.settings.language;
+  if (chosen) return chosen === 'en' ? 'en' : 'es';
+  return /^en/i.test(navigator.language || '') ? 'en' : 'es';
+}
 function t(key, ...args) {
   const l = currentLang();
   let v = (I18N[l] && I18N[l][key] !== undefined) ? I18N[l][key] : (I18N.es[key] !== undefined ? I18N.es[key] : key);
@@ -1714,6 +1720,12 @@ const I18N = {
     bioOffer: '¿Quieres desbloquear Bless Habit también con tu huella o tu rostro? 👆 El PIN seguirá funcionando.',
     bioOfferOk: 'Sí, activar', bioToggleLabel: 'Desbloquear con huella o rostro en este teléfono',
     bioEnableFail: 'No se pudo activar la huella o el rostro. Puedes seguir usando tu PIN.',
+    settingsKicker: 'Personaliza tu experiencia',
+    calTitle: 'Tu agenda', calSub: 'Organiza tus hábitos y mira tu constancia.',
+    diarySub: 'Un espacio para guardar lo que importa.',
+    metricsTitle: 'Tu evolución', metricsSub: 'Entiende cómo está cambiando tu constancia.',
+    profileGreeting: (n) => n ? `Tu espacio, ${n} ✨` : 'Tu espacio ✨', profileGreetingSub: 'Aquí ves tu progreso y configuras Bless.',
+    diagLabel: 'Diagnóstico de Bless',
     deleteAccountLink: 'Eliminar mi cuenta',
     deleteAccountWarn: 'Se borrarán para siempre tu perfil, hábitos, chat, recuerdos, diario y fotos. No se puede deshacer.',
     deleteAccountWarnPremium: 'Se cancelará tu suscripción Premium ahora mismo y se borrarán para siempre tu perfil, hábitos, chat, recuerdos, diario y fotos. No se puede deshacer.',
@@ -2081,6 +2093,12 @@ const I18N = {
     bioOffer: 'Want to unlock Bless Habit with your fingerprint or face too? 👆 Your PIN will keep working.',
     bioOfferOk: 'Yes, turn on', bioToggleLabel: 'Unlock with fingerprint or face on this phone',
     bioEnableFail: "Couldn't turn on fingerprint or face. You can keep using your PIN.",
+    settingsKicker: 'Make it yours',
+    calTitle: 'Your planner', calSub: 'Organize your habits and see your consistency.',
+    diarySub: 'A space to keep what matters.',
+    metricsTitle: 'Your progress', metricsSub: 'See how your consistency is changing.',
+    profileGreeting: (n) => n ? `Your space, ${n} ✨` : 'Your space ✨', profileGreetingSub: 'See your progress and set up Bless here.',
+    diagLabel: "Bless's diagnosis",
     deleteAccountLink: 'Delete my account',
     deleteAccountWarn: 'Your profile, habits, chat, memories, journal and photos will be deleted forever. This cannot be undone.',
     deleteAccountWarnPremium: 'Your Premium subscription will be cancelled right now and your profile, habits, chat, memories, journal and photos will be deleted forever. This cannot be undone.',
@@ -2257,6 +2275,8 @@ function optLabel(field, value) {
 function optLabelList(field, values) { return (values || []).map(v => optLabel(field, v)); }
 
 function applyStaticI18n() {
+  const legal = document.getElementById('login-legal');
+  if (legal && currentLang() === 'en') legal.innerHTML = '<a href="/pricing">Pricing</a> · <a href="/terms">Terms</a> · <a href="/privacy">Privacy</a> · <a href="/refunds">Refunds</a>';
   document.querySelectorAll('[data-i18n]').forEach(el => { el.textContent = t(el.getAttribute('data-i18n')); });
   document.querySelectorAll('[data-i18n-ph]').forEach(el => { el.placeholder = t(el.getAttribute('data-i18n-ph')); });
   document.querySelectorAll('[data-i18n-title]').forEach(el => { el.title = t(el.getAttribute('data-i18n-title')); });
@@ -2534,7 +2554,7 @@ function addNote(container, text, cls='agenda-note', onClick) {
 }
 function addDiagCard(container, diag) {
   const div = document.createElement('div'); div.className = 'diag-card';
-  div.innerHTML = `<div class="diag-label">Diagnóstico de Bless</div><div class="diag-title">${diag.title}</div><div class="diag-body">${diag.body}</div>`;
+  div.innerHTML = `<div class="diag-label">${t('diagLabel')}</div><div class="diag-title">${diag.title}</div><div class="diag-body">${diag.body}</div>`;
   container.appendChild(div); container.scrollTop = container.scrollHeight;
 }
 function showTyping(container) {
@@ -2829,7 +2849,7 @@ function buildDiagnostic(p) {
   const intento = optLabel('intentosPrevios', p.intentosPrevios && p.intentosPrevios[0]);
   const intentoTxt = intento ? ` Ya intentaste antes con ${intento.toLowerCase()}, así que esta vez lo vamos a hacer distinto.` : '';
   const diasTxt = (p.diasDificiles && p.diasDificiles.length) ? ` En tus días difíciles voy a bajarte el ritmo — ahí no te voy a exigir igual.` : '';
-  const title = `${p.nombre ? p.nombre + ': ' : ''}${tipoTxt}, motivada por ${motivTxt}`;
+  const title = `${p.nombre ? p.nombre + ': ' : ''}${tipoTxt}, con motivación en ${motivTxt}`;
   const body = `Lo que más se te dificulta es "${dificultad}", y sueles fallar cuando "${detonante}".${intentoTxt} Por eso, con ${habitCount ? `los ${habitCount} hábito${habitCount === 1 ? '' : 's'} que elegiste` : 'lo que elijas construir'}, voy a proponerte pasos pequeños, con recordatorios y sin presión extra.${diasTxt} No se trata de fuerza de voluntad — se trata de diseñar tu día a tu favor.`;
   return { title, body };
 }
@@ -3092,7 +3112,7 @@ async function openNativePaddleCheckout() {
   const plugins = window.Capacitor && window.Capacitor.Plugins;
   let data;
   try {
-    data = await (await fetch('/api/native-checkout-token', { method: 'POST' })).json();
+    data = await (await fetch('/api/native-checkout-token?lang=' + currentLang(), { method: 'POST' })).json();
   } catch (e) {
     uiAlert(t('paddleConnFail'));
     return;
@@ -3429,6 +3449,7 @@ if (IS_NATIVE_APP) {
   setupNativeBrowserFinishedListener();
   setupNativeBackButton();
 }
+applyStaticI18n(); // la pantalla de login ya sale en el idioma del teléfono
 bootstrapApp();
 
 /* La app nativa (y una pestaña abierta) puede quedar en segundo plano de un
@@ -3530,6 +3551,7 @@ async function openPaddleCheckout() {
     },
   });
   Paddle.Checkout.open({
+    settings: { locale: currentLang() },
     items: [{ priceId: cfg.priceId, quantity: 1 }],
     customer: currentUserEmail ? { email: currentUserEmail } : undefined,
     customData: { app_user_email: currentUserEmail },
@@ -4798,7 +4820,7 @@ function renderProfile() {
     <div class="profile-top-card">
       <div class="profile-top-main">
         <div class="profile-mini-avatar"><svg class="bless-logo-svg" viewBox="0 0 64 64" aria-hidden="true"><defs><linearGradient id="profileLogoBg" x1="8" y1="4" x2="56" y2="60" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#6F7BFF"/><stop offset=".48" stop-color="#6CCEF1"/><stop offset="1" stop-color="#42D6A1"/></linearGradient><linearGradient id="profileLogoLeaf" x1="20" y1="20" x2="45" y2="43" gradientUnits="userSpaceOnUse"><stop stop-color="#DFFF65"/><stop offset="1" stop-color="#62E6A9"/></linearGradient></defs><circle cx="32" cy="32" r="30" fill="url(#profileLogoBg)"/><circle cx="32" cy="32" r="27.5" fill="none" stroke="#fff" stroke-opacity=".7" stroke-width="1.5"/><path d="M31.8 43.8c.2-8.7.4-15.1 2.4-21.5" fill="none" stroke="#6B4B43" stroke-width="4" stroke-linecap="round"/><path d="M32 34c-8.6.4-13.6-3.4-15.2-10.5 7.7-.6 13.2 2.4 15.2 10.5Z" fill="url(#profileLogoLeaf)"/><path d="M34 28.5c1.5-8.1 6.3-12.6 14.1-13.5.3 7.9-4.3 12.7-14.1 13.5Z" fill="#B9F36B"/><path d="M22.5 46.5h19" stroke="#F08A9D" stroke-width="4" stroke-linecap="round"/></svg></div>
-        <div><div class="profile-greeting">Tu espacio, ${p.nombre || 'tú'} ✨</div><div class="profile-greeting-sub">Aquí ves tu progreso y configuras Bless.</div></div>
+        <div><div class="profile-greeting">${t('profileGreeting', escapeHtml(p.nombre || ''))}</div><div class="profile-greeting-sub">${t('profileGreetingSub')}</div></div>
       </div>
       <button class="settings-icon-btn" id="open-settings-top-btn" title="${t('openConfigBtn')}" aria-label="${t('openConfigBtn')}">⚙️</button>
     </div>
@@ -5009,11 +5031,11 @@ function findDiaryTheme(key) { return DIARY_THEMES.find(th => th.key === key) ||
 // background-image encima del color/estilo elegido, para no afectar la
 // legibilidad. Agregado el 24 ago 2026.
 const DIARY_TEXTURES = [
-  { key: 'grid', name: 'Cuadriculado', icon: '▦', image: 'linear-gradient(rgba(0,0,0,.05) 1px, transparent 1px), linear-gradient(90deg, rgba(0,0,0,.05) 1px, transparent 1px)', size: '16px 16px, 16px 16px' },
-  { key: 'dots', name: 'Punteado', icon: '⣿', image: 'radial-gradient(rgba(0,0,0,.14) 1px, transparent 1.4px)', size: '13px 13px' },
-  { key: 'lines', name: 'Rayas', icon: '☰', image: 'repeating-linear-gradient(180deg, rgba(0,0,0,.05) 0 1px, transparent 1px 20px)', size: 'auto' },
-  { key: 'kraft', name: 'Kraft', icon: '▧', image: 'radial-gradient(rgba(255,255,255,.10) 1px, transparent 1px), radial-gradient(rgba(0,0,0,.07) 1px, transparent 1px)', size: '9px 9px, 7px 7px' },
-  { key: 'grain', name: 'Granulado', icon: '▨', image: 'radial-gradient(rgba(0,0,0,.06) 1px, transparent 1px), radial-gradient(rgba(255,255,255,.08) 1px, transparent 1px)', size: '5px 5px, 8px 8px' },
+  { key: 'grid', name: 'Cuadriculado', en: 'Grid', icon: '▦', image: 'linear-gradient(rgba(0,0,0,.05) 1px, transparent 1px), linear-gradient(90deg, rgba(0,0,0,.05) 1px, transparent 1px)', size: '16px 16px, 16px 16px' },
+  { key: 'dots', name: 'Punteado', en: 'Dotted', icon: '⣿', image: 'radial-gradient(rgba(0,0,0,.14) 1px, transparent 1.4px)', size: '13px 13px' },
+  { key: 'lines', name: 'Rayas', en: 'Lined', icon: '☰', image: 'repeating-linear-gradient(180deg, rgba(0,0,0,.05) 0 1px, transparent 1px 20px)', size: 'auto' },
+  { key: 'kraft', name: 'Kraft', en: 'Kraft', icon: '▧', image: 'radial-gradient(rgba(255,255,255,.10) 1px, transparent 1px), radial-gradient(rgba(0,0,0,.07) 1px, transparent 1px)', size: '9px 9px, 7px 7px' },
+  { key: 'grain', name: 'Granulado', en: 'Grain', icon: '▨', image: 'radial-gradient(rgba(0,0,0,.06) 1px, transparent 1px), radial-gradient(rgba(255,255,255,.08) 1px, transparent 1px)', size: '5px 5px, 8px 8px' },
 ];
 function findDiaryTexture(key) { return DIARY_TEXTURES.find(tx => tx.key === key) || null; }
 // Stickers decorativos organizados por categoría (24 ago 2026, ampliado a
@@ -5461,7 +5483,7 @@ function renderDiary() {
     ${filterEmptyHtml}
   `;
   el.innerHTML = `
-    <div class="module-heading"><div><h2>${t('diaryTitle')}</h2><p>Un espacio para guardar lo que importa.</p></div><div class="module-icon">📔</div></div>
+    <div class="module-heading"><div><h2>${t('diaryTitle')}</h2><p>${t('diarySub')}</p></div><div class="module-icon">📔</div></div>
     ${viewToggleHtml}
     ${statsHtml}
     ${summaryLineHtml}
@@ -5586,7 +5608,7 @@ function refreshDiaryThemePicker() {
 function refreshDiaryTexturePicker() {
   const texturePicker = document.getElementById('diary-texture-picker');
   const noneTexture = `<span class="diary-theme-swatch none${diaryComposerTexture ? '' : ' selected'}" data-texture="" title="${t('diaryTextureLabel')}">✕</span>`;
-  const textureSwatches = DIARY_TEXTURES.map(tx => `<span class="diary-theme-swatch named${diaryComposerTexture === tx.key ? ' selected' : ''}" data-texture="${tx.key}"><span class="swatch-dot" style="background:var(--panel-3);background-image:${tx.image};background-size:${tx.size};"></span>${tx.icon} ${tx.name}</span>`).join('');
+  const textureSwatches = DIARY_TEXTURES.map(tx => `<span class="diary-theme-swatch named${diaryComposerTexture === tx.key ? ' selected' : ''}" data-texture="${tx.key}"><span class="swatch-dot" style="background:var(--panel-3);background-image:${tx.image};background-size:${tx.size};"></span>${tx.icon} ${currentLang() === 'en' ? tx.en : tx.name}</span>`).join('');
   texturePicker.innerHTML = noneTexture + textureSwatches;
   texturePicker.querySelectorAll('.diary-theme-swatch').forEach(sw => {
     sw.onclick = () => { diaryComposerTexture = sw.dataset.texture; texturePicker.querySelectorAll('.diary-theme-swatch').forEach(s => s.classList.remove('selected')); sw.classList.add('selected'); refreshDiaryStickerStage(); };
@@ -6862,7 +6884,7 @@ function renderMetrics() {
 
   el.innerHTML = `
     <div style="padding:18px 16px 24px;">
-      <div class="module-heading"><div><h2>Tu evolución</h2><p>Entiende cómo está cambiando tu constancia.</p></div><div class="module-icon">📊</div></div>
+      <div class="module-heading"><div><h2>${t('metricsTitle')}</h2><p>${t('metricsSub')}</p></div><div class="module-icon">📊</div></div>
       <div class="kpi-grid">
         <div class="kpi-tile"><div class="kpi-num" style="color:${tileColor(m.pctToday)}">${m.pctToday!==null?m.pctToday+'%':'—'}</div><div class="kpi-lbl">${t('cumplimientoHoy')}</div></div>
         <div class="kpi-tile"><div class="kpi-num" style="color:${tileColor(m.pctWeek)}">${m.pctWeek!==null?m.pctWeek+'%':(m.hasHistory?'—':t('sinDatosCap'))}</div><div class="kpi-lbl">${t('cumplimientoSemana')}</div></div>

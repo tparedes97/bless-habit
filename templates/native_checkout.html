@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="{{ lang }}">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -22,10 +22,10 @@
   {% if error %}
     <p>{{ error }}</p>
   {% else %}
-    <p id="msg">Sin publicidad + métricas completas — {{ price_label }}. Cobro automático vía Paddle, cancelas cuando quieras.</p>
-    <button class="btn" id="pay-btn">Hazte Premium — {{ price_label }}</button>
+    <p id="msg">{{ t.intro.format(price=price_label if lang == 'es' else price_label.replace('/mes', '/month')) }}</p>
+    <button class="btn" id="pay-btn">{{ t.pay.format(price=price_label if lang == 'es' else price_label.replace('/mes', '/month')) }}</button>
   {% endif %}
-  <a class="btn secondary" id="return-btn" href="{{ return_url }}">Volver a Bless Habit</a>
+  <a class="btn secondary" id="return-btn" href="{{ return_url }}">{{ t.back }}</a>
 </div>
 {% if not error %}
 <script>
@@ -34,10 +34,11 @@
   const payBtn = document.getElementById('pay-btn');
   function openCheckout() {
     if (typeof Paddle === 'undefined') {
-      msg.textContent = 'No se pudo cargar el widget de pago de Paddle. Revisa tu conexión e intenta de nuevo.';
+      msg.textContent = {{ t.widget_fail | tojson }};
       return;
     }
     Paddle.Checkout.open({
+      settings: { locale: {{ lang | tojson }} },
       items: [{ priceId: {{ price_id | tojson }}, quantity: 1 }],
       customer: {{ email | tojson }} ? { email: {{ email | tojson }} } : undefined,
       customData: { app_user_email: {{ email | tojson }} },
@@ -53,7 +54,7 @@
         if (event.name === 'checkout.completed') {
           Paddle.Checkout.close();
           payBtn.style.display = 'none';
-          msg.textContent = '¡Gracias! Tu pago se está confirmando. Vuelve a la app para ver tu Premium activo.';
+          msg.textContent = {{ t.thanks | tojson }};
           window.location.href = RETURN_URL;
         }
       },

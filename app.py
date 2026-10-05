@@ -131,6 +131,10 @@ def push_configured():
     return bool(VAPID_PRIVATE_KEY and VAPID_PUBLIC_KEY)
 
 
+REENGAGE_PUSH_MESSAGES_EN = [
+    "Hi again 🤍. Don't feel guilty — you can always start over. Shall we pick it back up today, even with something small?",
+    "Missed you 🤍. This isn't about being perfect, it's about coming back. Start again, no pressure?",
+]
 REENGAGE_PUSH_MESSAGES = [
     "Hola de nuevo 🤍. No te sientas culpable — siempre se puede comenzar de nuevo. ¿Retomamos hoy, aunque sea con algo pequeño?",
     "Te extrañé 🤍. Esto no se trata de ser perfecta, se trata de volver. ¿Empezamos de nuevo, sin presión?",
@@ -957,31 +961,60 @@ def api_cancel_subscription():
 # blesshabit://premium-done, y la app consulta /api/subscription-status.
 # Quien activa el Premium de verdad sigue siendo el webhook de Paddle.
 # ============================================================
+NATIVE_CHECKOUT_TEXT = {
+    "es": {
+        "expired": "Este enlace de pago expiró. Vuelve a la app y toca de nuevo \"Hazte Premium\".",
+        "no_account": "No encontramos tu cuenta. Vuelve a la app e inicia sesión de nuevo.",
+        "already": "Ya tienes Bless Habit Premium activo. ¡Gracias!",
+        "not_configured": "El cobro con Paddle todavía no está configurado en el servidor.",
+        "intro": "Sin publicidad + métricas completas — {price}. Cobro automático vía Paddle, cancelas cuando quieras.",
+        "pay": "Hazte Premium — {price}",
+        "back": "Volver a Bless Habit",
+        "widget_fail": "No se pudo cargar el widget de pago de Paddle. Revisa tu conexión e intenta de nuevo.",
+        "thanks": "¡Gracias! Tu pago se está confirmando. Vuelve a la app para ver tu Premium activo.",
+    },
+    "en": {
+        "expired": "This payment link expired. Go back to the app and tap \"Go Premium\" again.",
+        "no_account": "We couldn't find your account. Go back to the app and sign in again.",
+        "already": "You already have Bless Habit Premium. Thank you!",
+        "not_configured": "Paddle billing isn't configured on the server yet.",
+        "intro": "No ads + full metrics — {price}. Billed automatically via Paddle, cancel anytime.",
+        "pay": "Go Premium — {price}",
+        "back": "Back to Bless Habit",
+        "widget_fail": "Couldn't load Paddle's payment widget. Check your connection and try again.",
+        "thanks": "Thank you! Your payment is being confirmed. Go back to the app to see Premium active.",
+    },
+}
+
+
 @app.route("/api/native-checkout-token", methods=["POST"])
 def api_native_checkout_token():
     user_id = session.get("user_id")
     if not user_id:
         return jsonify({"ok": False, "error": "No autenticado"}), 401
     token = create_one_time_token(user_id, "checkout", NATIVE_TOKEN_TTL_SECONDS)
-    return jsonify({"ok": True, "url": url_for("native_checkout", token=token, _external=True)})
+    lang = "en" if request.args.get("lang") == "en" else "es"
+    return jsonify({"ok": True, "url": url_for("native_checkout", token=token, lang=lang, _external=True)})
 
 
 @app.route("/premium/native-checkout")
 def native_checkout():
     """Se abre en el navegador del sistema (no en el WebView de la app)."""
     checkout_user_id = consume_one_time_token(request.args.get("token", ""), "checkout")
+    lang = "en" if request.args.get("lang") == "en" else "es"
+    msgs = NATIVE_CHECKOUT_TEXT[lang]
     error = None
     user = None
     if not checkout_user_id:
-        error = "Este enlace de pago expiró. Vuelve a la app y toca de nuevo \"Hazte Premium\"."
+        error = msgs["expired"]
     else:
         user = get_user(checkout_user_id)
         if not user:
-            error = "No encontramos tu cuenta. Vuelve a la app e inicia sesión de nuevo."
+            error = msgs["no_account"]
         elif user["is_premium"]:
-            error = "Ya tienes Bless Habit Premium activo. ¡Gracias!"
+            error = msgs["already"]
         elif not paddle_configured():
-            error = "El cobro con Paddle todavía no está configurado en el servidor."
+            error = msgs["not_configured"]
     return render_template(
         "native_checkout.html",
         error=error,
@@ -991,6 +1024,8 @@ def native_checkout():
         paddle_env=PADDLE_ENV,
         price_label=PADDLE_PRICE_LABEL,
         return_url=f"{NATIVE_APP_URL_SCHEME}://premium-done",
+        lang=lang,
+        t=msgs,
     )
 
 
@@ -1127,7 +1162,9 @@ def api_push_send_test():
         return jsonify({"ok": False, "error": "No autenticado"}), 401
     if not push_configured():
         return jsonify({"ok": False, "error": "VAPID no está configurado en el servidor (faltan VAPID_PRIVATE_KEY / VAPID_PUBLIC_KEY en Secrets)."}), 400
-    result = send_push_to_user(user_id, "Bless Habit 🌱", "Esta es una notificación de prueba — si la ves, ¡ya quedó funcionando!")
+    lang = ((load_user_state(user_id) or {}).get("settings") or {}).get("language") or "es"
+    test_body = "This is a test notification — if you can see it, it's working!" if lang == "en" else "Esta es una notificación de prueba — si la ves, ¡ya quedó funcionando!"
+    result = send_push_to_user(user_id, "Bless Habit 🌱", test_body)
     return jsonify(result)
 
 
@@ -1146,7 +1183,9 @@ def api_push_send_reengagement():
     candidates = get_inactive_users_with_push(days)
     sent = 0
     for c in candidates:
-        msg = random.choice(REENGAGE_PUSH_MESSAGES)
+        user_state = load_user_state(c["user_id"]) or {}
+        lang = ((user_state.get("settings") or {}).get("language")) or "es"
+        msg = random.choice(REENGAGE_PUSH_MESSAGES_EN if lang == "en" else REENGAGE_PUSH_MESSAGES)
         send_push_to_user(c["user_id"], "Bless Habit 🤍", msg)
         sent += 1
     return jsonify({"ok": True, "usuariosNotificados": sent})
