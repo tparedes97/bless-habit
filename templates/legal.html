@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="{{ lang }}">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{{ title }} · Bless Habit</title>
+<meta name="description" content="{{ title }} — Bless Habit">
+<!-- Páginas públicas que Paddle (y Google Play) piden para aprobar los cobros:
+     precios, términos, privacidad y reembolsos. Los datos del vendedor salen de
+     variables de entorno (LEGAL_NAME, SUPPORT_EMAIL, LEGAL_COUNTRY, REFUND_DAYS)
+     para poder cambiarlos en Render sin tocar código. -->
+<style>
+  :root { --bg: #F7F6FD; --panel: #fff; --text: #241f3a; --dim: #6b6585; --accent: #7C6CF0; --border: #e8e6f3; }
+  @media (prefers-color-scheme: dark) { :root { --bg: #1b1830; --panel: #252141; --text: #f1eefc; --dim: #b9b3d6; --border: #37325a; } }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font-family: Inter, system-ui, -apple-system, sans-serif; line-height: 1.6; }
+  header { max-width: 760px; margin: 0 auto; padding: 20px 16px 0; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+  header a.brand { display: flex; align-items: center; gap: 8px; text-decoration: none; color: var(--text); font-weight: 800; font-size: 18px; }
+  nav { display: flex; gap: 14px; flex-wrap: wrap; font-size: 14px; }
+  nav a { color: var(--dim); text-decoration: none; }
+  nav a.on { color: var(--accent); font-weight: 700; }
+  main { max-width: 760px; margin: 0 auto; padding: 16px; }
+  .card { background: var(--panel); border: 1px solid var(--border); border-radius: 18px; padding: 24px 22px; }
+  h1 { font-size: 26px; margin: 0 0 4px; }
+  h2 { font-size: 18px; margin: 26px 0 8px; }
+  .updated { color: var(--dim); font-size: 13px; margin-bottom: 18px; }
+  p, li { font-size: 15.5px; }
+  a { color: var(--accent); }
+  .price { font-size: 40px; font-weight: 800; margin: 6px 0 0; }
+  .price small { font-size: 16px; color: var(--dim); font-weight: 600; }
+  .plans { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; margin-top: 18px; }
+  .plan { border: 1px solid var(--border); border-radius: 16px; padding: 18px; }
+  .plan.premium { border: 2px solid var(--accent); }
+  .plan h3 { margin: 0; font-size: 17px; }
+  .plan ul { padding-left: 20px; margin: 12px 0 0; }
+  .cta { display: inline-block; margin-top: 18px; background: linear-gradient(135deg, #7C6CF0, #A58CFF); color: #fff; text-decoration: none; font-weight: 800; padding: 12px 20px; border-radius: 14px; }
+  .lang { font-size: 13px; }
+  footer { max-width: 760px; margin: 0 auto; padding: 20px 16px 40px; color: var(--dim); font-size: 13px; }
+</style>
+</head>
+<body>
+<header>
+  <a class="brand" href="/">🌱 Bless Habit</a>
+  <nav>
+    {% for key, label in nav %}<a href="{{ key }}" class="{{ 'on' if key == current else '' }}">{{ label }}</a>{% endfor %}
+    <a class="lang" href="{{ other_lang_url }}">{{ 'English' if lang == 'es' else 'Español' }}</a>
+  </nav>
+</header>
+<main><div class="card">
+{% if page == 'pricing' %}
+  {% if lang == 'es' %}
+  <h1>Precios</h1>
+  <p>Bless Habit es una app de hábitos con un compañero de inteligencia artificial, agenda, métricas y un diario personal. Puedes usarla gratis o pasarte a Premium.</p>
+  <div class="plans">
+    <div class="plan"><h3>Gratis</h3><div class="price">$0</div>
+      <ul><li>Chat con Bless</li><li>Hábitos, agenda y recordatorios</li><li>Diario personal</li><li>Métricas básicas</li><li>Con publicidad (en la web)</li></ul></div>
+    <div class="plan premium"><h3>Bless Habit Premium</h3><div class="price">{{ price_label_num }} <small>USD / mes</small></div>
+      <ul><li>Todo lo del plan gratis</li><li>Sin publicidad</li><li>Métricas completas: rachas, patrones por día y ranking de hábitos</li><li>Bloqueo de la app con PIN (y huella o rostro en Android)</li><li>Tema dorado Premium</li></ul></div>
+  </div>
+  <p style="margin-top:18px;">La suscripción se renueva automáticamente cada mes hasta que la canceles. Puedes cancelar cuando quieras desde la app (Perfil → Plan) y conservas Premium hasta el final del periodo pagado. Los precios pueden incluir impuestos según tu país, que se muestran antes de pagar.</p>
+  <p>Los pagos los procesa <strong>Paddle.com</strong>, nuestro revendedor autorizado y Merchant of Record. Ver <a href="/reembolsos">política de reembolsos</a>.</p>
+  <a class="cta" href="/">Empezar gratis</a>
+  {% else %}
+  <h1>Pricing</h1>
+  <p>Bless Habit is a habit app with an AI companion, a planner, progress metrics and a personal journal. Use it for free or upgrade to Premium.</p>
+  <div class="plans">
+    <div class="plan"><h3>Free</h3><div class="price">$0</div>
+      <ul><li>Chat with Bless</li><li>Habits, planner and reminders</li><li>Personal journal</li><li>Basic metrics</li><li>Ads (on the web)</li></ul></div>
+    <div class="plan premium"><h3>Bless Habit Premium</h3><div class="price">{{ price_label_num }} <small>USD / month</small></div>
+      <ul><li>Everything in Free</li><li>No ads</li><li>Full metrics: streaks, day-of-week patterns and habit ranking</li><li>App lock with PIN (plus fingerprint or face on Android)</li><li>Premium gold theme</li></ul></div>
+  </div>
+  <p style="margin-top:18px;">The subscription renews automatically every month until you cancel. You can cancel anytime in the app (Profile → Plan) and keep Premium until the end of the paid period. Prices may include taxes depending on your country, shown before you pay.</p>
+  <p>Payments are processed by <strong>Paddle.com</strong>, our authorized reseller and Merchant of Record. See our <a href="/refunds">refund policy</a>.</p>
+  <a class="cta" href="/">Start for free</a>
+  {% endif %}
+
+{% elif page == 'terms' %}
+  {% if lang == 'es' %}
+  <h1>Términos y condiciones</h1>
+  <div class="updated">Última actualización: {{ updated }}</div>
+  <p>Estos términos regulan el uso de Bless Habit (la "app"), ofrecida por <strong>{{ legal_name }}</strong>, {{ country }} ("nosotros"). Al usar la app aceptas estos términos.</p>
+  <h2>1. El servicio</h2>
+  <p>Bless Habit te ayuda a crear hábitos con un compañero de inteligencia artificial, una agenda, métricas y un diario personal. Bless no es un servicio médico ni psicológico y sus respuestas no reemplazan la ayuda de un profesional. Si estás en una emergencia, contacta a los servicios de emergencia de tu país.</p>
+  <h2>2. Tu cuenta</h2>
+  <p>Inicias sesión con tu cuenta de Google. Eres responsable de lo que hagas con tu cuenta y de mantener tu acceso seguro. Debes tener al menos 13 años (o la edad mínima de tu país) para usar la app.</p>
+  <h2>3. Plan Premium y pagos</h2>
+  <p>Bless Habit Premium es una suscripción mensual de {{ price_label }} (más impuestos aplicables) que se renueva automáticamente hasta que la canceles. Nuestro proceso de pedidos lo realiza nuestro revendedor en línea <strong>Paddle.com</strong>. Paddle.com es el Merchant of Record de todos nuestros pedidos y atiende las consultas de servicio al cliente y las devoluciones relacionadas con el pago. Puedes cancelar en cualquier momento desde la app; conservas Premium hasta el final del periodo pagado. Los reembolsos se rigen por nuestra <a href="/reembolsos">política de reembolsos</a>.</p>
+  <h2>4. Uso aceptable</h2>
+  <p>No uses la app para fines ilegales, para dañar a otras personas, para intentar acceder a cuentas ajenas ni para interferir con su funcionamiento.</p>
+  <h2>5. Tu contenido</h2>
+  <p>Lo que escribes (chat, diario, hábitos) y las fotos que subes son tuyos. Nos das permiso para guardarlos y procesarlos solo para prestarte el servicio, como se explica en la <a href="/privacidad">política de privacidad</a>.</p>
+  <h2>6. Inteligencia artificial</h2>
+  <p>Las respuestas de Bless se generan automáticamente y pueden contener errores. Úsalas como acompañamiento, no como consejo profesional.</p>
+  <h2>7. Disponibilidad y cambios</h2>
+  <p>Hacemos lo posible para que la app funcione siempre, pero no garantizamos que esté libre de interrupciones o errores. Podemos cambiar o mejorar funciones y actualizar estos términos; si el cambio es importante te avisaremos en la app.</p>
+  <h2>8. Responsabilidad</h2>
+  <p>En la medida en que la ley lo permita, la app se ofrece "tal cual" y no somos responsables por daños indirectos derivados de su uso. Nada en estos términos limita derechos que la ley de tu país no permita limitar.</p>
+  <h2>9. Fin del servicio</h2>
+  <p>Puedes dejar de usar la app y pedir que borremos tu cuenta cuando quieras. Podemos suspender cuentas que incumplan estos términos.</p>
+  <h2>10. Ley aplicable y contacto</h2>
+  <p>Estos términos se rigen por las leyes de {{ country }}. Para cualquier consulta escríbenos a <a href="mailto:{{ support_email }}">{{ support_email }}</a>.</p>
+  {% else %}
+  <h1>Terms of Service</h1>
+  <div class="updated">Last updated: {{ updated }}</div>
+  <p>These terms govern your use of Bless Habit (the "app"), provided by <strong>{{ legal_name }}</strong>, {{ country_en }} ("we", "us"). By using the app you agree to these terms.</p>
+  <h2>1. The service</h2>
+  <p>Bless Habit helps you build habits with an AI companion, a planner, metrics and a personal journal. Bless is not a medical or psychological service and its replies do not replace professional help. If you are in an emergency, contact your local emergency services.</p>
+  <h2>2. Your account</h2>
+  <p>You sign in with your Google account. You are responsible for activity on your account and for keeping your access secure. You must be at least 13 years old (or the minimum age in your country) to use the app.</p>
+  <h2>3. Premium plan and payments</h2>
+  <p>Bless Habit Premium is a monthly subscription of {{ price_label_en }} (plus applicable taxes) that renews automatically until you cancel. Our order process is conducted by our online reseller <strong>Paddle.com</strong>. Paddle.com is the Merchant of Record for all our orders. Paddle provides all customer service inquiries and handles returns related to payment. You can cancel anytime in the app and keep Premium until the end of the paid period. Refunds are governed by our <a href="/refunds">refund policy</a>.</p>
+  <h2>4. Acceptable use</h2>
+  <p>Do not use the app for illegal purposes, to harm others, to try to access other people's accounts, or to interfere with how it works.</p>
+  <h2>5. Your content</h2>
+  <p>What you write (chat, journal, habits) and the photos you upload are yours. You allow us to store and process them only to provide the service, as described in our <a href="/privacy">privacy policy</a>.</p>
+  <h2>6. Artificial intelligence</h2>
+  <p>Bless's replies are generated automatically and may contain mistakes. Use them as support, not as professional advice.</p>
+  <h2>7. Availability and changes</h2>
+  <p>We do our best to keep the app running, but we don't guarantee it will be free of interruptions or errors. We may change or improve features and update these terms; if a change is significant we will let you know in the app.</p>
+  <h2>8. Liability</h2>
+  <p>To the extent permitted by law, the app is provided "as is" and we are not liable for indirect damages arising from its use. Nothing in these terms limits rights that the law of your country does not allow to be limited.</p>
+  <h2>9. Termination</h2>
+  <p>You can stop using the app and ask us to delete your account at any time. We may suspend accounts that break these terms.</p>
+  <h2>10. Governing law and contact</h2>
+  <p>These terms are governed by the laws of {{ country_en }}. For any question, email us at <a href="mailto:{{ support_email }}">{{ support_email }}</a>.</p>
+  {% endif %}
+
+{% elif page == 'privacy' %}
+  {% if lang == 'es' %}
+  <h1>Política de privacidad</h1>
+  <div class="updated">Última actualización: {{ updated }}</div>
+  <p>En Bless Habit ({{ legal_name }}, {{ country }}) cuidamos lo que nos confías. Aquí explicamos qué datos guardamos, para qué y qué control tienes.</p>
+  <h2>Datos que guardamos</h2>
+  <ul>
+    <li><strong>Tu cuenta de Google:</strong> nombre, correo y foto de perfil, para iniciar sesión.</li>
+    <li><strong>Lo que usas en la app:</strong> tu perfil y respuestas de la evaluación inicial, hábitos, agenda, métricas, logros, entradas y fotos del diario.</li>
+    <li><strong>El chat con Bless:</strong> la conversación del día se guarda hasta el día siguiente; después se descarta y solo quedan unas pocas notas ("lo que Bless recuerda de ti"), que puedes ver y borrar en Perfil.</li>
+    <li><strong>Pagos:</strong> si te suscribes a Premium, Paddle procesa el pago. Nosotros no vemos ni guardamos los datos de tu tarjeta; solo un identificador de cliente y de suscripción.</li>
+    <li><strong>Seguridad:</strong> si activas el PIN, guardamos solo una versión cifrada (hash), nunca el PIN.</li>
+    <li><strong>Notificaciones:</strong> si las activas, los datos técnicos necesarios para enviártelas.</li>
+  </ul>
+  <h2>Para qué los usamos</h2>
+  <p>Solo para prestarte el servicio: guardar tu progreso, que Bless te responda de forma personalizada, enviarte recordatorios y gestionar tu suscripción. No vendemos tus datos ni los usamos para publicidad personalizada.</p>
+  <h2>Con quién se comparten</h2>
+  <p>Con proveedores que necesitamos para que la app funcione, y solo para eso:</p>
+  <ul>
+    <li><strong>Google</strong> (inicio de sesión).</li>
+    <li><strong>OpenAI</strong> (genera las respuestas de Bless a partir de tus mensajes y del contexto de tu perfil).</li>
+    <li><strong>Render</strong> (servidor) y <strong>Turso</strong> (base de datos), donde se alojan tus datos.</li>
+    <li><strong>Paddle</strong> (pagos de Premium).</li>
+    <li><strong>Google AdSense</strong> (anuncios en la versión web del plan gratis).</li>
+  </ul>
+  <h2>Cuánto tiempo los guardamos</h2>
+  <p>Mientras tengas tu cuenta. Puedes borrar entradas del diario, recuerdos y hábitos cuando quieras desde la app. Si pides borrar tu cuenta, eliminamos tus datos en un plazo de 30 días, salvo lo que la ley nos obligue a conservar (por ejemplo, registros de pagos, que conserva Paddle).</p>
+  <h2>Tus derechos</h2>
+  <p>Puedes pedir acceso, corrección o eliminación de tus datos, o retirar tu consentimiento, escribiendo a <a href="mailto:{{ support_email }}">{{ support_email }}</a>. Te responderemos en un plazo razonable.</p>
+  <h2>Menores</h2>
+  <p>La app no está dirigida a menores de 13 años y no recopilamos sus datos a sabiendas.</p>
+  <h2>Cambios</h2>
+  <p>Si cambiamos esta política de forma importante, te avisaremos en la app.</p>
+  {% else %}
+  <h1>Privacy Policy</h1>
+  <div class="updated">Last updated: {{ updated }}</div>
+  <p>At Bless Habit ({{ legal_name }}, {{ country_en }}) we take care of what you trust us with. This explains what data we keep, why, and what control you have.</p>
+  <h2>Data we keep</h2>
+  <ul>
+    <li><strong>Your Google account:</strong> name, email and profile photo, to sign you in.</li>
+    <li><strong>What you use in the app:</strong> your profile and onboarding answers, habits, planner, metrics, achievements, journal entries and photos.</li>
+    <li><strong>Chat with Bless:</strong> the day's conversation is kept until the next day; then it is discarded and only a few notes remain ("what Bless remembers about you"), which you can see and delete in Profile.</li>
+    <li><strong>Payments:</strong> if you subscribe to Premium, Paddle processes the payment. We never see or store your card details; only a customer and subscription identifier.</li>
+    <li><strong>Security:</strong> if you turn on the PIN, we only store an encrypted version (hash), never the PIN itself.</li>
+    <li><strong>Notifications:</strong> if you turn them on, the technical data needed to send them.</li>
+  </ul>
+  <h2>How we use it</h2>
+  <p>Only to provide the service: save your progress, let Bless reply in a personalized way, send you reminders and manage your subscription. We do not sell your data or use it for personalized advertising.</p>
+  <h2>Who we share it with</h2>
+  <p>With providers we need for the app to work, and only for that:</p>
+  <ul>
+    <li><strong>Google</strong> (sign-in).</li>
+    <li><strong>OpenAI</strong> (generates Bless's replies from your messages and profile context).</li>
+    <li><strong>Render</strong> (server) and <strong>Turso</strong> (database), where your data is hosted.</li>
+    <li><strong>Paddle</strong> (Premium payments).</li>
+    <li><strong>Google AdSense</strong> (ads on the web version of the free plan).</li>
+  </ul>
+  <h2>How long we keep it</h2>
+  <p>For as long as you have your account. You can delete journal entries, memories and habits anytime in the app. If you ask us to delete your account, we delete your data within 30 days, except what the law requires us to keep (for example, payment records, kept by Paddle).</p>
+  <h2>Your rights</h2>
+  <p>You can request access, correction or deletion of your data, or withdraw your consent, by emailing <a href="mailto:{{ support_email }}">{{ support_email }}</a>. We will reply within a reasonable time.</p>
+  <h2>Children</h2>
+  <p>The app is not directed to children under 13 and we do not knowingly collect their data.</p>
+  <h2>Changes</h2>
+  <p>If we change this policy in an important way, we will let you know in the app.</p>
+  {% endif %}
+
+{% elif page == 'refunds' %}
+  {% if lang == 'es' %}
+  <h1>Política de reembolsos</h1>
+  <div class="updated">Última actualización: {{ updated }}</div>
+  <p>Queremos que estés feliz con Bless Habit Premium.</p>
+  <h2>Garantía de {{ refund_days }} días</h2>
+  <p>Si no estás satisfecha o satisfecho, puedes pedir el reembolso completo de tu pago dentro de los <strong>{{ refund_days }} días</strong> posteriores a la compra o a la renovación, sin tener que dar explicaciones.</p>
+  <h2>Cómo pedirlo</h2>
+  <p>Escríbenos a <a href="mailto:{{ support_email }}">{{ support_email }}</a> con el correo de tu cuenta, o responde al recibo de Paddle que te llegó al correo. Los pagos los procesa <strong>Paddle.com</strong> (Merchant of Record), que también puede gestionar tu reembolso directamente en <a href="https://paddle.net" rel="noopener">paddle.net</a>.</p>
+  <h2>Cancelar la suscripción</h2>
+  <p>Puedes cancelar cuando quieras desde la app (Perfil → Plan → Cancelar suscripción). No se te volverá a cobrar y conservas Premium hasta el final del periodo pagado.</p>
+  <h2>Plazos</h2>
+  <p>Una vez aprobado, el reembolso vuelve al mismo medio de pago. Según tu banco puede tardar entre 5 y 10 días hábiles en verse reflejado.</p>
+  {% else %}
+  <h1>Refund Policy</h1>
+  <div class="updated">Last updated: {{ updated }}</div>
+  <p>We want you to be happy with Bless Habit Premium.</p>
+  <h2>{{ refund_days }}-day guarantee</h2>
+  <p>If you're not satisfied, you can request a full refund of your payment within <strong>{{ refund_days }} days</strong> of the purchase or renewal, no questions asked.</p>
+  <h2>How to request it</h2>
+  <p>Email us at <a href="mailto:{{ support_email }}">{{ support_email }}</a> with your account email, or reply to the Paddle receipt you received. Payments are processed by <strong>Paddle.com</strong> (Merchant of Record), which can also handle your refund directly at <a href="https://paddle.net" rel="noopener">paddle.net</a>.</p>
+  <h2>Cancelling your subscription</h2>
+  <p>You can cancel anytime in the app (Profile → Plan → Cancel subscription). You won't be charged again and keep Premium until the end of the paid period.</p>
+  <h2>Timing</h2>
+  <p>Once approved, the refund goes back to the original payment method. Depending on your bank it may take 5–10 business days to show up.</p>
+  {% endif %}
+{% endif %}
+</div></main>
+<footer>© {{ year }} {{ legal_name }} · Bless Habit · <a href="mailto:{{ support_email }}">{{ support_email }}</a></footer>
+</body>
+</html>

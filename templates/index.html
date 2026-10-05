@@ -283,6 +283,8 @@
   .pin-link { background: none; border: none; color: var(--accent); font-size: 14px; font-weight: 600; padding: 10px; cursor: pointer; }
   .pin-link:empty { visibility: hidden; }
   .premium-tag { font-size: 10px; font-weight: 800; color: var(--on-accent); background: linear-gradient(135deg, var(--accent), var(--accent-2)); padding: 2px 7px; border-radius: 999px; vertical-align: middle; margin-left: 6px; }
+  .login-legal { margin-top: 22px; font-size: 12.5px; color: var(--text-dim); }
+  .login-legal a { color: var(--text-dim); }
   .memory-list { display: flex; flex-direction: column; gap: 6px; }
   .memory-item { display: flex; align-items: flex-start; gap: 8px; background: var(--panel-2); border: 1px solid var(--border); border-radius: 12px; padding: 9px 10px; font-size: 13.5px; line-height: 1.4; }
   .memory-text { flex: 1; }
@@ -940,6 +942,8 @@
     <p data-i18n="loginDesc">Tu compañero de hábitos y agenda. Inicia sesión para que Bless recuerde tu perfil y tu progreso entre visitas.</p>
     <a href="/auth/login" class="google-btn" id="google-login-btn" data-i18n="loginBtn">Continuar con Google</a>
     <div class="login-loading" id="login-loading" style="display:none;" data-i18n="loginLoading">Cargando tu información…</div>
+    <!-- Enlaces públicos (Paddle los revisa para aprobar los cobros). -->
+    <div class="login-legal"><a href="/precios">Precios</a> · <a href="/terminos">Términos</a> · <a href="/privacidad">Privacidad</a> · <a href="/reembolsos">Reembolsos</a></div>
   </div>
 
   <div id="view-onboarding">
@@ -4824,6 +4828,9 @@ function renderProfile() {
     </div>
     ${adBannerHtml()}
     <div style="text-align:center; margin-top: 14px;"><a href="/auth/logout" class="logout-link">${t('logoutLink')}</a></div>
+    <div class="login-legal" style="text-align:center;">${currentLang() === 'en'
+      ? '<a href="/pricing" target="_blank">Pricing</a> · <a href="/terms" target="_blank">Terms</a> · <a href="/privacy" target="_blank">Privacy</a> · <a href="/refunds" target="_blank">Refunds</a>'
+      : '<a href="/precios" target="_blank">Precios</a> · <a href="/terminos" target="_blank">Términos</a> · <a href="/privacidad" target="_blank">Privacidad</a> · <a href="/reembolsos" target="_blank">Reembolsos</a>'}</div>
   `;
   if (isPremium) {
     const cancelLink = document.getElementById('cancel-premium-link');

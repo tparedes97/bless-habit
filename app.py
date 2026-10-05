@@ -1111,6 +1111,64 @@ def index():
     )
 
 
+# ============================================================
+# PÁGINAS LEGALES Y DE PRECIOS (públicas) — Paddle las exige para aprobar los
+# cobros reales, y Google Play pide la de privacidad. Los datos del vendedor
+# se configuran en Render → Environment:
+#   LEGAL_NAME     = nombre completo de la persona (o empresa) que vende
+#   SUPPORT_EMAIL  = correo de soporte para los usuarios
+#   LEGAL_COUNTRY  = país (por defecto Perú)
+#   REFUND_DAYS    = días de garantía de reembolso (por defecto 14)
+# ============================================================
+LEGAL_PAGES = {
+    "pricing": {"es": ("/precios", "Precios"), "en": ("/pricing", "Pricing")},
+    "terms": {"es": ("/terminos", "Términos"), "en": ("/terms", "Terms")},
+    "privacy": {"es": ("/privacidad", "Privacidad"), "en": ("/privacy", "Privacy")},
+    "refunds": {"es": ("/reembolsos", "Reembolsos"), "en": ("/refunds", "Refunds")},
+}
+LEGAL_TITLES = {
+    "pricing": {"es": "Precios", "en": "Pricing"},
+    "terms": {"es": "Términos y condiciones", "en": "Terms of Service"},
+    "privacy": {"es": "Política de privacidad", "en": "Privacy Policy"},
+    "refunds": {"es": "Política de reembolsos", "en": "Refund Policy"},
+}
+COUNTRY_EN = {"Perú": "Peru", "Peru": "Peru", "México": "Mexico", "España": "Spain", "Colombia": "Colombia", "Chile": "Chile", "Argentina": "Argentina"}
+LEGAL_UPDATED = {"es": "5 de octubre de 2026", "en": "October 5, 2026"}
+
+
+def render_legal(page, lang):
+    country = os.environ.get("LEGAL_COUNTRY", "Perú")
+    price_num = re.sub(r"[^0-9.,$]", "", PADDLE_PRICE_LABEL) or "$4.99"
+    return render_template(
+        "legal.html",
+        page=page,
+        lang=lang,
+        title=LEGAL_TITLES[page][lang],
+        current=LEGAL_PAGES[page][lang][0],
+        nav=[LEGAL_PAGES[k][lang] for k in LEGAL_PAGES],
+        other_lang_url=LEGAL_PAGES[page]["en" if lang == "es" else "es"][0],
+        legal_name=os.environ.get("LEGAL_NAME", "Bless Habit"),
+        support_email=os.environ.get("SUPPORT_EMAIL", "soporte@blesshabit.app"),
+        country=country,
+        country_en=COUNTRY_EN.get(country, country),
+        refund_days=os.environ.get("REFUND_DAYS", "14"),
+        price_label=PADDLE_PRICE_LABEL,
+        price_label_en=PADDLE_PRICE_LABEL.replace("/mes", "/month"),
+        price_label_num=price_num,
+        updated=LEGAL_UPDATED[lang],
+        year=time.strftime("%Y"),
+    )
+
+
+def _register_legal_routes():
+    for page, langs in LEGAL_PAGES.items():
+        for lang, (path, _label) in langs.items():
+            app.add_url_rule(path, f"legal_{page}_{lang}", (lambda p=page, l=lang: render_legal(p, l)))
+
+
+_register_legal_routes()
+
+
 @app.route("/healthz")
 def healthz():
     # Para un servicio externo gratis (ej. cron-job.org) que lo visite cada 10
