@@ -269,6 +269,13 @@ def init_db():
             created_at REAL NOT NULL
         )
     """)
+    # Ajustes internos del servidor (por ahora, las claves VAPID generadas solas).
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS app_settings (
+            key TEXT PRIMARY KEY,
+            value TEXT NOT NULL
+        )
+    """)
     # Migración suave: agrega columnas nuevas si la base ya existía sin ellas
     # (por ejemplo una base creada antes de Premium, o todavía con las
     # columnas viejas de Culqi de una versión anterior de este archivo).
@@ -288,6 +295,44 @@ def init_db():
 
 
 init_db()
+
+
+def ensure_vapid_keys():
+    """Las notificaciones web necesitan un par de claves VAPID. Si no están en
+    las variables de entorno, se generan solas la primera vez y se guardan en
+    la base (así sobreviven reinicios y no hay que configurar nada a mano)."""
+    global VAPID_PRIVATE_KEY, VAPID_PUBLIC_KEY
+    if VAPID_PRIVATE_KEY and VAPID_PUBLIC_KEY:
+        return
+    try:
+        conn = get_db()
+        cur = conn.execute("SELECT key, value FROM app_settings WHERE key IN ('vapid_private', 'vapid_public')")
+        stored = {r["key"]: r["value"] for r in _rows_to_dicts(cur, cur.fetchall())}
+        if not (stored.get("vapid_private") and stored.get("vapid_public")):
+            from cryptography.hazmat.primitives.asymmetric import ec
+            from cryptography.hazmat.primitives import serialization
+            key = ec.generate_private_key(ec.SECP256R1())
+            private_der = key.private_bytes(serialization.Encoding.DER, serialization.PrivateFormat.PKCS8, serialization.NoEncryption())
+            public_raw = key.public_key().public_bytes(serialization.Encoding.X962, serialization.PublicFormat.UncompressedPoint)
+            stored = {
+                "vapid_private": base64.urlsafe_b64encode(private_der).decode().rstrip("="),
+                "vapid_public": base64.urlsafe_b64encode(public_raw).decode().rstrip("="),
+            }
+            # INSERT OR IGNORE + volver a leer: si dos procesos arrancan a la vez,
+            # gana el primero y ambos terminan usando el mismo par.
+            for k, v in stored.items():
+                conn.execute("INSERT OR IGNORE INTO app_settings (key, value) VALUES (?, ?)", (k, v))
+            conn.commit()
+            cur = conn.execute("SELECT key, value FROM app_settings WHERE key IN ('vapid_private', 'vapid_public')")
+            stored = {r["key"]: r["value"] for r in _rows_to_dicts(cur, cur.fetchall())}
+            print("[push] claves VAPID generadas y guardadas en la base")
+        conn.close()
+        VAPID_PRIVATE_KEY, VAPID_PUBLIC_KEY = stored["vapid_private"], stored["vapid_public"]
+    except Exception as e:
+        print(f"[push] no se pudieron preparar las claves VAPID: {e}")
+
+
+ensure_vapid_keys()
 
 
 def get_or_create_user(google_id, email, name, picture):

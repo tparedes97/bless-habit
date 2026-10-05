@@ -286,6 +286,7 @@
   .delete-account-link { background: none; border: none; color: #d9534f; font-size: 13px; text-decoration: underline; cursor: pointer; padding: 8px; }
   .login-legal { margin-top: 22px; font-size: 12.5px; color: var(--text-dim); }
   .login-legal a { color: var(--text-dim); }
+  .premium-benefits { list-style: none; padding: 0; margin: 0 0 12px; display: flex; flex-direction: column; gap: 6px; font-size: 13.5px; line-height: 1.4; }
   .memory-list { display: flex; flex-direction: column; gap: 6px; }
   .memory-item { display: flex; align-items: flex-start; gap: 8px; background: var(--panel-2); border: 1px solid var(--border); border-radius: 12px; padding: 9px 10px; font-size: 13.5px; line-height: 1.4; }
   .memory-text { flex: 1; }
@@ -1633,13 +1634,13 @@ const I18N = {
     pushDisableBtn: '🔕 Desactivar recordatorios',
     pushDisabledText: 'Desactivadas. Actívalas para que Bless te escriba si pasas varios días sin abrir la app.',
     pushEnableBtn: '🔔 Activar recordatorios',
-    pushNotConfigured: 'Las notificaciones todavía no están configuradas en el servidor (faltan las Secrets de VAPID). Avísale a quien administra la app.',
+    pushNotConfigured: 'Las notificaciones no están disponibles en este momento. Intenta de nuevo más tarde.',
     pushPermissionDenied: 'No diste permiso de notificaciones — puedes activarlo luego desde los ajustes del navegador.',
     pushSwFail: 'No se pudo registrar el service worker.',
     pushEnableFail: 'No se pudo activar las notificaciones. Intenta de nuevo.',
 
     paddleConnFail: 'No se pudo conectar con el servidor para iniciar el pago. Intenta de nuevo.',
-    paddleNotConfigured: 'El cobro con Paddle todavía no está configurado en el servidor (faltan las Secrets de Paddle). Avísale a quien administra la app.',
+    paddleNotConfigured: 'Los pagos no están disponibles en este momento. Intenta de nuevo más tarde.',
     paddleWidgetFail: 'No se pudo cargar el widget de pago de Paddle. Revisa tu conexión e intenta de nuevo.',
     paddleThanks: '¡Gracias! Estamos confirmando tu pago — Bless Habit Premium se activa en unos segundos…',
     cancelConfirm: '¿Seguro que quieres cancelar tu suscripción Premium? Seguirás con Premium hasta el final del periodo que ya pagaste.',
@@ -1761,7 +1762,9 @@ const I18N = {
     configDescPremiumExtra: '/dorado Premium',
     openConfigBtn: 'Abrir configuración',
     planTitle: 'Plan', premiumBadge: '✨ Bless Habit Premium', cancelSubLink: 'Cancelar suscripción',
-    freePlanDesc: 'Estás en el plan gratuito (con publicidad y métricas limitadas).',
+    freePlanDesc: 'Estás en el plan gratis. Con Premium tienes:',
+    premiumBenefits: ['🚫 Sin anuncios', '📊 Métricas completas: rachas, patrones por día y ranking de hábitos', '🔒 Bloqueo con PIN (y huella o rostro en Android)', '✨ Tema dorado Premium'],
+    premiumCancelNote: 'Pago mensual con Paddle. Cancelas cuando quieras.',
     becomePremiumBtn: (price) => `Hazte Premium — ${price}`,
     notifTitle: 'Notificaciones', consultando: 'Consultando…', logoutLink: 'Cerrar sesión',
     editFieldPrompt: (label) => `Editar ${label}:`,
@@ -2006,13 +2009,13 @@ const I18N = {
     pushDisableBtn: '🔕 Disable reminders',
     pushDisabledText: "Disabled. Turn them on so Bless can message you if you go several days without opening the app.",
     pushEnableBtn: '🔔 Enable reminders',
-    pushNotConfigured: 'Notifications are not configured on the server yet (missing VAPID Secrets). Let whoever manages the app know.',
+    pushNotConfigured: 'Notifications are not available right now. Please try again later.',
     pushPermissionDenied: "You didn't grant notification permission — you can enable it later from your browser settings.",
     pushSwFail: 'Could not register the service worker.',
     pushEnableFail: 'Could not enable notifications. Please try again.',
 
     paddleConnFail: 'Could not connect to the server to start the payment. Please try again.',
-    paddleNotConfigured: 'Paddle billing is not configured on the server yet (missing Paddle Secrets). Let whoever manages the app know.',
+    paddleNotConfigured: 'Payments are not available right now. Please try again later.',
     paddleWidgetFail: "Could not load Paddle's payment widget. Check your connection and try again.",
     paddleThanks: 'Thank you! We are confirming your payment — Bless Habit Premium will activate in a few seconds…',
     cancelConfirm: 'Are you sure you want to cancel your Premium subscription? You keep Premium until the end of the period you already paid for.',
@@ -2134,7 +2137,9 @@ const I18N = {
     configDescPremiumExtra: '/Premium gold',
     openConfigBtn: 'Open settings',
     planTitle: 'Plan', premiumBadge: '✨ Bless Habit Premium', cancelSubLink: 'Cancel subscription',
-    freePlanDesc: 'You are on the free plan (with ads and limited metrics).',
+    freePlanDesc: "You're on the free plan. With Premium you get:",
+    premiumBenefits: ['🚫 No ads', '📊 Full metrics: streaks, day-of-week patterns and habit ranking', '🔒 PIN lock (plus fingerprint or face on Android)', '✨ Premium gold theme'],
+    premiumCancelNote: 'Monthly payment via Paddle. Cancel anytime.',
     becomePremiumBtn: (price) => `Go Premium — ${price}`,
     notifTitle: 'Notifications', consultando: 'Checking…', logoutLink: 'Log out',
     editFieldPrompt: (label) => `Edit ${label}:`,
@@ -3328,6 +3333,9 @@ async function disableAppLock() {
   renderProfile();
 }
 function appLockCardHtml() {
+  // Para el plan gratis el PIN aparece como beneficio dentro del bloque de
+  // Premium (un solo botón), no como una tarjeta aparte con otro botón.
+  if (!isPremium && !appLockEnabled) return '';
   const title = `<h4>${t('pinCardTitle')}<span class="premium-tag">PREMIUM</span></h4>`;
   if (appLockEnabled) {
     return `<div class="profile-card">${title}
@@ -4875,7 +4883,10 @@ function renderProfile() {
       <h4>${t('planTitle')}</h4>
       ${isPremium
         ? `<div class="premium-badge">${t('premiumBadge')}</div><div style="margin-top:10px;"><span class="logout-link" id="cancel-premium-link">${t('cancelSubLink')}</span></div>`
-        : `<div style="font-size:13px;color:var(--text-dim);margin-bottom:10px;">${t('freePlanDesc')}</div><button class="premium-btn" id="profile-unlock-premium-btn">${t('becomePremiumBtn', PADDLE_PRICE_LABEL)}</button>`}
+        : `<div style="font-size:13px;color:var(--text-dim);margin-bottom:10px;">${t('freePlanDesc')}</div>
+           <ul class="premium-benefits">${(I18N[currentLang()].premiumBenefits || I18N.es.premiumBenefits).map(b => `<li>${b}</li>`).join('')}</ul>
+           <button class="premium-btn" id="profile-unlock-premium-btn">${t('becomePremiumBtn', PADDLE_PRICE_LABEL)}</button>
+           <div class="premium-note">${t('premiumCancelNote')}</div>`}
     </div>
     ${appLockCardHtml()}
     <div class="profile-card">
