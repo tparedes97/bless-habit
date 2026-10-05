@@ -7068,7 +7068,8 @@ async function ensureWeeklySummary() {
   if (!isPremium || !aiEnabled() || weeklySummaryLoading) return false;
   const key = lastCompletedWeekStart();
   state.weeklySummaries = state.weeklySummaries || {};
-  if (state.weeklySummaries[key]) return false;
+  const existing = state.weeklySummaries[key];
+  if (existing && (existing.lang || 'es') === currentLang()) return false; // si cambió el idioma, se reescribe
   const days = weekDaysData(key);
   if (!days.length) return false;
   weeklySummaryLoading = true;
@@ -7077,7 +7078,7 @@ async function ensureWeeklySummary() {
       body: JSON.stringify({ name: state.profile.nombre, language: currentLang(), days }) });
     const data = await res.json().catch(() => null);
     if (!res.ok || !data || !data.ok) return false;
-    state.weeklySummaries[key] = Object.assign({ createdAt: Date.now() }, data.summary);
+    state.weeklySummaries[key] = Object.assign({ createdAt: Date.now(), lang: currentLang() }, data.summary);
     // Solo se guardan las últimas 8 semanas.
     Object.keys(state.weeklySummaries).sort().slice(0, -8).forEach(k => delete state.weeklySummaries[k]);
     saveStateToServer();
@@ -7207,7 +7208,7 @@ function renderMetrics() {
     const btn = document.getElementById('unlock-premium-btn');
     if (btn) btn.onclick = openPaddleCheckout;
     pushAdsenseSlots();
-  } else if (!(state.weeklySummaries || {})[lastCompletedWeekStart()] && !weeklySummaryLoading) {
+  } else if (!weeklySummaryLoading && (!(state.weeklySummaries || {})[lastCompletedWeekStart()] || ((state.weeklySummaries[lastCompletedWeekStart()].lang || 'es') !== currentLang()))) {
     ensureWeeklySummary().then(created => {
       if (created && document.getElementById('view-metrics').classList.contains('active')) renderMetrics();
     });
