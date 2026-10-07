@@ -4538,7 +4538,14 @@ function blessDevice() {
 // Alarmas en la app Reloj del teléfono (BlessDevice.setAlarm, desde la versión
 // 1.1 de la app). groups: [{ time: 'HH:MM', days: [0..6] | null }]. Con días es
 // una alarma que se repite; sin días suena una vez, a la próxima vez que llegue esa hora.
-function canSetClockAlarm() { return !!blessDevice(); }
+// Solo si la app instalada ya trae setAlarm (versión 1.1+): en la 1.0 la opción
+// ni aparece. Capacitor publica en PluginHeaders los métodos nativos de cada plugin.
+function canSetClockAlarm() {
+  if (!blessDevice()) return false;
+  const headers = (window.Capacitor && window.Capacitor.PluginHeaders) || [];
+  const h = headers.find(x => x.name === 'BlessDevice');
+  return !!(h && (h.methods || []).some(m => m.name === 'setAlarm'));
+}
 async function createClockAlarms(groups, message) {
   const BD = blessDevice();
   if (!BD) return;
