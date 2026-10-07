@@ -5880,7 +5880,22 @@ async function handleUserMessageInner(text) {
   // barato, para no gastar una llamada en mensajes que no tienen nada que ver).
   // Si la IA no está disponible o no contesta a tiempo, se usa el mismo detector
   // por reglas de siempre como respaldo — el chat nunca se queda sin responder.
-  const mentionsAchievementWord = /logr[eé]|\blogros?\b|conseguí|consegui|\bachievements?\b/i.test(text);
+  // "Quiero agregar un logro(o)" → se pregunta cuál y se queda esperando la
+  // respuesta (antes, con "logroo" no se reconocía y la respuesta siguiente,
+  // "Trabajar en equipo", terminaba en "¿a qué hora lo haces?").
+  const textNoRepeats = collapseRepeatedLetters(text);
+  if (!pending && /\b(agreg|añad|anad|guard|registr|anot|sum|nuev|otro|tengo|add|save|log|new)\w*\s+(?:(?:un|una|otro|mi|el|an?|another|my)\s+)?(?:nuevo\s+|new\s+)?(logro|achievement)s?\b/i.test(textNoRepeats)) {
+    const detail = cleanLogroText(textNoRepeats);
+    if (!detail) {
+      state.pending = { type: 'needsAchievementDetail' };
+      await agentSay(chatScroll, tp('achievementAskDetailFallback'), 300, '🏆');
+      return;
+    }
+    state.pending = { type: 'needsAchievementFollowup', detail };
+    await say(chatScroll, `La persona acaba de contarte un logro: "${detail}". Como su mejor amigo/a, alégrate genuinamente y pregúntale con curiosidad real cómo lo logró o cómo se siente con eso — todavía NO le preguntes si quiere guardarlo.`, t('achievementFollowupFallback'));
+    return;
+  }
+  const mentionsAchievementWord = /logr[eé]|\blogros?\b|conseguí|consegui|\bachievements?\b/i.test(textNoRepeats);
   if (!pending && mentionsAchievementWord) {
     const classified = await classifyAchievementMessage(text);
     if (classified) {
