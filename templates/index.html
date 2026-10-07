@@ -1501,11 +1501,25 @@ Responde solo con el mensaje que Bless le diría ahora. No uses listas ni encabe
 // handleUserMessage), la IA lo recibe tal cual — como estar chateando de
 // verdad — y extraSystem le suma solo el contexto interno adicional que
 // necesita, por fuera del mensaje del usuario.
+// La IA a veces dice "¡listo, lo guardé en tu perfil!" sin que la app haya
+// guardado nada. Si en este turno la app no hizo ninguna acción real, se quitan
+// de la respuesta las frases que afirman haber guardado/agendado algo.
+let appActedThisTurn = false;
+function markAppActed() { appActedThisTurn = true; }
+const FALSE_CLAIM_RE = /\b(?:est[aá]n? (?:ahora |ya )?(?:guardad|agregad|anotad|registrad|agendad|programad|a[nñ]adid|apuntad)[oa]s?|(?:ya |ahora )?(?:est[aá]n?|qued[oó]|quedaron) (?:ahora )?(?:guardad|agregad|anotad|registrad|agendad|programad|a[nñ]adid)|est[aá]n? (?:ahora |ya )?en tu (?:perfil|diario|calendario|agenda|lista)|(?:guardé|agregué|añadí|anoté|registré|agendé|programé|apunté|he (?:guardado|agregado|añadido|anotado|registrado|agendado|programado|apuntado))(?![a-záéíóúñ])|(?:recordaré|avisaré)(?![a-záéíóúñ])|i(?:'ve| have)? (?:saved|added|noted|scheduled|logged|recorded)|(?:is|are) now (?:saved|in your)|has been (?:saved|added|scheduled)|i'?ll remind you)/i;
+function stripFalseClaims(reply) {
+  if (!reply || appActedThisTurn) return reply;
+  const parts = reply.match(/[^.!?¡¿]*(?:[¡¿][^.!?]*)?[.!?…]+[\s\u{1F300}-\u{1FAFF}\u2600-\u27BF\uFE0F]*|[^.!?]+$/gu) || [reply];
+  const kept = parts.filter(p => !FALSE_CLAIM_RE.test(p));
+  if (kept.length === parts.length) return reply;
+  const out = kept.join('').trim().replace(/^(?:hecho|listo|perfecto|genial|done|great)[,!.\s]*/i, '').trim();
+  return out.length >= 12 ? out.charAt(0).toUpperCase() + out.slice(1) : null;
+}
 async function say(container, situationDesc, fallbackText, delay, reactionEmoji, extraSystem) {
   const sys = extraSystem ? `${blessSystemPrompt()}\n\n${extraSystem}` : blessSystemPrompt();
   showTyping(container); // "Bless está escribiendo…" mientras la IA piensa
   const started = Date.now();
-  const aiReply = await callBlessAI(sys, situationDesc);
+  const aiReply = stripFalseClaims(await callBlessAI(sys, situationDesc));
   // Si la IA ya tardó, no se suma otra pausa larga encima.
   if (delay === undefined && Date.now() - started > 800) delay = 250;
   await agentSay(container, aiReply || fallbackText, delay, reactionEmoji);
@@ -1710,6 +1724,7 @@ const I18N = {
     ],
     achievementFallback: '¡Qué buena noticia! 🎉 ¿Quieres que lo guarde en tu perfil como un logro?',
     achievementSavedFallback: '¡Guardado! 🏆 Ya lo vas a ver en tu perfil, en tu sección de logros.',
+    logroSavedNamed: (x) => `¡Guardado! 🏆 "${x}" ya está en tus logros, en tu Perfil. Te muestro la tarjeta por si quieres personalizarla y compartirla ✨`,
     achievementDeclinedFallback: 'Va, no lo guardo — pero igual me alegra mucho por ti 🤍',
     achievementAskDetailFallback: ['¡Qué bueno que tengas un logro! 🎉 Cuéntame, ¿cuál fue?', '¡Me encanta! 🎉 ¿Qué fue exactamente lo que lograste?'],
     achievementFollowupFallback: ['Eso es enorme 🎉 Cuéntame, ¿cómo lo lograste?', '¡Me encanta! ¿Qué se sintió al conseguirlo?', 'Qué orgullo 🌟 ¿Qué fue lo que más te ayudó a lograrlo?'],
@@ -2189,6 +2204,7 @@ const I18N = {
     ],
     achievementFallback: 'That is great news! 🎉 Want me to save it to your profile as an achievement?',
     achievementSavedFallback: 'Saved! 🏆 You will see it in your profile, in your achievements section.',
+    logroSavedNamed: (x) => `Saved! 🏆 "${x}" is now in your achievements, in your Profile. Here's the card in case you want to customize and share it ✨`,
     achievementDeclinedFallback: "Okay, I won't save it — but I'm still really happy for you 🤍",
     achievementAskDetailFallback: ["That's great, you have an achievement! 🎉 Tell me, what was it?", "Love that! 🎉 What exactly did you achieve?"],
     achievementFollowupFallback: ["That's huge 🎉 Tell me, how did you pull it off?", "Love that! What did it feel like to get there?", "So proud of you 🌟 What helped you the most to make it happen?"],
@@ -3844,6 +3860,9 @@ async function bootstrapApp() {
       Object.assign(state, stateData.state);
       state.settings = Object.assign({ language: null, country: null, theme: 'light' }, state.settings || {});
       state.profile.logros = state.profile.logros || [];
+      // Logros guardados con el pedido incluido ("Agreguemos un logro — Hoy logré…"):
+      // se deja solo el logro.
+      state.profile.logros.forEach(l => { if (l && l.text && LOGRO_LEADIN_RE.test(l.text)) { const c = cleanLogroText(l.text); if (c) l.text = c; } });
       // Cuentas guardadas antes del sistema de Niveles (2 sept 2026) no traen "xp" —
       // se normaliza acá mismo, igual que ya se hace arriba con "logros".
       state.profile.xp = state.profile.xp || 0;
@@ -5158,6 +5177,7 @@ function cleanLogroText(text) {
   return s ? s.charAt(0).toUpperCase() + s.slice(1) : '';
 }
 function addLogro(text) {
+  markAppActed();
   state.profile.logros = state.profile.logros || [];
   state.profile.logros.push({ text: cleanLogroText(text) || String(text).trim(), date: ymd(new Date()) });
   saveStateToServer();
@@ -5470,6 +5490,7 @@ function habitNameFromText(text) {
 // Abre el editor de hábitos ya lleno (nombre, días, hora) para que la persona
 // confirme o ajuste antes de guardar. Busca si el nombre es un hábito predefinido.
 async function offerHabitFromChat({ label, time, days, removeTaskId }) {
+  markAppActed(); // abre el editor: la app sí está haciendo algo
   if (!canAddHabit()) {
     await agentSay(chatScroll, t('habitLimitMsg', FREE_HABIT_LIMIT));
     addNote(chatScroll, t('seePremiumNote'), 'agenda-note', () => openPremiumSheet());
@@ -5479,6 +5500,32 @@ async function offerHabitFromChat({ label, time, days, removeTaskId }) {
   const preset = label ? HABIT_PRESETS.find(h => norm(h.label) === norm(label) || norm(t2(h)) === norm(label)) : null;
   await agentSay(chatScroll, tp('addHabitFallback'), 300, '🌱');
   openHabitEditor(null, { preset, label, time, days, removeTaskId });
+}
+function looksLikeSaveAsLogro(text) {
+  const l = text.toLowerCase();
+  if (/^\s*(?:s[ií],?\s*)?(?:es|era|fue|eso es|esto es)\s+(?:un|mi)\s+logro\b/.test(l)) return true;
+  if (/\b(?:gu[aá]rd|agr[eé]g|a[nñ][aá]d|p[oó]n|reg[ií]str|an[oó]t)\w*\s+(?:como (?:un )?logro|(?:a|en) (?:mis )?logros)/.test(l)) return true;
+  if (/\b(?:it'?s|that'?s) an achievement\b|\b(?:save|add) (?:it|this|that) (?:as an achievement|to my achievements)/.test(l)) return true;
+  // "agrégalo a mi perfil" solo cuenta si se venía hablando de un logro.
+  if (/\b(?:gu[aá]rd|agr[eé]g|a[nñ][aá]d|p[oó]n)\w*(?:lo|la)\s+(?:a|en) mi perfil|\b(?:save|add) it to my profile/.test(l)) {
+    return chatMemory.slice(-6).some(m => /logro|achievement/i.test(m.content || ''));
+  }
+  return false;
+}
+// Qué guardar como logro: lo que estaba pendiente (una actividad o un logro en
+// curso) o el último mensaje de la persona que no sea otro pedido de guardar.
+function logroCandidateFromContext(pend, currentText) {
+  if (pend && (pend.detail || pend.task || pend.text)) return cleanLogroText(pend.detail || pend.text || pend.task) || null;
+  const users = chatMemory.filter(m => m.role === 'user').map(m => m.content);
+  for (let i = users.length - 1; i >= 0 && i >= users.length - 4; i--) {
+    const c = users[i];
+    if (!c || c === currentText) continue;
+    if (looksLikeSaveAsLogro(collapseRepeatedLetters(c)) || /^(s[ií]+|no|ok|bien|vale|gracias|listo|yes|nope?)\W*$/i.test(c.trim())) continue;
+    if (/\b(logro|achievement)s?\b/i.test(c) && !cleanLogroText(c)) continue;
+    const cleaned = cleanLogroText(c);
+    if (cleaned && cleaned.split(/\s+/).length <= 25) return cleaned;
+  }
+  return null;
 }
 async function respondWithHabitSuggestions() {
   const picks = suggestUnusedHabits(3);
@@ -5616,6 +5663,7 @@ function parseDiaryRequest(text) {
   return { text: body ? body.charAt(0).toUpperCase() + body.slice(1) : '' };
 }
 async function handleDiaryRequest(req) {
+  markAppActed();
   const today = todayStr();
   if (!req.text) {
     await agentSay(chatScroll, t('diaryAskChat'), 300);
@@ -5669,6 +5717,10 @@ function openCalendarDay(dateStr) {
 // del día. Ahora eso es una Tarea: se mueven las que quedaron de antes.
 function migrateOneOffAgendaToTasks() {
   if (!Array.isArray(state.agenda)) return;
+  // Filas de hábitos que ya se borraron (quedaban si se borraban estando hechas).
+  const before = state.agenda.length;
+  state.agenda = state.agenda.filter(a => !a.recurring || (state.profile.habitos || []).some(h => h.key === a.habitKey && h.label === (a.task || a.label)) || (state.profile.habitos || []).some(h => h.label === (a.task || a.label)));
+  if (state.agenda.length !== before) saveStateToServer();
   const today = ymd(new Date());
   const keep = [];
   let moved = 0;
@@ -5747,6 +5799,7 @@ async function handleTaskOrNoteRequest(req) {
 async function handleUserMessage(text) {
   const asksPremium = !isPremium && /premium|suscrip|subscri|membres[ií]a|membership|versi[oó]n (?:pagada|completa|pro)|plan (?:pagado|de pago)|paid (?:plan|version)/i.test(text);
   const typingTimer = setTimeout(() => showTyping(chatScroll), 300);
+  appActedThisTurn = false;
   try { await handleUserMessageInner(text); }
   finally { clearTimeout(typingTimer); hideTyping(); }
   if (asksPremium) addNote(chatScroll, t('seePremiumNote'), 'agenda-note', () => openPremiumSheet());
@@ -5884,6 +5937,23 @@ async function handleUserMessageInner(text) {
   // respuesta (antes, con "logroo" no se reconocía y la respuesta siguiente,
   // "Trabajar en equipo", terminaba en "¿a qué hora lo haces?").
   const textNoRepeats = collapseRepeatedLetters(text);
+  // "Es un logro", "guárdalo como logro", "agrégalo a mi perfil" (hablando de un
+  // logro) → se guarda de verdad lo que contó justo antes.
+  if (looksLikeSaveAsLogro(textNoRepeats)) {
+    const candidate = logroCandidateFromContext(state.pending || pending, text);
+    if (candidate) {
+      state.pending = null;
+      addLogro(candidate);
+      const idx = state.profile.logros.length - 1;
+      await agentSay(chatScroll, t('logroSavedNamed', state.profile.logros[idx].text), 300, '🏆');
+      addNote(chatScroll, t('shareLogroPrompt'), 'agenda-note', () => openLogroShareCard(idx));
+      openLogroShareCard(idx);
+      return;
+    }
+    state.pending = { type: 'needsAchievementDetail' };
+    await agentSay(chatScroll, tp('achievementAskDetailFallback'), 300, '🏆');
+    return;
+  }
   if (!pending && /\b(agreg|añad|anad|guard|registr|anot|sum|nuev|otro|tengo|add|save|log|new)\w*\s+(?:(?:un|una|otro|mi|el|an?|another|my)\s+)?(?:nuevo\s+|new\s+)?(logro|achievement)s?\b/i.test(textNoRepeats)) {
     const detail = cleanLogroText(textNoRepeats);
     if (!detail) {
@@ -7975,6 +8045,7 @@ function saveHabitEditor() {
     entry.repeatDays.forEach(d => { const tm = habitTimeForDay(entry, d); (byTime[tm] = byTime[tm] || []).push(d); });
     createClockAlarms(Object.keys(byTime).map(tm => ({ time: tm, days: byTime[tm] })), `${entry.icon} ${habitDisplayLabel(entry)}`);
   }
+  markAppActed();
   syncTodayAgendaForHabit(entry);
   if (wasDoneToday) { const ai = state.agenda.findIndex(a => a.habitKey === entry.key && a.task === entry.label); if (ai !== -1) state.agenda[ai].done = true; }
   saveStateToServer();
@@ -7990,8 +8061,10 @@ function deleteHabitFromEditor() {
   if (editingHabitIndex === null) return;
   const h = state.profile.habitos[editingHabitIndex];
   state.profile.habitos.splice(editingHabitIndex, 1);
-  const idx = state.agenda.findIndex(a => a.habitKey === h.key && a.task === h.label && !a.done);
-  if (idx !== -1) state.agenda.splice(idx, 1);
+  // Se quita su fila de hoy aunque ya estuviera marcada como hecha (antes quedaba
+  // en el Calendario y contaba en el anillo como si el hábito siguiera existiendo).
+  state.agenda = state.agenda.filter(a => !(a.habitKey === h.key && (a.task === h.label || !state.profile.habitos.some(x => x.key === h.key))));
+  if (state.streaks && !state.profile.habitos.some(x => x.key === h.key)) delete state.streaks[h.key];
   saveStateToServer();
   pendingAddHabitStatus = t('deletedHabitMsg', h.icon, habitDisplayLabel(h));
   scheduleNativeRemindersSoon();
@@ -8254,6 +8327,7 @@ function canAddTask() { return isPremium || tasksList().length < FREE_TASK_LIMIT
 function canDeleteTask() { return isPremium || tasksList().length < FREE_TASK_LIMIT; }
 function canAddNote() { return isPremium || notesList().length < FREE_NOTE_LIMIT; }
 function afterTasksOrNotesChanged() {
+  markAppActed();
   saveStateToServer(); // también reprograma los recordatorios
   if (calSubTab === 'day' && document.getElementById('view-calendar').classList.contains('active')) renderCalDay();
 }
