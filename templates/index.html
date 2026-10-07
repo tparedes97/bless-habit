@@ -1975,7 +1975,8 @@ const I18N = {
     taskSavedNoTimeChat: (text, date) => `¡Anotado! ✅ «${text}» quedó en tus tareas de ${date}. Si quieres que te avise, dime a qué hora 🤍`,
     noteSavedChat: (date) => `Guardé tu nota en el día de ${date} 📝`,
     diarySavedChat: 'Listo, lo escribí en tu diario de hoy 📔 Puedes verlo o agregarle foto y stickers en la pestaña Diario.',
-    diaryAskChat: '¿Qué quieres escribir en tu diario? Te abro la página de hoy 📔',
+    diaryAskChat: '¡Claro! ¿Qué quieres escribir en tu diario de hoy? Escríbemelo y lo guardo 📔',
+    openDiaryNote: '📔 Prefiero abrir mi diario',
     seeInDiaryNote: '📔 Ver en mi diario',
     alarmToggle: '⏰ Crear también una alarma en el reloj',
     alarmCreated: 'Listo ⏰ Se creó la alarma en la app Reloj de tu teléfono. Suena aunque Bless esté cerrada.',
@@ -2456,7 +2457,8 @@ const I18N = {
     taskSavedNoTimeChat: (text, date) => `Got it! ✅ "${text}" is in your tasks for ${date}. If you want a reminder, tell me what time 🤍`,
     noteSavedChat: (date) => `I saved your note on ${date} 📝`,
     diarySavedChat: "Done, I wrote it in today's journal 📔 You can see it or add a photo and stickers in the Journal tab.",
-    diaryAskChat: "What would you like to write in your journal? I'll open today's page 📔",
+    diaryAskChat: "Sure! What would you like to write in today's journal? Type it and I'll save it 📔",
+    openDiaryNote: "📔 I'd rather open my journal",
     seeInDiaryNote: '📔 See it in my journal',
     alarmToggle: '⏰ Also set an alarm on the clock',
     alarmCreated: "Done ⏰ The alarm was created in your phone's Clock app. It rings even if Bless is closed.",
@@ -5480,7 +5482,8 @@ function suggestUnusedHabits(count) {
 // Devuelve los días (0 = domingo) o null.
 function parseRepeatDays(text) {
   const l = ' ' + text.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '') + ' ';
-  if (/\b(todos los dias|todo los dias|cada dia|diari[ao]|a diario|toda la semana|every ?day|daily|each day|all week)\b/.test(l)) return [0,1,2,3,4,5,6];
+  // Ojo: "diario" solo NO cuenta ("mi diario" es el Diario de la app).
+  if (/\b(todos los dias|todo los dias|cada dia|diariamente|a diario|toda la semana|every ?day|daily|each day|all week)\b/.test(l)) return [0,1,2,3,4,5,6];
   if (/\b(de )?lunes a viernes\b|\bentre semana\b|\bdias (de semana|laborables|habiles)\b|\bweekdays\b|\bmonday (to|through|-) friday\b/.test(l)) return [1,2,3,4,5];
   if (/\b(lunes a sabado|monday (to|through) saturday)\b/.test(l)) return [1,2,3,4,5,6];
   if (/\b(fines? de semana|sabados? y domingos?|weekends?)\b/.test(l)) return [0,6];
@@ -5499,7 +5502,7 @@ function parseRepeatDays(text) {
 // Quita del texto lo que dice la frecuencia y la hora, para quedarse con el nombre del hábito.
 function habitNameFromText(text) {
   // Primero se quita la frecuencia (si no, "los lunes" se leería como una fecha).
-  let n = String(text || '').replace(/\b(todos los d[ií]as|todo los d[ií]as|cada d[ií]a|diariamente|a diario|diario|toda la semana|de lunes a (viernes|s[aá]bado)|entre semana|fines? de semana|every ?day|daily|each day|weekdays|weekends?)\b/gi, '')
+  let n = String(text || '').replace(/\b(todos los d[ií]as|todo los d[ií]as|cada d[ií]a|diariamente|a diario|toda la semana|de lunes a (viernes|s[aá]bado)|entre semana|fines? de semana|every ?day|daily|each day|weekdays|weekends?)\b/gi, '')
     .replace(/\b(los|cada|every|on)\s+((domingo|lunes|martes|mi[eé]rcoles|jueves|viernes|s[aá]bado)s?|(sun|mon|tues|wednes|thurs|fri|satur)days?)(\s*(,|y|e|and)\s*((domingo|lunes|martes|mi[eé]rcoles|jueves|viernes|s[aá]bado)s?|(sun|mon|tues|wednes|thurs|fri|satur)days?))*\b/gi, '')
     .replace(/\b(quiero|me gustar[ií]a|hacer|un h[aá]bito de|h[aá]bito de|h[aá]bito|habit of|habit)\b/gi, '')
     .replace(/\s{2,}/g, ' ').trim();
@@ -5673,7 +5676,7 @@ function cleanTaskText(t0) {
 // "querido diario, …". Va a la entrada de hoy del Diario (se suma al final si ya
 // había algo escrito). Antes caía en la IA, que a veces decía "lo agregué" sin
 // que se guardara nada.
-const DIARY_RE = /^\s*(?:(?:oye|bless|porfa|por favor|ok|okay|vale|ya|y|tambi[eé]n|ahora|bueno|hola|please|also|hey)[,!.\s]+)*(?:(?:quiero|quisiera|puedes|podr[ií]as)\s+)?(?:agr[eé]ga(?:r|me|lo)?|a[nñ]([aá]de)(?:lo)?|a[nñ]adir|escr[ií]be(?:lo)?|escribir|anota(?:lo)?|anotar|guarda(?:lo)?|guardar|pon(?:lo|er)?|registra(?:lo)?|apunta(?:lo)?|add|write|put|save|log)\s+(?:esto\s+|this\s+|it\s+)?(?:en|a|al|to|in|into)\s+(?:mi|el|my|the)\s+(?:diario|journal|diary)\b\s*(?:de hoy|today)?\s*[:,.]?\s*(?:que\s+|that\s+)?/i;
+const DIARY_RE = /^\s*(?:(?:oye|bless|porfa|por favor|ok|okay|vale|ya|y|tambi[eé]n|ahora|bueno|hola|please|also|hey)[,!.\s]+)*(?:(?:quiero|quisiera|puedes|podr[ií]as)\s+)?(?:agr[eé]ga(?:r|me|lo)?|a[nñ]([aá]de)(?:lo)?|a[nñ]adir|escr[ií]be(?:lo)?|escribir|anota(?:lo)?|anotar|guarda(?:lo)?|guardar|pon(?:lo|er)?|registra(?:lo)?|apunta(?:lo)?|add|write|put|save|log)\s+(?:(?:esto|algo(?:\s+m[aá]s)?|una cosa(?:\s+m[aá]s)?|otra cosa|un poco m[aá]s|m[aá]s|this|it|something(?:\s+(?:else|more))?|more)\s+)?(?:en|a|al|to|in|into)\s+(?:mi|el|my|the)\s+(?:diario|journal|diary)\b\s*(?:de hoy|today)?\s*[:,.]?\s*(?:que\s+|that\s+)?/i;
 const DIARY_DEAR_RE = /^\s*(?:querido diario|dear (?:diary|journal)|diario|journal)\s*[:,]\s*/i;
 function parseDiaryRequest(text) {
   let m = text.match(DIARY_RE) || text.match(DIARY_DEAR_RE);
@@ -5685,8 +5688,11 @@ async function handleDiaryRequest(req) {
   markAppActed();
   const today = todayStr();
   if (!req.text) {
-    await agentSay(chatScroll, t('diaryAskChat'), 300);
-    openDiaryComposer(today);
+    // "Quiero agregar algo a mi diario": se pregunta qué, y lo siguiente que
+    // escriba va directo a la página de hoy (o puede abrir el Diario).
+    state.pending = { type: 'diaryText' };
+    await agentSay(chatScroll, t('diaryAskChat'), 300, '📔');
+    addNote(chatScroll, t('openDiaryNote'), 'agenda-note', () => { state.pending = null; openDiaryComposer(today); });
     return;
   }
   if (!state.journal) state.journal = [];
@@ -5831,6 +5837,10 @@ async function handleUserMessageInner(text) {
   {
     const dreq = parseDiaryRequest(text);
     if (dreq) { state.pending = null; await handleDiaryRequest(dreq); return; }
+    if (state.pending && state.pending.type === 'diaryText') {
+      state.pending = null;
+      if (!/^\s*(no|nada|olv[ií]dalo|cancela|mejor no|nothing|never ?mind|cancel)\W*$/i.test(text)) { await handleDiaryRequest({ text: text.trim().charAt(0).toUpperCase() + text.trim().slice(1) }); return; }
+    }
   }
   // "Recuérdame X el viernes a las 6" / "anota que…" → tarea o nota del día.
   // Son pedidos explícitos: mandan sobre cualquier pregunta pendiente.
