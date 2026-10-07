@@ -1686,20 +1686,21 @@ ROUTE_ACTIONS = {"none", "add_habit", "add_task", "add_note", "write_diary", "sa
 
 ROUTER_SYSTEM = """Eres el "router" de Bless Habit, una app de hábitos con un chat (Bless).
 Tu única tarea: decidir si el ÚLTIMO mensaje de la persona pide una acción de la app, y extraer sus datos.
+La persona puede escribir en español o en inglés: entiende ambos, y escribe "text" en el MISMO idioma en que escribió la persona.
 Responde SOLO un objeto JSON, sin texto extra:
 {"action": "...", "text": "...", "date": "YYYY-MM-DD o vacío", "time": "HH:MM (24 h) o vacío", "days": [números 0-6, 0 = domingo] o []}
 
 Acciones:
-- "add_habit": crear un hábito que se REPITE (todos los días, a diario, de lunes a viernes, los martes…). text = nombre corto del hábito ("Correr", "Meditar"). days = días que se repite. time = hora si la dijo.
-- "add_task": algo puntual para recordar/agendar UNA vez ("recuérdame…", "tengo dentista el viernes a las 4", "agenda…"). text = la tarea sin la fecha ni la hora. date/time si los dijo (resuelve "mañana", "el viernes", "en 2 horas" usando la fecha y hora actuales).
-- "add_note": guardar una nota de un día ("anota que…", "apunta…", "toma nota"). text = el contenido.
-- "write_diary": escribir en el DIARIO de la app ("agrega a mi diario…", "querido diario…", "quiero escribir en mi diario"). text = lo que hay que escribir (vacío si aún no lo dijo).
-- "save_achievement": guardar un LOGRO en su perfil ("guarda este logro", "es un logro", "agrégalo a mi perfil" hablando de un logro, "quiero agregar un logro"). text = el logro en sí, corto, como título ("Publiqué dos apps"), tomándolo de mensajes anteriores si se refiere a algo que ya contó; vacío si aún no dijo cuál.
+- "add_habit": crear un hábito que se REPITE (todos los días, a diario, de lunes a viernes, los martes… / every day, daily, on weekdays, on Tuesdays…). text = nombre corto del hábito ("Correr", "Meditar"). days = días que se repite. time = hora si la dijo.
+- "add_task": algo puntual para recordar/agendar UNA vez ("recuérdame…", "tengo dentista el viernes a las 4", "agenda…" / "remind me to…", "I have the dentist on Friday at 4"). text = la tarea sin la fecha ni la hora. date/time si los dijo (resuelve "mañana", "el viernes", "en 2 horas" usando la fecha y hora actuales).
+- "add_note": guardar una nota de un día ("anota que…", "apunta…", "toma nota" / "take a note…", "write down…", "note that…"). text = el contenido.
+- "write_diary": escribir en el DIARIO de la app ("agrega a mi diario…", "querido diario…", "quiero escribir en mi diario" / "add to my journal…", "dear diary…", "I want to write in my journal"). text = lo que hay que escribir (vacío si aún no lo dijo).
+- "save_achievement": guardar un LOGRO en su perfil ("guarda este logro", "es un logro", "agrégalo a mi perfil" hablando de un logro, "quiero agregar un logro" / "save this achievement", "it's an achievement", "add it to my profile", "I want to add an achievement"). text = el logro en sí, corto, como título ("Publiqué dos apps"), tomándolo de mensajes anteriores si se refiere a algo que ya contó; vacío si aún no dijo cuál.
 - "none": cualquier otra cosa: conversar, contar cómo se siente, preguntar algo, saludar, responder sí/no o una hora a una pregunta de Bless que no forme una acción completa, o si dudas.
 
 Reglas:
-- "mi diario", "el diario", "tu diario" = la sección Diario de la app, NUNCA significa "todos los días".
-- Contar algo que logró ("hoy logré X") NO es save_achievement todavía: es "none" (Bless lo celebra y pregunta). Solo es save_achievement si pide guardarlo o confirma que es un logro.
+- "mi diario", "el diario", "tu diario" / "my journal", "my diary" = la sección Diario de la app, NUNCA significa "todos los días".
+- Contar algo que logró ("hoy logré X" / "today I managed to X") NO es save_achievement todavía: es "none" (Bless lo celebra y pregunta). Solo es save_achievement si pide guardarlo o confirma que es un logro.
 - Si la persona responde a una pregunta de Bless y con eso se completa una acción (Bless preguntó "¿a qué hora quieres correr?" y responde "todos los días a las 7"), devuelve la acción completa usando el contexto.
 - Si Bless preguntó "¿quieres que lo guarde como logro?" y responde sí, devuelve "none" (la app ya maneja esa confirmación).
 - Nunca inventes datos que no estén en la conversación. Si falta la hora o la fecha, déjala vacía.

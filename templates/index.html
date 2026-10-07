@@ -5774,7 +5774,7 @@ function cleanTaskText(t0) {
 // "querido diario, …". Va a la entrada de hoy del Diario (se suma al final si ya
 // había algo escrito). Antes caía en la IA, que a veces decía "lo agregué" sin
 // que se guardara nada.
-const DIARY_RE = /^\s*(?:(?:oye|bless|porfa|por favor|ok|okay|vale|ya|y|tambi[eé]n|ahora|bueno|hola|please|also|hey)[,!.\s]+)*(?:(?:quiero|quisiera|puedes|podr[ií]as)\s+)?(?:agr[eé]ga(?:r|me|lo)?|a[nñ]([aá]de)(?:lo)?|a[nñ]adir|escr[ií]be(?:lo)?|escribir|anota(?:lo)?|anotar|guarda(?:lo)?|guardar|pon(?:lo|er)?|registra(?:lo)?|apunta(?:lo)?|add|write|put|save|log)\s+(?:(?:esto|algo(?:\s+m[aá]s)?|una cosa(?:\s+m[aá]s)?|otra cosa|un poco m[aá]s|m[aá]s|this|it|something(?:\s+(?:else|more))?|more)\s+)?(?:en|a|al|to|in|into)\s+(?:mi|el|my|the)\s+(?:diario|journal|diary)\b\s*(?:de hoy|today)?\s*[:,.]?\s*(?:que\s+|that\s+)?/i;
+const DIARY_RE = /^\s*(?:(?:oye|bless|porfa|por favor|ok|okay|vale|ya|y|tambi[eé]n|ahora|bueno|hola|please|also|hey)[,!.\s]+)*(?:(?:quiero|quisiera|puedes|podr[ií]as|i want to|i'd like to|i would like to|can you|could you)\s+)?(?:agr[eé]ga(?:r|me|lo)?|a[nñ]([aá]de)(?:lo)?|a[nñ]adir|escr[ií]be(?:lo)?|escribir|anota(?:lo)?|anotar|guarda(?:lo)?|guardar|pon(?:lo|er)?|registra(?:lo)?|apunta(?:lo)?|add|write|put|save|log)\s+(?:(?:esto|algo(?:\s+m[aá]s)?|una cosa(?:\s+m[aá]s)?|otra cosa|un poco m[aá]s|m[aá]s|this|it|something(?:\s+(?:else|more))?|more)\s+)?(?:en|a|al|to|in|into)\s+(?:mi|el|my|the)\s+(?:diario|journal|diary)\b\s*(?:de hoy|today)?\s*[:,.]?\s*(?:que\s+|that\s+)?/i;
 const DIARY_DEAR_RE = /^\s*(?:querido diario|dear (?:diary|journal)|diario|journal)\s*[:,]\s*/i;
 function parseDiaryRequest(text) {
   let m = text.match(DIARY_RE) || text.match(DIARY_DEAR_RE);
@@ -6089,8 +6089,10 @@ async function handleUserMessageInner(text) {
     await agentSay(chatScroll, tp('achievementAskDetailFallback'), 300, '🏆');
     return;
   }
-  if (!pending && !routerSaysChat && /\b(agreg|añad|anad|guard|registr|anot|sum|nuev|otro|tengo|add|save|log|new)\w*\s+(?:(?:un|una|otro|mi|el|an?|another|my)\s+)?(?:nuevo\s+|new\s+)?(logro|achievement)s?\b/i.test(textNoRepeats)) {
-    const detail = cleanLogroText(textNoRepeats);
+  const ADD_LOGRO_RE = /\b(agreg|añad|anad|guard|registr|anot|sum|nuev|otro|tengo|add|save|log|new)\w*\s+(?:(?:un|una|otro|mi|el|an?|another|my)\s+)?(?:nuevo\s+|new\s+)?(logro|achievement)s?\b/i;
+  if (!pending && !routerSaysChat && (ADD_LOGRO_RE.test(text) || ADD_LOGRO_RE.test(textNoRepeats))) {
+    // Se prueba con el texto tal cual ("add") y sin letras repetidas ("logroo"); vale el más corto.
+    const detail = [cleanLogroText(text), cleanLogroText(textNoRepeats)].sort((a, b) => a.length - b.length)[0];
     if (!detail) {
       state.pending = { type: 'needsAchievementDetail' };
       await agentSay(chatScroll, tp('achievementAskDetailFallback'), 300, '🏆');
