@@ -188,6 +188,12 @@
   .tag-chip { display: inline-block; background: var(--panel-3); border-radius: 999px; padding: 5px 11px; font-size: 12px; margin: 3px 4px 3px 0; }
   .logros-card { border-color: #7a5f1e; background: linear-gradient(135deg, #2a2311, #1c1810); }
   .logros-card h4 { color: #f0d78c; }
+  .logro-custom-label { font-size: 11px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--text-dim); margin: 12px 0 6px; }
+  .logro-custom-row { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+  .logro-swatch { width: 30px; height: 30px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; padding: 0; box-shadow: 0 1px 4px rgba(0,0,0,.25); }
+  .logro-swatch.selected { border-color: var(--text); transform: scale(1.12); }
+  .logro-icon-opt { width: 38px; height: 38px; border-radius: 12px; border: 2px solid transparent; background: var(--card-2, rgba(127,127,127,.12)); font-size: 20px; cursor: pointer; padding: 0; }
+  .logro-icon-opt.selected { border-color: var(--accent, #7C6CF0); }
   .logro-chip { display: flex; align-items: center; gap: 8px; background: linear-gradient(135deg, #caa23a, #f0d78c); color: #3b2e08; border-radius: 12px; padding: 8px 12px; font-size: 13px; font-weight: 700; margin-bottom: 6px; }
   .logro-chip .logro-date { font-size: 10px; font-weight: 700; opacity: .75; margin-left: auto; white-space: nowrap; }
 
@@ -554,6 +560,8 @@
   .task-sheet .tk-row input { padding: 9px; border-radius: 10px; border: 1px solid var(--border); background: var(--panel); color: var(--text); font-size: 14px; min-height: 40px; }
   .task-sheet .tk-sub { font-size: 12px; color: var(--text-dim); margin: 18px 0 8px; }
   .task-sheet .tk-hint { font-size: 11.5px; color: var(--text-dim); margin-top: 6px; }
+  .alarm-toggle { display: none; align-items: center; gap: 8px; margin-top: 12px; font-size: 13px; color: var(--text); cursor: pointer; }
+  .alarm-toggle input { width: 18px; height: 18px; accent-color: var(--accent, #7C6CF0); }
   .day-add-choices { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
   .day-add-choices .qr-btn { width: 100%; text-align: left; padding: 12px 14px; font-size: 15px; }
   .day-nav .day-pct { font-size: 11px; color: var(--accent-2); text-align: center; }
@@ -1097,6 +1105,14 @@
     <div class="profile-card" style="max-width:360px;width:100%;max-height:92vh;overflow-y:auto;margin:0;text-align:center;">
       <h4 data-i18n="shareLogroTitle">Comparte tu logro</h4>
       <canvas id="logro-share-canvas" style="width:100%;max-width:260px;border-radius:16px;margin:14px auto 4px;display:block;box-shadow:0 10px 28px rgba(0,0,0,.45);"></canvas>
+      <div class="logro-custom-label" data-i18n="logroColorLabel">Color</div>
+      <div class="logro-custom-row" id="logro-colors"></div>
+      <div class="logro-custom-label" data-i18n="logroIconLabel">Ícono</div>
+      <div class="logro-custom-row" id="logro-icons"></div>
+      <div style="display:flex;gap:8px;justify-content:center;margin-top:10px;">
+        <label class="qr-btn" style="cursor:pointer;margin:0;"><span data-i18n="logroAddPhoto">📷 Agregar foto</span><input type="file" id="logro-photo-input" accept="image/*" style="display:none;"></label>
+        <button type="button" class="qr-btn" id="logro-photo-remove" style="display:none;margin:0;" data-i18n="logroRemovePhoto">Quitar foto</button>
+      </div>
       <div style="display:flex;gap:8px;margin-top:14px;">
         <button class="send-btn" id="logro-share-download-btn" style="flex:1;" data-i18n="downloadBtn">📥 Descargar</button>
         <button class="send-btn" id="logro-share-native-btn" style="flex:1;display:none;background:linear-gradient(135deg, var(--accent-2), var(--accent-3));" data-i18n="shareBtn">📤 Compartir</button>
@@ -1127,6 +1143,7 @@
       </div>
       <div style="font-size:12px;color:var(--text-dim);margin:14px 0 6px;"><span data-i18n="heRemindQ">¿Cuándo te aviso?</span> <span class="he-remind-premium" id="he-remind-premium" data-i18n="heRemindPremiumTag">✨ Premium</span></div>
       <div class="quick-replies he-remind" id="he-remind"></div>
+      <label class="alarm-toggle" id="he-alarm-row"><input type="checkbox" id="he-alarm"> <span data-i18n="alarmToggle">⏰ Crear también una alarma en el reloj</span></label>
       <div style="font-size:12px;color:var(--text-dim);margin:14px 0 6px;" data-i18n="heDurationQ">¿Hasta cuándo?</div>
       <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:13px;color:var(--text-dim);">
         <label style="display:flex;align-items:center;gap:4px;"><input type="radio" name="he-duration" id="he-duration-indef" checked> <span data-i18n="heIndef">Indefinido</span></label>
@@ -1463,8 +1480,8 @@ CÓMO DEBES CONVERSAR:
 
 SOBRE LA APP (úsalo solo si preguntan; nunca inventes menús, pantallas ni precios):
 - Secciones: Bless (chat), Calendario (día/semana/mes; cada día tiene Hábitos, Tareas con recordatorio y Notas del día), Métricas, Diario y Perfil.
-- La persona puede pedirte tareas o notas escribiendo "recuérdame…" o "anota…" (la app las guarda sola); si pregunta cómo, explícale eso.
-- NUNCA digas que agendaste, anotaste, guardaste o programaste algo, ni "te recordaré" o "te aviso": tú no puedes hacerlo, lo hace la app sola y ella misma lo confirma. Si la persona quiere guardar algo, dile que te lo pida empezando con "recuérdame…" o "anota…".
+- La persona puede pedirte tareas o notas escribiendo "recuérdame…" o "anota…", y escribir en su diario con "escribe en mi diario: …" (la app los guarda sola); si pregunta cómo, explícale eso.
+- NUNCA digas que agendaste, anotaste, guardaste, agregaste, escribiste o programaste algo (tampoco en el diario, ni hábitos ni logros), ni "te recordaré" o "te aviso": tú no puedes hacerlo, lo hace la app sola y ella misma lo confirma. Si la persona quiere guardar algo, dile que te lo pida empezando con "recuérdame…", "anota…" o "escribe en mi diario: …".
 - Plan gratis de tareas y notas: hasta 3 tareas (al llegar al límite se pueden editar para reutilizarlas, no borrar) y 10 notas; Premium ilimitado.
 - Plan gratis: chat con Bless (límite diario de mensajes), hasta 3 hábitos, calendario, diario y recordatorios a la hora de cada hábito.
 - Bless Habit Premium incluye: chat ilimitado y memoria (Bless recuerda lo importante de días anteriores), hábitos ilimitados, resumen semanal escrito por Bless, análisis de ánimo, recordatorios personalizados (avisar 10, 15, 30 o 60 minutos antes), temas y stickers extra para el diario, exportar el diario a PDF y bloqueo con PIN o huella.
@@ -1794,6 +1811,7 @@ const I18N = {
     shareLogroTitle: 'Comparte tu logro',
     downloadBtn: '📥 Descargar', shareBtn: '📤 Compartir',
     logroCardUnlocked: 'LOGRO DESBLOQUEADO', logroCardBrand: 'blesshabit.app',
+    logroColorLabel: 'Color', logroIconLabel: 'Ícono', logroAddPhoto: '📷 Agregar foto', logroRemovePhoto: 'Quitar foto',
     shareLogroPrompt: '📤 Compartir este logro en tus historias',
     shareLogroDownloadedNote: '¡Listo! Se descargó la imagen de tu logro. 🎉',
     diaryTitle: '📔 Tu diario', diaryTodayLabel: 'Hoy',
@@ -1932,6 +1950,15 @@ const I18N = {
     taskSavedChat: (text, date, time) => `¡Listo! ✅ Te recordaré «${text}» ${date} a las ${time} ⏰`,
     taskSavedNoTimeChat: (text, date) => `¡Anotado! ✅ «${text}» quedó en tus tareas de ${date}. Si quieres que te avise, dime a qué hora 🤍`,
     noteSavedChat: (date) => `Guardé tu nota en el día de ${date} 📝`,
+    diarySavedChat: 'Listo, lo escribí en tu diario de hoy 📔 Puedes verlo o agregarle foto y stickers en la pestaña Diario.',
+    diaryAskChat: '¿Qué quieres escribir en tu diario? Te abro la página de hoy 📔',
+    seeInDiaryNote: '📔 Ver en mi diario',
+    alarmToggle: '⏰ Crear también una alarma en el reloj',
+    alarmCreated: 'Listo ⏰ Se creó la alarma en la app Reloj de tu teléfono. Suena aunque Bless esté cerrada.',
+    alarmTooFar: 'La alarma del reloj solo se puede crear para las próximas 24 horas. Abre la tarea el día que toca y actívala ahí 🙂',
+    alarmNeedsUpdate: 'Para crear alarmas necesitas la versión más reciente de Bless Habit. Actualízala desde Play Store 🙂',
+    alarmNoClock: 'No encontramos una app de reloj en tu teléfono para crear la alarma.',
+    alarmNeedsTime: 'Para crear la alarma, elige una hora 🙂',
     seeInCalendarNote: '📅 Ver en el calendario', typingLabel: 'Bless está escribiendo…',
     taskTimeNotUnderstood: 'Mmm, no entendí la hora 😅 Dímela así: "a las 5pm", "a las 17:30" o "en 10 minutos" ⏰',
     askTaskForTimeChat: (time) => `¿Qué tarea programo para las ${time}? 😊`,
@@ -2259,6 +2286,7 @@ const I18N = {
     shareLogroTitle: 'Share your achievement',
     downloadBtn: '📥 Download', shareBtn: '📤 Share',
     logroCardUnlocked: 'ACHIEVEMENT UNLOCKED', logroCardBrand: 'blesshabit.app',
+    logroColorLabel: 'Color', logroIconLabel: 'Icon', logroAddPhoto: '📷 Add photo', logroRemovePhoto: 'Remove photo',
     shareLogroPrompt: '📤 Share this achievement to your stories',
     shareLogroDownloadedNote: 'Done! Your achievement image was downloaded. 🎉',
     diaryTitle: '📔 Your journal', diaryTodayLabel: 'Today',
@@ -2397,6 +2425,15 @@ const I18N = {
     taskSavedChat: (text, date, time) => `Done! ✅ I'll remind you to "${text}" ${date} at ${time} ⏰`,
     taskSavedNoTimeChat: (text, date) => `Got it! ✅ "${text}" is in your tasks for ${date}. If you want a reminder, tell me what time 🤍`,
     noteSavedChat: (date) => `I saved your note on ${date} 📝`,
+    diarySavedChat: "Done, I wrote it in today's journal 📔 You can see it or add a photo and stickers in the Journal tab.",
+    diaryAskChat: "What would you like to write in your journal? I'll open today's page 📔",
+    seeInDiaryNote: '📔 See it in my journal',
+    alarmToggle: '⏰ Also set an alarm on the clock',
+    alarmCreated: "Done ⏰ The alarm was created in your phone's Clock app. It rings even if Bless is closed.",
+    alarmTooFar: 'Clock alarms can only be set for the next 24 hours. Open the task on the day and turn it on there 🙂',
+    alarmNeedsUpdate: 'To create alarms you need the latest version of Bless Habit. Update it from the Play Store 🙂',
+    alarmNoClock: "We couldn't find a clock app on your phone to create the alarm.",
+    alarmNeedsTime: 'To create the alarm, choose a time 🙂',
     seeInCalendarNote: '📅 See it in the calendar', typingLabel: 'Bless is typing…',
     taskTimeNotUnderstood: 'Hmm, I didn\'t get the time 😅 Try: "at 5pm", "at 17:30" or "in 10 minutes" ⏰',
     askTaskForTimeChat: (time) => `What task should I set for ${time}? 😊`,
@@ -4498,6 +4535,25 @@ async function enableNativeReminders() {
 function blessDevice() {
   return IS_NATIVE_APP && window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.BlessDevice;
 }
+// Alarmas en la app Reloj del teléfono (BlessDevice.setAlarm, desde la versión
+// 1.1 de la app). groups: [{ time: 'HH:MM', days: [0..6] | null }]. Con días es
+// una alarma que se repite; sin días suena una vez, a la próxima vez que llegue esa hora.
+function canSetClockAlarm() { return !!blessDevice(); }
+async function createClockAlarms(groups, message) {
+  const BD = blessDevice();
+  if (!BD) return;
+  try {
+    for (const g of groups) {
+      const [hh, mm] = g.time.split(':').map(n => parseInt(n, 10));
+      const res = await BD.setAlarm({ hour: hh, minutes: mm, message: String(message || 'Bless Habit').slice(0, 60), days: g.days || [], skipUi: true });
+      if (res && res.ok === false) { await uiAlert(t('alarmNoClock')); return; }
+    }
+    setTimeout(() => uiAlert(t('alarmCreated')), 600);
+  } catch (e) {
+    // La app instalada es anterior a la 1.1 y no tiene setAlarm.
+    await uiAlert(t('alarmNeedsUpdate'));
+  }
+}
 function backgroundHintFor(manufacturer) {
   const m = String(manufacturer || '').toLowerCase();
   if (/honor|huawei/.test(m)) return t('bgHintHonor');
@@ -5084,9 +5140,19 @@ function isGenericAchievementMention(text) {
   return /^(tengo\s+|ten[ií]a\s+)?(un\s+|una\s+|mi\s+|el\s+)?logros?$/.test(l)
     || /^(i\s+(have|got|had)\s+)?(an\s+)?achievements?$/.test(l);
 }
+// Quita del texto del logro la frase con que se pidió guardarlo ("agreguemos un
+// logro —", "quiero guardar un logro:", "add an achievement"), para que la
+// tarjeta muestre solo el logro en sí.
+const LOGRO_LEADIN_RE = /^\s*(?:(?:oye|bless|hola|hey|ok|bueno|mira|please)[,!.\s]+)*(?:(?:quiero|quisiera|me gustar[ií]a|vamos a|podemos|puedes)\s+)?(?:agreguemos|agrega(?:r|me)?|a[nñ]ad(?:e|ir|amos)|guarda(?:r|me)?|registra(?:r|me)?|anota(?:r)?|sumar?|contarte|celebrar|tengo|hay|let'?s add|add|save|log|record|i have|new)\s+(?:un|una|otro|mi|el|an?|another|my)?\s*(?:nuevo\s+|new\s+)?(?:logro|achievement)s?\b\s*(?:nuevo|new)?\s*[:,.!—–-]*\s*/i;
+function cleanLogroText(text) {
+  let s = String(text || '').trim();
+  s = s.replace(LOGRO_LEADIN_RE, '').replace(/^(?:logro|achievement)\s*[:—–-]\s*/i, '').trim();
+  s = s.replace(/^[—–\-:,.\s]+/, '').trim();
+  return s ? s.charAt(0).toUpperCase() + s.slice(1) : '';
+}
 function addLogro(text) {
   state.profile.logros = state.profile.logros || [];
-  state.profile.logros.push({ text, date: ymd(new Date()) });
+  state.profile.logros.push({ text: cleanLogroText(text) || String(text).trim(), date: ymd(new Date()) });
   saveStateToServer();
   setAvatarMood('proud');
   renderProfile();
@@ -5111,6 +5177,35 @@ function pickLogroTheme(text) {
   const found = LOGRO_THEMES.find(th => th.match.test(text));
   return found || { key: 'general', gradient: ['#1a1f3a', '#4a5fd6'], icon: '🏆' };
 }
+// La persona puede personalizar su tarjeta: color, ícono y una foto. El color y
+// el ícono se guardan con el logro; la foto solo vive mientras está abierta la
+// tarjeta (no se sube al servidor), así no pesa en el estado.
+const LOGRO_COLORS = [
+  { key: 'indigo', gradient: ['#1a1f3a', '#4a5fd6'] },
+  { key: 'violet', gradient: ['#2b1f5c', '#a58cff'] },
+  { key: 'sunset', gradient: ['#c2410c', '#f9a26c'] },
+  { key: 'rose', gradient: ['#5c1f3d', '#f08ab4'] },
+  { key: 'mint', gradient: ['#0f5132', '#5fd3b0'] },
+  { key: 'ocean', gradient: ['#0b3d5c', '#4fc3f7'] },
+  { key: 'gold', gradient: ['#5c4300', '#e8c35a'] },
+  { key: 'night', gradient: ['#0b0b12', '#3a3a52'] },
+];
+const LOGRO_ICONS = ['🏆', '🌟', '🎉', '💪', '🚀', '🌱', '❤️', '🎓', '💼', '🔥', '🦋', '👑'];
+let logroSharePhoto = null; // HTMLImageElement elegido para la tarjeta abierta
+function logroCardStyle(logro) {
+  const theme = pickLogroTheme(logro.text);
+  const color = LOGRO_COLORS.find(c => c.key === logro.color);
+  return { gradient: color ? color.gradient : theme.gradient, icon: logro.icon || theme.icon };
+}
+function roundRectPath(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + w, y, r);
+  ctx.closePath();
+}
 function wrapCanvasText(ctx, text, maxWidth) {
   const words = text.split(/\s+/);
   const lines = [];
@@ -5127,7 +5222,7 @@ function drawLogroCard(canvas, logro) {
   const W = 1080, H = 1920;
   canvas.width = W; canvas.height = H;
   const ctx = canvas.getContext('2d');
-  const theme = pickLogroTheme(logro.text);
+  const theme = logroCardStyle(logro);
 
   const grad = ctx.createLinearGradient(0, 0, W, H);
   grad.addColorStop(0, theme.gradient[0]);
@@ -5149,18 +5244,36 @@ function drawLogroCard(canvas, logro) {
   ctx.font = '600 34px system-ui, sans-serif';
   ctx.fillText('🌱 BLESS HABIT', W / 2, 130);
 
-  ctx.font = '160px system-ui, sans-serif';
-  ctx.fillText(theme.icon, W / 2, 430);
+  // Con foto: la foto arriba en un marco redondeado y el ícono más chico debajo.
+  let unlockedY = 540, startY = 760, maxLines = 6;
+  if (logroSharePhoto) {
+    const S = 640, x = (W - S) / 2, y = 200;
+    ctx.save();
+    ctx.shadowColor = 'rgba(0,0,0,0.35)'; ctx.shadowBlur = 40; ctx.shadowOffsetY = 12;
+    ctx.fillStyle = '#ffffff';
+    roundRectPath(ctx, x - 12, y - 12, S + 24, S + 24, 64); ctx.fill();
+    ctx.restore();
+    ctx.save();
+    roundRectPath(ctx, x, y, S, S, 54); ctx.clip();
+    const img = logroSharePhoto, side = Math.min(img.width, img.height);
+    ctx.drawImage(img, (img.width - side) / 2, (img.height - side) / 2, side, side, x, y, S, S);
+    ctx.restore();
+    ctx.font = '110px system-ui, sans-serif';
+    ctx.fillText(theme.icon, W / 2, 990);
+    unlockedY = 1080; startY = 1210; maxLines = 5;
+  } else {
+    ctx.font = '160px system-ui, sans-serif';
+    ctx.fillText(theme.icon, W / 2, 430);
+  }
 
   ctx.font = '700 42px system-ui, sans-serif';
   ctx.fillStyle = 'rgba(255,255,255,0.92)';
-  ctx.fillText(t('logroCardUnlocked'), W / 2, 540);
+  ctx.fillText(t('logroCardUnlocked'), W / 2, unlockedY);
 
   ctx.font = '700 66px system-ui, sans-serif';
   ctx.fillStyle = '#ffffff';
-  const lines = wrapCanvasText(ctx, logro.text, W - 160).slice(0, 6);
+  const lines = wrapCanvasText(ctx, logro.text, W - 160).slice(0, maxLines);
   const lineHeight = 80;
-  const startY = 760;
   lines.forEach((line, i) => ctx.fillText(line, W / 2, startY + i * lineHeight));
 
   ctx.font = '600 38px system-ui, sans-serif';
@@ -5180,9 +5293,9 @@ async function logroCardBlob() {
 function openLogroShareCard(idx) {
   const logro = state.profile.logros && state.profile.logros[idx];
   if (!logro) return;
+  if (currentShareLogroIdx !== idx) logroSharePhoto = null;
   currentShareLogroIdx = idx;
-  const canvas = document.getElementById('logro-share-canvas');
-  drawLogroCard(canvas, logro);
+  redrawLogroShare();
   const nativeBtn = document.getElementById('logro-share-native-btn');
   // Se detecta soporte real de "compartir con archivo adjunto" (no solo texto) —
   // en desktop casi nunca está disponible, así que el botón queda oculto y solo
@@ -5191,9 +5304,47 @@ function openLogroShareCard(idx) {
   nativeBtn.style.display = canShareFiles ? 'block' : 'none';
   document.getElementById('logro-share-overlay').style.display = 'flex';
 }
+function redrawLogroShare() {
+  const logro = state.profile.logros && state.profile.logros[currentShareLogroIdx];
+  if (!logro) return;
+  drawLogroCard(document.getElementById('logro-share-canvas'), logro);
+  const style = logroCardStyle(logro);
+  const colors = document.getElementById('logro-colors');
+  colors.innerHTML = '';
+  LOGRO_COLORS.forEach(c => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'logro-swatch' + (style.gradient === c.gradient ? ' selected' : '');
+    b.style.background = `linear-gradient(135deg, ${c.gradient[0]}, ${c.gradient[1]})`;
+    b.onclick = () => { logro.color = c.key; saveStateToServer(); redrawLogroShare(); };
+    colors.appendChild(b);
+  });
+  const icons = document.getElementById('logro-icons');
+  icons.innerHTML = '';
+  LOGRO_ICONS.forEach(ic => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'logro-icon-opt' + (style.icon === ic ? ' selected' : '');
+    b.textContent = ic;
+    b.onclick = () => { logro.icon = ic; saveStateToServer(); redrawLogroShare(); };
+    icons.appendChild(b);
+  });
+  document.getElementById('logro-photo-remove').style.display = logroSharePhoto ? 'inline-flex' : 'none';
+}
+document.getElementById('logro-photo-input').addEventListener('change', (e) => {
+  const file = e.target.files && e.target.files[0];
+  e.target.value = '';
+  if (!file) return;
+  const url = URL.createObjectURL(file);
+  const img = new Image();
+  img.onload = () => { logroSharePhoto = img; redrawLogroShare(); setTimeout(() => URL.revokeObjectURL(url), 1000); };
+  img.src = url;
+});
+document.getElementById('logro-photo-remove').onclick = () => { logroSharePhoto = null; redrawLogroShare(); };
 function closeLogroShareCard() {
   document.getElementById('logro-share-overlay').style.display = 'none';
   currentShareLogroIdx = null;
+  logroSharePhoto = null;
 }
 document.getElementById('logro-share-close-btn').onclick = closeLogroShareCard;
 document.getElementById('logro-share-overlay').addEventListener('click', (e) => {
@@ -5248,10 +5399,11 @@ function maybeAutoLogroFromStreak(habitKey) {
 
 function detectAddHabitIntent(text) {
   const l = text.toLowerCase();
-  return /(agregar|añadir|anadir|sumar|crear|arma(r|me)?)\s+.*h[aá]bito/.test(l)
+  // "h[aá]bit" sin la "o" final a propósito: tolera "agrega un hábit" (typo real).
+  return /(agrega|agregar|agregame|añade|añadir|anadir|sumar|suma|crea|crear|creame|arma(r|me)?|pon(me)?|nuevo)\s+.*h[aá]bit/.test(l)
     || /h[aá]bito\s+(nuevo|personalizado)/.test(l)
-    || /^(agregar|añadir|crear)\s+h[aá]bito/.test(l)
-    || /quiero (un |otro )?h[aá]bito/.test(l)
+    || /^(agregar|añadir|crear)\s+h[aá]bit/.test(l)
+    || /quiero (un |otro )?(nuevo )?h[aá]bit/.test(l)
     || /(add|create|make|set up|build)\s+.*habit/.test(l)
     || /new habit/.test(l)
     || /i want (a |another )?habit/.test(l);
@@ -5277,6 +5429,50 @@ function suggestUnusedHabits(count) {
 // Respuesta compartida de "te sugiero esto" — la usan tanto quien pide una
 // recomendación directamente ("qué me recomiendas") como quien acepta la oferta
 // proactiva de Bless ("¿quieres que te sugiera algo?" → "sí").
+// "todos los días", "de lunes a viernes", "los martes y jueves", "every day"…
+// Si el mensaje dice cada cuánto se repite algo, es un hábito, no una tarea.
+// Devuelve los días (0 = domingo) o null.
+function parseRepeatDays(text) {
+  const l = ' ' + text.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '') + ' ';
+  if (/\b(todos los dias|todo los dias|cada dia|diari[ao]|a diario|toda la semana|every ?day|daily|each day|all week)\b/.test(l)) return [0,1,2,3,4,5,6];
+  if (/\b(de )?lunes a viernes\b|\bentre semana\b|\bdias (de semana|laborables|habiles)\b|\bweekdays\b|\bmonday (to|through|-) friday\b/.test(l)) return [1,2,3,4,5];
+  if (/\b(lunes a sabado|monday (to|through) saturday)\b/.test(l)) return [1,2,3,4,5,6];
+  if (/\b(fines? de semana|sabados? y domingos?|weekends?)\b/.test(l)) return [0,6];
+  const es = ['domingo','lunes','martes','miercoles','jueves','viernes','sabado'];
+  const en = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'];
+  // Plural o "cada X": "los martes y jueves", "cada lunes", "on mondays", "every friday".
+  if (/\b(los|cada|todos los|every|on)\s+(domingo|lunes|martes|miercoles|jueves|viernes|sabado|sunday|monday|tuesday|wednesday|thursday|friday|saturday)/.test(l)
+      || /\b(domingos|sabados|mondays|tuesdays|wednesdays|thursdays|fridays|saturdays|sundays)\b/.test(l)) {
+    const days = [];
+    es.forEach((d, i) => { if (new RegExp('\\b' + d + 's?\\b').test(l)) days.push(i); });
+    en.forEach((d, i) => { if (new RegExp('\\b' + d + 's?\\b').test(l) && !days.includes(i)) days.push(i); });
+    return days.length ? days.sort() : null;
+  }
+  return null;
+}
+// Quita del texto lo que dice la frecuencia y la hora, para quedarse con el nombre del hábito.
+function habitNameFromText(text) {
+  // Primero se quita la frecuencia (si no, "los lunes" se leería como una fecha).
+  let n = String(text || '').replace(/\b(todos los d[ií]as|todo los d[ií]as|cada d[ií]a|diariamente|a diario|diario|toda la semana|de lunes a (viernes|s[aá]bado)|entre semana|fines? de semana|every ?day|daily|each day|weekdays|weekends?)\b/gi, '')
+    .replace(/\b(los|cada|every|on)\s+((domingo|lunes|martes|mi[eé]rcoles|jueves|viernes|s[aá]bado)s?|(sun|mon|tues|wednes|thurs|fri|satur)days?)(\s*(,|y|e|and)\s*((domingo|lunes|martes|mi[eé]rcoles|jueves|viernes|s[aá]bado)s?|(sun|mon|tues|wednes|thurs|fri|satur)days?))*\b/gi, '')
+    .replace(/\b(quiero|me gustar[ií]a|hacer|un h[aá]bito de|h[aá]bito de|h[aá]bito|habit of|habit)\b/gi, '')
+    .replace(/\s{2,}/g, ' ').trim();
+  n = (cleanTaskText(parseWhenFromText(n).rest) || '').replace(/^[\s,.:;-]+|[\s,.:;-]+$/g, '').trim();
+  return n ? n.charAt(0).toUpperCase() + n.slice(1) : '';
+}
+// Abre el editor de hábitos ya lleno (nombre, días, hora) para que la persona
+// confirme o ajuste antes de guardar. Busca si el nombre es un hábito predefinido.
+async function offerHabitFromChat({ label, time, days, removeTaskId }) {
+  if (!canAddHabit()) {
+    await agentSay(chatScroll, t('habitLimitMsg', FREE_HABIT_LIMIT));
+    addNote(chatScroll, t('seePremiumNote'), 'agenda-note', () => openPremiumSheet());
+    return;
+  }
+  const norm = x => String(x || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+  const preset = label ? HABIT_PRESETS.find(h => norm(h.label) === norm(label) || norm(t2(h)) === norm(label)) : null;
+  await agentSay(chatScroll, tp('addHabitFallback'), 300, '🌱');
+  openHabitEditor(null, { preset, label, time, days, removeTaskId });
+}
 async function respondWithHabitSuggestions() {
   const picks = suggestUnusedHabits(3);
   if (!picks.length) {
@@ -5284,6 +5480,8 @@ async function respondWithHabitSuggestions() {
     return;
   }
   const names = picks.map(h => `${h.icon} ${t2(h)}`).join(', ');
+  // Si responde con uno de estos ("correr", "el de meditar"), se abre el editor de ese hábito.
+  state.pendingHabitSuggestion = { keys: picks.map(h => h.key), at: Date.now() };
   await say(chatScroll, `La persona quiere que le recomiendes/sugieras un hábito nuevo para construir. Sugiérele estas opciones concretas con calidez, mencionando sus nombres tal cual: ${names}. Pregúntale si alguna le llama la atención, o si prefiere agregar otra cosa distinta (puede tocar el botón "+" del calendario para elegir).`, t('habitRecommendationFallback', names));
 }
 
@@ -5397,6 +5595,40 @@ function cleanTaskText(t0) {
     .replace(/[\s,.;:!?¡¿]+$/, '').replace(/^[\s,.;:¡¿]+/, '').trim();
   if (/^(?:que|de|a|to|that|para|por|el|la|las|los|for|at|on|y|and|algo|something|una cosa)$/i.test(x)) x = '';
   return x ? x.charAt(0).toUpperCase() + x.slice(1) : '';
+}
+// "Agrega a mi diario que hoy fue un buen día", "escribe en mi diario: …",
+// "querido diario, …". Va a la entrada de hoy del Diario (se suma al final si ya
+// había algo escrito). Antes caía en la IA, que a veces decía "lo agregué" sin
+// que se guardara nada.
+const DIARY_RE = /^\s*(?:(?:oye|bless|porfa|por favor|ok|okay|vale|ya|y|tambi[eé]n|ahora|bueno|hola|please|also|hey)[,!.\s]+)*(?:(?:quiero|quisiera|puedes|podr[ií]as)\s+)?(?:agr[eé]ga(?:r|me|lo)?|a[nñ]([aá]de)(?:lo)?|a[nñ]adir|escr[ií]be(?:lo)?|escribir|anota(?:lo)?|anotar|guarda(?:lo)?|guardar|pon(?:lo|er)?|registra(?:lo)?|apunta(?:lo)?|add|write|put|save|log)\s+(?:esto\s+|this\s+|it\s+)?(?:en|a|al|to|in|into)\s+(?:mi|el|my|the)\s+(?:diario|journal|diary)\b\s*(?:de hoy|today)?\s*[:,.]?\s*(?:que\s+|that\s+)?/i;
+const DIARY_DEAR_RE = /^\s*(?:querido diario|dear (?:diary|journal)|diario|journal)\s*[:,]\s*/i;
+function parseDiaryRequest(text) {
+  let m = text.match(DIARY_RE) || text.match(DIARY_DEAR_RE);
+  if (!m) return null;
+  const body = text.slice(m[0].length).trim();
+  return { text: body ? body.charAt(0).toUpperCase() + body.slice(1) : '' };
+}
+async function handleDiaryRequest(req) {
+  const today = todayStr();
+  if (!req.text) {
+    await agentSay(chatScroll, t('diaryAskChat'), 300);
+    openDiaryComposer(today);
+    return;
+  }
+  if (!state.journal) state.journal = [];
+  const entry = state.journal.find(e => e.date === today);
+  if (entry) {
+    entry.text = (entry.text ? entry.text.trim() + '\n\n' : '') + req.text;
+    entry.updatedAt = Date.now();
+    saveStateToServer();
+  } else {
+    state.journal.push({ date: today, text: req.text, mood: '', stickers: [], tags: [], updatedAt: Date.now() });
+    awardXp(15); // misma recompensa que una entrada nueva desde el Diario (ya guarda)
+  }
+  if (document.getElementById('view-diary').classList.contains('active')) renderDiary();
+  setAvatarMood('happy', 1500);
+  await agentSay(chatScroll, t('diarySavedChat'), 300, '📔');
+  addNote(chatScroll, t('seeInDiaryNote'), 'agenda-note', () => switchTab('diary'));
 }
 function parseTaskOrNoteRequest(text) {
   let m = text.match(TASK_TRIGGER_RE);
@@ -5516,11 +5748,42 @@ async function handleUserMessageInner(text) {
   addBubble(chatScroll, text, 'user');
   pushChatMemory('user', text);
 
+  // "Escribe en mi diario…" → entrada de hoy del Diario.
+  {
+    const dreq = parseDiaryRequest(text);
+    if (dreq) { state.pending = null; await handleDiaryRequest(dreq); return; }
+  }
   // "Recuérdame X el viernes a las 6" / "anota que…" → tarea o nota del día.
   // Son pedidos explícitos: mandan sobre cualquier pregunta pendiente.
   {
     const req = parseTaskOrNoteRequest(text);
+    // "Recuérdame meditar todos los días a las 7" se repite → es un hábito.
+    if (req && (req.kind === 'task' || req.kind === 'askTask') && parseRepeatDays(text)) {
+      const name = habitNameFromText(req.text || '') ;
+      if (name) {
+        state.pending = null;
+        await offerHabitFromChat({ label: name, time: extractTime(text), days: parseRepeatDays(text) });
+        return;
+      }
+    }
     if (req) { state.pending = null; await handleTaskOrNoteRequest(req); return; }
+  }
+  // "Todos los días a las 7", "corre de lunes a viernes": dice cada cuánto se
+  // repite → es un hábito. Se abre el editor ya lleno para elegir días y hora
+  // (antes se agendaba como tarea suelta y chocaba con el límite de tareas).
+  {
+    const repeatDays = parseRepeatDays(text);
+    const pend = state.pending;
+    if (repeatDays && (!pend || pend.type === 'needsTime' || pend.type === 'offerRecurring' || pend.type === 'offerSuggestion')) {
+      const name = habitNameFromText(text) || (pend && pend.task ? pend.task : '');
+      const time = extractTime(text) || (pend && pend.time) || null;
+      if (name) {
+        state.pending = null;
+        state.pendingHabitSuggestion = null;
+        await offerHabitFromChat({ label: name, time, days: repeatDays, removeTaskId: pend && pend.type === 'offerRecurring' ? pend.taskId : null });
+        return;
+      }
+    }
   }
   // Respuesta a "¿qué tarea agrego?"
   if (state.pending && state.pending.type === 'taskNew') {
@@ -5556,6 +5819,25 @@ async function handleUserMessageInner(text) {
       state.pending = { type: 'taskTime', taskId: tk.id };
       await agentSay(chatScroll, t('taskTimeNotUnderstood'), 300);
       return;
+    }
+  }
+
+  // Respuesta a "te sugiero 🏃 Correr, 📖 Leer…": eligió uno → editor de ese hábito.
+  if (state.pendingHabitSuggestion) {
+    const sug = state.pendingHabitSuggestion;
+    state.pendingHabitSuggestion = null;
+    if (Date.now() - sug.at < 30 * 60000 && text.split(/\s+/).length <= 8) {
+      const norm = x => String(x || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+      const l = norm(text);
+      const chosen = HABIT_PRESETS.filter(h => sug.keys.includes(h.key)).find(h => {
+        const names = [h.label, t2(h)].map(norm);
+        return names.some(n => l.includes(n) || n.split(/\s+/).filter(w => w.length > 3).some(w => l.includes(w)));
+      });
+      if (chosen) {
+        state.pending = null;
+        await offerHabitFromChat({ label: chosen.label, time: extractTime(text), days: parseRepeatDays(text) });
+        return;
+      }
     }
   }
 
@@ -5600,8 +5882,8 @@ async function handleUserMessageInner(text) {
         return;
       }
       if (classified.intent === 'real_achievement') {
-        if (classified.achievement_summary) {
-          state.pending = { type: 'needsAchievementFollowup', detail: classified.achievement_summary };
+        if (classified.achievement_summary && cleanLogroText(classified.achievement_summary)) {
+          state.pending = { type: 'needsAchievementFollowup', detail: cleanLogroText(classified.achievement_summary) };
         } else {
           state.pending = { type: 'needsAchievementDetail' };
         }
@@ -5658,7 +5940,7 @@ async function handleUserMessageInner(text) {
   }
 
   if (pending && pending.type === 'needsAchievementDetail') {
-    state.pending = { type: 'needsAchievementFollowup', detail: text };
+    state.pending = { type: 'needsAchievementFollowup', detail: cleanLogroText(text) || text };
     await say(chatScroll, `La persona ya contó cuál fue su logro: "${text}". Como su mejor amigo/a que además entiende de verdad de hábitos, alégrate genuinamente y pregúntale con curiosidad real cómo lo logró o cómo se siente con eso — todavía NO le preguntes si quiere guardarlo, primero queremos indagar un poco más para poder guardar una descripción rica de su logro.`, t('achievementFollowupFallback'));
     return;
   }
@@ -5668,8 +5950,15 @@ async function handleUserMessageInner(text) {
   // descripción más rica antes de ofrecer guardarlo (antes se guardaba solo la
   // primera frase suelta, sin indagar nada más).
   if (pending && pending.type === 'needsAchievementFollowup') {
-    const fullText = pending.detail + (text.trim() ? ` — ${text.trim()}` : '');
-    state.pending = { type: 'confirmAchievement', text: fullText };
+    // Si lo que se tenía era solo el pedido ("agreguemos un logro"), este
+    // mensaje es el logro de verdad: se pregunta el detalle con él.
+    if (!cleanLogroText(pending.detail)) {
+      state.pending = { type: 'needsAchievementFollowup', detail: cleanLogroText(text) || text };
+      await say(chatScroll, `La persona ya contó cuál fue su logro: "${text}". Como su mejor amigo/a, alégrate genuinamente y pregúntale con curiosidad real cómo lo logró o cómo se siente con eso — todavía NO le preguntes si quiere guardarlo.`, t('achievementFollowupFallback'));
+      return;
+    }
+    // En la tarjeta va solo el logro; lo que contó después queda como detalle.
+    state.pending = { type: 'confirmAchievement', text: cleanLogroText(pending.detail), note: text.trim() };
     await say(chatScroll, `La persona contó su logro ("${pending.detail}") y ahora agregó más detalle sobre cómo lo logró o cómo se siente: "${text}". Como su mejor amigo/a, reacciona con calidez genuina a ese detalle y pregúntale si quiere que guardes todo esto en su perfil como un logro.`, t('achievementFallback'));
     return;
   }
@@ -5678,6 +5967,7 @@ async function handleUserMessageInner(text) {
     state.pending = null;
     if (isAffirmative(text)) {
       addLogro(pending.text);
+      if (pending.note) state.profile.logros[state.profile.logros.length - 1].note = pending.note.slice(0, 500);
       const savedLogroIdx = state.profile.logros.length - 1;
       await say(chatScroll, `Se guardó el logro "${pending.text}" en el perfil de la persona, con estilo dorado. Celebra con ella brevemente, y si tiene sentido con lo que logró, aprovecha para preguntarle si quiere que la ayudes a convertir esto en un hábito nuevo que siga construyendo ese progreso.`, t('achievementSavedFallback'), undefined, '🏆');
       // 25 ago 2026: antes había que tocar este aviso para siquiera ver cómo
@@ -5703,19 +5993,9 @@ async function handleUserMessageInner(text) {
         return;
       }
       if (!state.profile.habitos.some(h => h.label.toLowerCase() === label.toLowerCase())) {
-        const entry = {
-          key: pickHabitKey(label), icon: pickIcon(label), label,
-          repeatDays: [0,1,2,3,4,5,6], sameTimeEveryday: true, time: pending.time,
-          timesByDay: {}, durationWeeks: null, createdAt: ymd(new Date()),
-          minutesPerDay: HABIT_SUGGESTED_MINUTES[pickHabitKey(label)] || null,
-          repeatWeekly: true, suggestedByBless: true,
-        };
-        state.profile.habitos.push(entry);
-        state.streaks[entry.key] = state.streaks[entry.key] || 0;
-        if (pending.taskId) state.tasks = tasksList().filter(x => x.id !== pending.taskId); // ahora es hábito, no tarea suelta
-        syncTodayAgendaForHabit(entry);
-        saveStateToServer();
-        renderProfile(); renderAgenda(); renderHeaderRing();
+        // Se abre el editor ya lleno para que elija días, hora y recordatorios.
+        await offerHabitFromChat({ label, time: pending.time, days: null, removeTaskId: pending.taskId });
+        return;
       }
       await say(chatScroll, `Se confirmó que "${label}" ahora es un hábito recurrente, sugerido por Bless. Celebra brevemente y anímala a seguir construyéndolo.`, t('recurringConfirmedFallback'), undefined, '🌱');
       return;
@@ -6002,7 +6282,7 @@ function renderProfile() {
     <div class="profile-card"><h4>${t('diasDificilesTitle')}</h4>${chipList(optLabelList('diasDificiles', p.diasDificiles))}</div>
     <div class="profile-card"><h4>${t('habitosTitle')}</h4><div>${habitsHtml || '—'}</div></div>
     <div class="profile-card logros-card"><h4>${t('logrosTitle')}</h4>
-      ${(p.logros && p.logros.length) ? p.logros.map((l, i) => ({l, i})).reverse().map(({l, i}) => `<div class="logro-chip">🏆 ${l.text}<span class="logro-share-btn" data-logro-idx="${i}" title="${t('shareLogroIconTitle')}">📤</span><span class="logro-delete-btn" data-logro-idx="${i}" title="${t('deleteLogroIconTitle')}">🗑️</span><span class="logro-date">${l.date}</span></div>`).join('') : `<div style="font-size:13px;color:var(--text-dim);">${t('noLogros')}</div>`}
+      ${(p.logros && p.logros.length) ? p.logros.map((l, i) => ({l, i})).reverse().map(({l, i}) => `<div class="logro-chip">${l.icon || '🏆'} ${l.text}<span class="logro-share-btn" data-logro-idx="${i}" title="${t('shareLogroIconTitle')}">📤</span><span class="logro-delete-btn" data-logro-idx="${i}" title="${t('deleteLogroIconTitle')}">🗑️</span><span class="logro-date">${l.date}</span></div>`).join('') : `<div style="font-size:13px;color:var(--text-dim);">${t('noLogros')}</div>`}
     </div>
     <div class="profile-card">
       <h4>${t('addHabitTitle')}</h4>
@@ -7359,7 +7639,7 @@ function renderAddHabitPresets() {
     const b = document.createElement('button');
     b.className = 'qr-btn';
     b.textContent = `${h.icon} ${t2(h)}`;
-    b.onclick = () => addManualHabit({ key: h.key, icon: h.icon, label: h.label, repeatDays: [0,1,2,3,4,5,6], sameTimeEveryday: true, time: defaultTimeFor(h.key), durationWeeks: null });
+    b.onclick = () => openHabitEditor(null, { preset: h });
     wrap.appendChild(b);
   });
   if (!wrap.children.length) {
@@ -7408,9 +7688,8 @@ function addManualHabit({ key, icon, label, repeatDays, sameTimeEveryday, time, 
   saveStateToServer();
   setAvatarMood('happy');
   pendingAddHabitStatus = t('addedHabitMsg', icon, habitDisplayLabel(entry), habitDaysLabel(entry));
-  renderProfile();
-  renderAgenda();
-  renderHeaderRing();
+  scheduleNativeRemindersSoon();
+  refreshHabitViews();
 }
 
 /* ---- Picker de "agregar hábito" desde el botón flotante "+" de Calendario Día:
@@ -7424,11 +7703,7 @@ function openAddHabitPicker() {
     const b = document.createElement('button');
     b.className = 'qr-btn';
     b.textContent = `${h.icon} ${t2(h)}`;
-    b.onclick = () => {
-      addManualHabit({ key: h.key, icon: h.icon, label: h.label, repeatDays: [0,1,2,3,4,5,6], sameTimeEveryday: true, time: defaultTimeFor(h.key), durationWeeks: null });
-      closeAddHabitPicker();
-      if (document.getElementById('view-calendar').classList.contains('active')) renderCalendar();
-    };
+    b.onclick = () => { closeAddHabitPicker(); openHabitEditor(null, { preset: h }); };
     wrap.appendChild(b);
   });
   if (!wrap.children.length) wrap.innerHTML = `<div style="font-size:12px;color:var(--text-dim);">${t('allAddedMsg')}</div>`;
@@ -7512,15 +7787,21 @@ function renderPerDayTimeInputs(selectedDays, existingHabit) {
     wrap.appendChild(row);
   });
 }
-function openHabitEditor(index) {
+// prefill (solo para hábitos nuevos): { preset, label, time, days, removeTaskId }
+// — así, al agregar un hábito sugerido (por Bless, por la lista de predefinidos o
+// desde el chat), la persona igual elige días, hora y recordatorios antes de guardar.
+let habitEditorPrefill = null;
+function openHabitEditor(index, prefill) {
   if ((index === null || index === undefined || index < 0) && !canAddHabit()) { promptHabitLimit(); return; }
   editingHabitIndex = (index === null || index === undefined || index < 0) ? null : index;
   const h = editingHabitIndex !== null ? state.profile.habitos[editingHabitIndex] : null;
-  document.getElementById('habit-editor-title').textContent = h ? t('editHabitTitle') : t('newCustomHabitTitle');
-  document.getElementById('he-label').value = h ? habitDisplayLabel(h) : '';
+  habitEditorPrefill = h ? null : (prefill || null);
+  const pf = habitEditorPrefill || {};
+  document.getElementById('habit-editor-title').textContent = h ? t('editHabitTitle') : (pf.preset || pf.label ? t('heTitleNew') : t('newCustomHabitTitle'));
+  document.getElementById('he-label').value = h ? habitDisplayLabel(h) : (pf.preset ? t2(pf.preset) : (pf.label || ''));
   document.getElementById('habit-editor-status').textContent = '';
 
-  const days = h ? habitRepeatDays(h) : [0,1,2,3,4,5,6];
+  const days = h ? habitRepeatDays(h) : (pf.days && pf.days.length ? pf.days : [0,1,2,3,4,5,6]);
   const daysWrap = document.getElementById('he-days');
   daysWrap.innerHTML = '';
   WEEKDAY_LABELS.forEach((lbl, i) => {
@@ -7536,7 +7817,7 @@ function openHabitEditor(index) {
 
   const sameTimeCheckbox = document.getElementById('he-same-time');
   sameTimeCheckbox.checked = h ? h.sameTimeEveryday !== false : true;
-  document.getElementById('he-time').value = h ? (h.time || defaultTimeFor(h.key)) : defaultTimeFor('general');
+  document.getElementById('he-time').value = h ? (h.time || defaultTimeFor(h.key)) : (pf.time || defaultTimeFor(pf.preset ? pf.preset.key : 'general'));
   sameTimeCheckbox.onchange = () => renderPerDayTimeInputs(getSelectedEditorDays(), h);
   renderPerDayTimeInputs(days, h);
 
@@ -7552,6 +7833,8 @@ function openHabitEditor(index) {
   document.getElementById('he-duration-indef').onchange = () => { weeksInput.disabled = true; };
   document.getElementById('he-duration-weeks').onchange = () => { weeksInput.disabled = false; };
 
+  document.getElementById('he-alarm-row').style.display = canSetClockAlarm() ? 'flex' : 'none';
+  document.getElementById('he-alarm').checked = false;
   document.getElementById('he-delete-btn').style.display = h ? 'block' : 'none';
   document.getElementById('he-save-btn').onclick = saveHabitEditor;
   document.getElementById('he-delete-btn').onclick = deleteHabitFromEditor;
@@ -7562,6 +7845,15 @@ function openHabitEditor(index) {
 function closeHabitEditor() {
   document.getElementById('habit-editor-overlay').style.display = 'none';
   editingHabitIndex = null;
+  habitEditorPrefill = null;
+}
+// Después de agregar/editar/borrar un hábito, todo lo que lo muestra se
+// redibuja al momento (antes el Calendario quedaba igual hasta recargar).
+function refreshHabitViews() {
+  renderProfile();
+  renderAgenda();
+  renderHeaderRing();
+  if (document.getElementById('view-calendar').classList.contains('active')) renderCalendar();
 }
 document.getElementById('habit-editor-overlay').addEventListener('click', (e) => {
   if (e.target.id === 'habit-editor-overlay') closeHabitEditor();
@@ -7617,10 +7909,17 @@ function saveHabitEditor() {
   const durationWeeks = usingWeeks ? (parseInt(document.getElementById('he-weeks').value, 10) || 4) : null;
 
   const existing = isNew ? null : state.profile.habitos[editingHabitIndex];
-  const key = existing ? existing.key : pickHabitKey(label);
-  const icon = existing ? existing.icon : pickIcon(label);
+  const pf = habitEditorPrefill || {};
+  // Si el nombre es el del hábito predefinido (en cualquier idioma), se guarda
+  // como tal para que conserve su clave, ícono y traducción.
+  const preset = pf.preset && (label === t2(pf.preset) || label.toLowerCase() === pf.preset.label.toLowerCase()) ? pf.preset : null;
+  const finalLabel = preset ? preset.label : label;
+  const key = existing ? existing.key : (preset ? preset.key : pickHabitKey(label));
+  // Al cambiarle el nombre a un hábito, el ícono se vuelve a elegir según el nombre nuevo.
+  const renamed = existing && label !== habitDisplayLabel(existing) && label.toLowerCase() !== existing.label.toLowerCase();
+  const icon = existing ? (renamed ? pickIcon(label) : existing.icon) : (preset ? preset.icon : pickIcon(label));
   const entry = {
-    key, icon, label,
+    key, icon, label: renamed || isNew ? finalLabel : existing.label,
     repeatDays: days,
     sameTimeEveryday,
     time,
@@ -7631,6 +7930,15 @@ function saveHabitEditor() {
     createdAt: existing ? (existing.createdAt || ymd(new Date())) : ymd(new Date()),
   };
   entry.repeatWeekly = entry.repeatDays.length === 7;
+  if (existing && existing.suggestedByBless) entry.suggestedByBless = true;
+  // Al renombrar, la fila de hoy con el nombre viejo se quita (syncTodayAgendaForHabit
+  // agrega la nueva); si ya estaba hecha, se conserva marcada.
+  let wasDoneToday = false;
+  if (renamed) {
+    const ai = state.agenda.findIndex(a => a.habitKey === existing.key && a.task === existing.label);
+    if (ai !== -1) { wasDoneToday = !!state.agenda[ai].done; state.agenda.splice(ai, 1); }
+  }
+  if (isNew && pf.removeTaskId) state.tasks = tasksList().filter(x => x.id !== pf.removeTaskId); // ahora es hábito, no tarea suelta
 
   if (isNew) {
     state.profile.habitos.push(entry);
@@ -7640,14 +7948,21 @@ function saveHabitEditor() {
     state.profile.habitos[editingHabitIndex] = entry;
     pendingAddHabitStatus = t('updatedHabitMsg', icon, label, habitDaysLabel(entry));
   }
+  if (document.getElementById('he-alarm').checked && canSetClockAlarm()) {
+    const byTime = {};
+    entry.repeatDays.forEach(d => { const tm = habitTimeForDay(entry, d); (byTime[tm] = byTime[tm] || []).push(d); });
+    createClockAlarms(Object.keys(byTime).map(tm => ({ time: tm, days: byTime[tm] })), `${entry.icon} ${habitDisplayLabel(entry)}`);
+  }
   syncTodayAgendaForHabit(entry);
+  if (wasDoneToday) { const ai = state.agenda.findIndex(a => a.habitKey === entry.key && a.task === entry.label); if (ai !== -1) state.agenda[ai].done = true; }
   saveStateToServer();
   scheduleNativeRemindersSoon();
   setAvatarMood('happy');
   closeHabitEditor();
-  renderProfile();
-  renderAgenda();
-  renderHeaderRing();
+  refreshHabitViews();
+  if (isNew && document.getElementById('view-chat').classList.contains('active')) {
+    agentSay(chatScroll, t('addedHabitMsg', icon, habitDisplayLabel(entry), habitDaysLabel(entry)), 200, '🌱');
+  }
 }
 function deleteHabitFromEditor() {
   if (editingHabitIndex === null) return;
@@ -7657,10 +7972,9 @@ function deleteHabitFromEditor() {
   if (idx !== -1) state.agenda.splice(idx, 1);
   saveStateToServer();
   pendingAddHabitStatus = t('deletedHabitMsg', h.icon, habitDisplayLabel(h));
+  scheduleNativeRemindersSoon();
   closeHabitEditor();
-  renderProfile();
-  renderAgenda();
-  renderHeaderRing();
+  refreshHabitViews();
 }
 
 /* ============================================================
@@ -7972,6 +8286,8 @@ function openTaskEditor(id, defaultDate) {
       <div class="tk-sub">${t('heRemindQ')}</div>
       ${isPremium ? '<div class="quick-replies he-remind" id="tk-remind"></div>' : `<div class="tk-free-remind">⏰ ${t('taskFreeRemind')} <button type="button" id="tk-premium-link">${t('taskFreeRemindMore')}</button></div>`}
       <div class="tk-hint" id="tk-hint">${t('taskNoTimeHint')}</div>
+      <label class="alarm-toggle" id="tk-alarm-row" style="display:${canSetClockAlarm() ? 'flex' : 'none'};"><input type="checkbox" id="tk-alarm"> <span>${t('alarmToggle')}</span></label>
+      <div class="tk-hint" id="tk-alarm-msg" style="display:none;color:var(--accent, #7C6CF0);"></div>
       ${existing && !canDeleteTask() ? `<div class="tk-hint">🔒 ${t('taskLockedDeleteHint', FREE_TASK_LIMIT)}</div>` : ''}
       <div class="ui-dialog-actions">
         ${existing && canDeleteTask() ? `<button type="button" class="ui-dialog-cancel tk-delete">${t('deleteWord')}</button>` : `<button type="button" class="ui-dialog-cancel tk-cancel">${t('dialogCancel')}</button>`}
@@ -8018,6 +8334,17 @@ function openTaskEditor(id, defaultDate) {
     if (!text) { textEl.focus(); return; }
     const date = dateEl.value || ymd(new Date());
     const offsets = isPremium ? Array.from(remindWrap.querySelectorAll('.qr-btn.selected')).map(b => parseInt(b.dataset.offset, 10)).sort((a, b) => b - a) : [0];
+    const alarmEl = overlay.querySelector('#tk-alarm');
+    if (alarmEl && alarmEl.checked) {
+      // La alarma del Reloj no tiene fecha: suena la próxima vez que llega esa
+      // hora, así que solo se crea si la tarea es dentro de las próximas 24 h.
+      const alarmMsg = overlay.querySelector('#tk-alarm-msg');
+      const showAlarmMsg = (m) => { alarmMsg.textContent = m; alarmMsg.style.display = ''; };
+      if (!timeEl.value) { showAlarmMsg(t('alarmNeedsTime')); timeEl.focus(); return; }
+      const diff = new Date(date + 'T' + timeEl.value + ':00') - new Date();
+      if (diff <= 0 || diff > 24 * 3600000) { showAlarmMsg(t('alarmTooFar')); return; }
+      createClockAlarms([{ time: timeEl.value, days: null }], text);
+    }
     if (existing) {
       Object.assign(existing, { text: text.slice(0, 200), date, time: timeEl.value || null, reminderOffsets: offsets });
       afterTasksOrNotesChanged();

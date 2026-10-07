@@ -59,6 +59,9 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <!-- Desbloqueo con huella o rostro (plugin @capgo/capacitor-native-biometric). -->
     <uses-permission android:name="android.permission.USE_BIOMETRIC" />
+    <!-- Crear una alarma en la app Reloj del teléfono para un hábito o tarea
+         (BlessDevicePlugin.setAlarm). Es un permiso normal: no pide nada al usuario. -->
+    <uses-permission android:name="com.android.alarm.permission.SET_ALARM" />
     <!-- Android 11+: para poder abrir la pantalla de "segundo plano / inicio
          automático" de cada marca (ver BlessDevicePlugin). -->
     <queries>
@@ -70,6 +73,10 @@
         <package android:name="com.vivo.permissionmanager" />
         <package android:name="com.iqoo.secure" />
         <package android:name="com.samsung.android.lool" />
+        <!-- La app Reloj que recibe "crear alarma". -->
+        <intent>
+            <action android:name="android.intent.action.SET_ALARM" />
+        </intent>
     </queries>
 
 </manifest>

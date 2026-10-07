@@ -6,7 +6,10 @@ import android.content.Intent;
 import android.net.Uri;
 import android.os.Build;
 import android.os.PowerManager;
+import android.provider.AlarmClock;
 import android.provider.Settings;
+
+import com.getcapacitor.JSArray;
 
 import com.getcapacitor.JSObject;
 import com.getcapacitor.Plugin;
@@ -53,6 +56,45 @@ public class BlessDevicePlugin extends Plugin {
     public void openBatterySettings(PluginCall call) {
         if (!tryStart(batteryIntent())) tryStart(appDetailsIntent());
         call.resolve();
+    }
+
+    /**
+     * Crea una alarma en la app Reloj del teléfono (suena aunque Bless esté
+     * cerrada o el teléfono en silencio). Recibe hour, minutes, message y,
+     * opcionalmente, days: días de la semana con 0 = domingo … 6 = sábado
+     * (si no vienen, es una alarma de una sola vez a la próxima hora indicada).
+     */
+    @PluginMethod
+    public void setAlarm(PluginCall call) {
+        Integer hour = call.getInt("hour");
+        Integer minutes = call.getInt("minutes");
+        if (hour == null || minutes == null) { call.reject("hour y minutes son obligatorios"); return; }
+        Intent i = new Intent(AlarmClock.ACTION_SET_ALARM);
+        i.putExtra(AlarmClock.EXTRA_HOUR, hour);
+        i.putExtra(AlarmClock.EXTRA_MINUTES, minutes);
+        String message = call.getString("message", "Bless Habit");
+        i.putExtra(AlarmClock.EXTRA_MESSAGE, message);
+        i.putExtra(AlarmClock.EXTRA_SKIP_UI, call.getBoolean("skipUi", false));
+        JSArray days = call.getArray("days");
+        if (days != null && days.length() > 0) {
+            java.util.ArrayList<Integer> list = new java.util.ArrayList<>();
+            for (int k = 0; k < days.length(); k++) {
+                int d = days.optInt(k, -1);
+                // java.util.Calendar: SUNDAY = 1 … SATURDAY = 7
+                if (d >= 0 && d <= 6) list.add(d + 1);
+            }
+            if (!list.isEmpty()) i.putExtra(AlarmClock.EXTRA_DAYS, list);
+        }
+        i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        JSObject ret = new JSObject();
+        if (i.resolveActivity(getContext().getPackageManager()) == null) {
+            ret.put("ok", false);
+            ret.put("reason", "no_clock_app");
+            call.resolve(ret);
+            return;
+        }
+        ret.put("ok", tryStart(i));
+        call.resolve(ret);
     }
 
     private Intent findAutostartIntent() {
