@@ -1486,7 +1486,7 @@ SOBRE LA APP (úsalo solo si preguntan; nunca inventes menús, pantallas ni prec
 - Secciones: Bless (chat), Calendario (día/semana/mes; cada día tiene Hábitos, Tareas con recordatorio y Notas del día), Métricas, Diario y Perfil.
 - La persona puede pedirte tareas o notas escribiendo "recuérdame…" o "anota…", y escribir en su diario con "escribe en mi diario: …" (la app los guarda sola); si pregunta cómo, explícale eso.
 - NUNCA digas que agendaste, anotaste, guardaste, agregaste, escribiste o programaste algo (tampoco en el diario, ni hábitos ni logros), ni "te recordaré" o "te aviso": tú no puedes hacerlo, lo hace la app sola y ella misma lo confirma. Si la persona quiere guardar algo, dile que te lo pida empezando con "recuérdame…", "anota…" o "escribe en mi diario: …".
-- Plan gratis de tareas y notas: hasta 3 tareas (al llegar al límite se pueden editar para reutilizarlas, no borrar) y 10 notas; Premium ilimitado.
+- Plan gratis de tareas y notas: hasta 3 tareas y 10 notas por día (un día con sus 3 tareas no deja borrarlas, solo editarlas); hábitos: 3 en total. Premium ilimitado.
 - Plan gratis: chat con Bless (límite diario de mensajes), hasta 3 hábitos, calendario, diario y recordatorios a la hora de cada hábito.
 - Bless Habit Premium incluye: chat ilimitado y memoria (Bless recuerda lo importante de días anteriores), hábitos ilimitados, resumen semanal escrito por Bless, análisis de ánimo, recordatorios personalizados (avisar 10, 15, 30 o 60 minutos antes), temas y stickers extra para el diario, exportar el diario a PDF y bloqueo con PIN o huella.
 - Esta persona ${isPremium ? 'YA tiene Premium: agradécele y no le ofrezcas comprarlo' : 'todavía no tiene Premium'}.
@@ -1935,7 +1935,7 @@ const I18N = {
     openConfigBtn: 'Abrir configuración',
     planTitle: 'Plan', premiumBadge: '✨ Bless Habit Premium', cancelSubLink: 'Cancelar suscripción',
     freePlanDesc: 'Estás en el plan gratis. Con Premium tienes:',
-    premiumBenefits: ['💬 Conversa con Bless sin límite, y Bless recuerda lo importante de ti', '📬 Cada lunes, tu resumen semanal escrito por Bless', '😊 Tu ánimo en el tiempo y qué hábitos acompañan tus días buenos', '🌱 Hábitos ilimitados (gratis: hasta 3)', '⏰ Recordatorios a tu medida: 10, 15, 30 o 60 min antes', '✅ Tareas y notas ilimitadas (gratis: 3 tareas y 10 notas)', '📔 Diario con temas y stickers exclusivos, y exportar a PDF', '🔒 Bloqueo con PIN (y huella o rostro en Android)', '🚫 Sin anuncios · ✨ Tema dorado'],
+    premiumBenefits: ['💬 Conversa con Bless sin límite, y Bless recuerda lo importante de ti', '📬 Cada lunes, tu resumen semanal escrito por Bless', '😊 Tu ánimo en el tiempo y qué hábitos acompañan tus días buenos', '🌱 Hábitos ilimitados (gratis: 3 en total)', '⏰ Recordatorios a tu medida: 10, 15, 30 o 60 min antes', '✅ Tareas y notas ilimitadas (gratis: 3 tareas y 10 notas por día)', '📔 Diario con temas y stickers exclusivos, y exportar a PDF', '🔒 Bloqueo con PIN (y huella o rostro en Android)', '🚫 Sin anuncios · ✨ Tema dorado'],
     premiumCancelNote: 'Pago mensual con Paddle. Cancelas cuando quieras.',
     heRemindQ: '¿Cuándo te aviso?', heRemindPremiumTag: '✨ Premium para más opciones',
     daySecHabits: 'Hábitos', daySecTasks: 'Tareas', daySecNotes: 'Notas del día', daySecAdd: 'Agregar',
@@ -1965,11 +1965,12 @@ const I18N = {
     deleteTaskConfirm: '¿Eliminar esta tarea?', newNoteTitle: '📝 Nueva nota', editNoteTitle: '📝 Editar nota', noteTextPh: 'Escribe tu nota…',
     deleteNoteConfirm: '¿Eliminar esta nota?',
     taskReminderBody: ['Es la hora de esto ⏰', 'Te lo recuerdo como quedamos 🤍', '¡Ahora sí! Tú puedes ✨'],
-    taskLimitMsg: (n) => `En el plan gratis puedes tener hasta ${n} tareas ✅. Puedes editar una de las que ya tienes para reutilizarla (cambiar texto, día u hora), o hacerte Premium para tenerlas ilimitadas. ¿Quieres verlo?`,
-    taskLockedDeleteHint: (n) => `Plan gratis: con ${n} tareas no puedes borrarlas, pero sí editarlas para reutilizarlas. Con Premium son ilimitadas ✨`,
-    noteLimitMsg: (n) => `En el plan gratis puedes guardar hasta ${n} notas 📝. Borra alguna o hazte Premium para tenerlas ilimitadas. ¿Quieres verlo?`,
-    taskLimitChat: (n) => `Llegaste al máximo de ${n} tareas del plan gratis 🌱 Puedes editar una de tus tareas en el Calendario para reutilizarla (cambiar texto, día u hora). Con Premium son ilimitadas ✨`,
-    noteLimitChat: (n) => `Llegaste al máximo de ${n} notas del plan gratis 📝 Si borras alguna, guardo esta. Con Premium son ilimitadas ✨`,
+    taskLimitMsg: (n) => `En el plan gratis puedes tener ${n} tareas por día ✅. Elige otro día, edita una de las de este día para reutilizarla, o hazte Premium para tenerlas ilimitadas. ¿Quieres verlo?`,
+    taskDayFullHint: (n) => `Ese día ya tiene ${n} tareas (máximo del plan gratis). Elige otro día 🙂`,
+    taskLockedDeleteHint: (n) => `Plan gratis: con ${n} tareas en este día no puedes borrarlas, pero sí editarlas para reutilizarlas. Con Premium son ilimitadas ✨`,
+    noteLimitMsg: (n) => `En el plan gratis puedes guardar ${n} notas por día 📝. Borra alguna de este día o hazte Premium para tenerlas ilimitadas. ¿Quieres verlo?`,
+    taskLimitChat: (n) => `Ese día ya tiene ${n} tareas, el máximo del plan gratis 🌱 Pídemela para otro día, o edita una de ese día en el Calendario para reutilizarla. Con Premium son ilimitadas ✨`,
+    noteLimitChat: (n) => `Ese día ya tiene ${n} notas, el máximo del plan gratis 📝 Si borras alguna, guardo esta. Con Premium son ilimitadas ✨`,
     taskSavedChat: (text, date, time) => `¡Listo! ✅ Te recordaré «${text}» ${date} a las ${time} ⏰`,
     taskSavedNoTimeChat: (text, date) => `¡Anotado! ✅ «${text}» quedó en tus tareas de ${date}. Si quieres que te avise, dime a qué hora 🤍`,
     noteSavedChat: (date) => `Guardé tu nota en el día de ${date} 📝`,
@@ -2415,7 +2416,7 @@ const I18N = {
     openConfigBtn: 'Open settings',
     planTitle: 'Plan', premiumBadge: '✨ Bless Habit Premium', cancelSubLink: 'Cancel subscription',
     freePlanDesc: "You're on the free plan. With Premium you get:",
-    premiumBenefits: ['💬 Talk with Bless without limits, and Bless remembers what matters to you', '📬 Every Monday, your weekly summary written by Bless', '😊 Your mood over time and which habits come with your good days', '🌱 Unlimited habits (free: up to 3)', '⏰ Reminders your way: 10, 15, 30 or 60 min before', '✅ Unlimited tasks and notes (free: 3 tasks and 10 notes)', '📔 Journal with exclusive themes and stickers, plus PDF export', '🔒 PIN lock (plus fingerprint or face on Android)', '🚫 No ads · ✨ Gold theme'],
+    premiumBenefits: ['💬 Talk with Bless without limits, and Bless remembers what matters to you', '📬 Every Monday, your weekly summary written by Bless', '😊 Your mood over time and which habits come with your good days', '🌱 Unlimited habits (free: 3 in total)', '⏰ Reminders your way: 10, 15, 30 or 60 min before', '✅ Unlimited tasks and notes (free: 3 tasks and 10 notes per day)', '📔 Journal with exclusive themes and stickers, plus PDF export', '🔒 PIN lock (plus fingerprint or face on Android)', '🚫 No ads · ✨ Gold theme'],
     premiumCancelNote: 'Monthly payment via Paddle. Cancel anytime.',
     heRemindQ: 'When should I remind you?', heRemindPremiumTag: '✨ Premium for more options',
     daySecHabits: 'Habits', daySecTasks: 'Tasks', daySecNotes: "Today's notes", daySecAdd: 'Add',
@@ -2445,11 +2446,12 @@ const I18N = {
     deleteTaskConfirm: 'Delete this task?', newNoteTitle: '📝 New note', editNoteTitle: '📝 Edit note', noteTextPh: 'Write your note…',
     deleteNoteConfirm: 'Delete this note?',
     taskReminderBody: ["It's time for this ⏰", 'Reminding you, just like we said 🤍', 'Now is the moment! You got this ✨'],
-    taskLimitMsg: (n) => `On the free plan you can have up to ${n} tasks ✅. You can edit one of yours to reuse it (change text, day or time), or go Premium for unlimited tasks. Want to see it?`,
-    taskLockedDeleteHint: (n) => `Free plan: with ${n} tasks you can't delete them, but you can edit them to reuse them. With Premium they're unlimited ✨`,
-    noteLimitMsg: (n) => `On the free plan you can keep up to ${n} notes 📝. Delete one or go Premium for unlimited notes. Want to see it?`,
-    taskLimitChat: (n) => `You've reached the free plan limit of ${n} tasks 🌱 You can edit one of your tasks in the Calendar to reuse it (change text, day or time). With Premium they're unlimited ✨`,
-    noteLimitChat: (n) => `You've reached the free plan limit of ${n} notes 📝 Delete one and I'll save this. With Premium they're unlimited ✨`,
+    taskLimitMsg: (n) => `On the free plan you can have ${n} tasks per day ✅. Pick another day, edit one of this day's tasks to reuse it, or go Premium for unlimited tasks. Want to see it?`,
+    taskDayFullHint: (n) => `That day already has ${n} tasks (free plan maximum). Pick another day 🙂`,
+    taskLockedDeleteHint: (n) => `Free plan: with ${n} tasks on this day you can't delete them, but you can edit them to reuse them. With Premium they're unlimited ✨`,
+    noteLimitMsg: (n) => `On the free plan you can keep ${n} notes per day 📝. Delete one from this day or go Premium for unlimited notes. Want to see it?`,
+    taskLimitChat: (n) => `That day already has ${n} tasks, the free plan maximum 🌱 Ask me for another day, or edit one of that day's tasks in the Calendar to reuse it. With Premium they're unlimited ✨`,
+    noteLimitChat: (n) => `That day already has ${n} notes, the free plan maximum 📝 Delete one and I'll save this. With Premium they're unlimited ✨`,
     taskSavedChat: (text, date, time) => `Done! ✅ I'll remind you to "${text}" ${date} at ${time} ⏰`,
     taskSavedNoTimeChat: (text, date) => `Got it! ✅ "${text}" is in your tasks for ${date}. If you want a reminder, tell me what time 🤍`,
     noteSavedChat: (date) => `I saved your note on ${date} 📝`,
@@ -5752,12 +5754,12 @@ function migrateOneOffAgendaToTasks() {
   if (moved) { state.agenda = keep; saveStateToServer(); }
 }
 function scheduleFromChat(time, rawText) {
-  if (!canAddTask()) return null;
   const when = parseWhenFromText(rawText);
   const text = cleanTaskText(when.rest) || cleanTaskText(rawText) || rawText;
   let date = when.explicitDate ? when.date : ymd(new Date());
   const now = new Date(), nowHM = String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
   if (!when.explicitDate && time && time <= nowHM) date = ymd(addDays(now, 1)); // esa hora ya pasó hoy
+  if (!canAddTask(date)) return null;
   return addTask({ text, date, time });
 }
 async function applyTimeToRecentTask(time, date) {
@@ -5780,13 +5782,13 @@ async function handleTaskOrNoteRequest(req) {
     // Solo dio la hora ("programa tarea para las 3:25"): si hay una tarea
     // reciente sin hora, se le pone; si no, se pregunta cuál.
     if (req.time && await applyTimeToRecentTask(req.time, req.date)) return;
-    if (!canAddTask()) { await sayTaskLimit(); return; }
+    if (req.time && !canAddTask(req.date)) { await sayTaskLimit(); return; }
     state.pending = { type: 'taskNew', time: req.time || null, date: req.time ? req.date : null };
     await agentSay(chatScroll, req.time ? t('askTaskForTimeChat', req.time) : t('askTaskChat'), 300);
     return;
   }
   if (req.kind === 'task') {
-    if (!canAddTask()) {
+    if (!canAddTask(req.date)) {
       await agentSay(chatScroll, t('taskLimitChat', FREE_TASK_LIMIT));
       addNote(chatScroll, t('seePremiumNote'), 'agenda-note', () => openPremiumSheet());
       return;
@@ -5800,7 +5802,7 @@ async function handleTaskOrNoteRequest(req) {
     else state.pending = { type: 'taskTime', taskId: tk.id };
     addNote(chatScroll, t('seeInCalendarNote'), 'agenda-note', () => openCalendarDay(tk.date));
   } else {
-    if (!canAddNote()) {
+    if (!canAddNote(req.date)) {
       await agentSay(chatScroll, t('noteLimitChat', FREE_NOTE_LIMIT));
       addNote(chatScroll, t('seePremiumNote'), 'agenda-note', () => openPremiumSheet());
       return;
@@ -8356,7 +8358,7 @@ function renderCalDay() {
      hábitos (no cuentan para el % del día).
    - Notas: texto libre ligado a un día.
    Se crean desde el Calendario (Día) o pidiéndoselo a Bless en el chat.
-   Plan gratis: hasta FREE_TASK_LIMIT tareas pendientes y FREE_NOTE_LIMIT notas.
+   Plan gratis: hasta FREE_TASK_LIMIT tareas y FREE_NOTE_LIMIT notas por día.
    ============================================================ */
 const CAL_DAY_MAX_AHEAD = 60;
 const FREE_TASK_LIMIT = 3;
@@ -8369,11 +8371,11 @@ function tasksForDate(dateStr) {
     .sort((a, b) => (a.time || '99:99').localeCompare(b.time || '99:99'));
 }
 function notesForDate(dateStr) { return notesList().filter(n => n.date === dateStr).sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0)); }
-// Plan gratis: hasta 3 tareas en total. Al llegar al límite no se pueden borrar
-// (para no "rotarlas"), solo editar: cambiar texto, día u hora para reutilizarlas.
-function canAddTask() { return isPremium || tasksList().length < FREE_TASK_LIMIT; }
-function canDeleteTask() { return isPremium || tasksList().length < FREE_TASK_LIMIT; }
-function canAddNote() { return isPremium || notesList().length < FREE_NOTE_LIMIT; }
+// Plan gratis: hasta 3 tareas y 10 notas POR DÍA. Un día con sus 3 tareas no
+// deja borrarlas (para no "rotarlas"), solo editarlas: texto, día u hora.
+function canAddTask(date) { return isPremium || tasksForDate(date || ymd(new Date())).length < FREE_TASK_LIMIT; }
+function canDeleteTask(date) { return isPremium || tasksForDate(date || ymd(new Date())).length < FREE_TASK_LIMIT; }
+function canAddNote(date) { return isPremium || notesForDate(date || ymd(new Date())).length < FREE_NOTE_LIMIT; }
 function afterTasksOrNotesChanged() {
   markAppActed();
   saveStateToServer(); // también reprograma los recordatorios
@@ -8415,7 +8417,7 @@ async function promptNoteLimit() {
 // Hoja inferior para crear/editar una tarea (texto, día, hora, recordatorio).
 function openTaskEditor(id, defaultDate) {
   const existing = id ? tasksList().find(x => x.id === id) : null;
-  if (!existing && !canAddTask()) { promptTaskLimit(); return; }
+  if (!existing && !canAddTask(defaultDate)) { promptTaskLimit(); return; }
   document.querySelectorAll('.task-sheet-overlay').forEach(x => x.remove());
   const overlay = document.createElement('div');
   overlay.className = 'ui-dialog-overlay task-sheet-overlay';
@@ -8432,9 +8434,9 @@ function openTaskEditor(id, defaultDate) {
       <div class="tk-hint" id="tk-hint">${t('taskNoTimeHint')}</div>
       <label class="alarm-toggle" id="tk-alarm-row" style="display:${canSetClockAlarm() ? 'flex' : 'none'};"><input type="checkbox" id="tk-alarm"> <span>${t('alarmToggle')}</span></label>
       <div class="tk-hint" id="tk-alarm-msg" style="display:none;color:var(--accent, #7C6CF0);"></div>
-      ${existing && !canDeleteTask() ? `<div class="tk-hint">🔒 ${t('taskLockedDeleteHint', FREE_TASK_LIMIT)}</div>` : ''}
+      ${existing && !canDeleteTask(existing.date) ? `<div class="tk-hint">🔒 ${t('taskLockedDeleteHint', FREE_TASK_LIMIT)}</div>` : ''}
       <div class="ui-dialog-actions">
-        ${existing && canDeleteTask() ? `<button type="button" class="ui-dialog-cancel tk-delete">${t('deleteWord')}</button>` : `<button type="button" class="ui-dialog-cancel tk-cancel">${t('dialogCancel')}</button>`}
+        ${existing && canDeleteTask(existing.date) ? `<button type="button" class="ui-dialog-cancel tk-delete">${t('deleteWord')}</button>` : `<button type="button" class="ui-dialog-cancel tk-cancel">${t('dialogCancel')}</button>`}
         <button type="button" class="ui-dialog-ok tk-save">${t('dialogSave')}</button>
       </div>
     </div>`;
@@ -8477,6 +8479,12 @@ function openTaskEditor(id, defaultDate) {
     const text = textEl.value.trim();
     if (!text) { textEl.focus(); return; }
     const date = dateEl.value || ymd(new Date());
+    // Cambiar la tarea a otro día (o crearla) cuenta para el límite de ese día.
+    if ((!existing || existing.date !== date) && !canAddTask(date)) {
+      const m = overlay.querySelector('#tk-alarm-msg');
+      m.textContent = t('taskDayFullHint', FREE_TASK_LIMIT); m.style.display = '';
+      return;
+    }
     const offsets = isPremium ? Array.from(remindWrap.querySelectorAll('.qr-btn.selected')).map(b => parseInt(b.dataset.offset, 10)).sort((a, b) => b - a) : [0];
     const alarmEl = overlay.querySelector('#tk-alarm');
     if (alarmEl && alarmEl.checked) {
@@ -8505,7 +8513,7 @@ function openTaskEditor(id, defaultDate) {
 }
 function openNoteEditor(id, defaultDate) {
   const existing = id ? notesList().find(x => x.id === id) : null;
-  if (!existing && !canAddNote()) { promptNoteLimit(); return; }
+  if (!existing && !canAddNote(defaultDate)) { promptNoteLimit(); return; }
   document.querySelectorAll('.task-sheet-overlay').forEach(x => x.remove());
   const overlay = document.createElement('div');
   overlay.className = 'ui-dialog-overlay task-sheet-overlay';
