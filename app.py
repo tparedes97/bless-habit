@@ -1672,6 +1672,125 @@ def premium_required_response():
     return jsonify({"ok": False, "error": "premium_required"}), 403
 
 
+# ============================================================
+# ROUTER DE INTENCIONES — antes de responder, la IA lee el mensaje (con el
+# contexto de la charla) y decide si la persona pide una ACCIÓN de la app
+# (hábito, tarea, nota, diario, logro) o solo conversa. La app ejecuta la
+# acción ella misma y lo confirma; así Bless no "dice" que guardó algo sin
+# guardarlo, ni confunde "mi diario" con "todos los días".
+# Tiene su propio cupo diario (es una llamada corta) para no gastar el cupo
+# de mensajes del plan gratis.
+# ============================================================
+ROUTE_REQUESTS_PER_DAY = int(os.environ.get("ROUTE_REQUESTS_PER_DAY", "200"))
+ROUTE_ACTIONS = {"none", "add_habit", "add_task", "add_note", "write_diary", "save_achievement"}
+
+ROUTER_SYSTEM = """Eres el "router" de Bless Habit, una app de hábitos con un chat (Bless).
+Tu única tarea: decidir si el ÚLTIMO mensaje de la persona pide una acción de la app, y extraer sus datos.
+Responde SOLO un objeto JSON, sin texto extra:
+{"action": "...", "text": "...", "date": "YYYY-MM-DD o vacío", "time": "HH:MM (24 h) o vacío", "days": [números 0-6, 0 = domingo] o []}
+
+Acciones:
+- "add_habit": crear un hábito que se REPITE (todos los días, a diario, de lunes a viernes, los martes…). text = nombre corto del hábito ("Correr", "Meditar"). days = días que se repite. time = hora si la dijo.
+- "add_task": algo puntual para recordar/agendar UNA vez ("recuérdame…", "tengo dentista el viernes a las 4", "agenda…"). text = la tarea sin la fecha ni la hora. date/time si los dijo (resuelve "mañana", "el viernes", "en 2 horas" usando la fecha y hora actuales).
+- "add_note": guardar una nota de un día ("anota que…", "apunta…", "toma nota"). text = el contenido.
+- "write_diary": escribir en el DIARIO de la app ("agrega a mi diario…", "querido diario…", "quiero escribir en mi diario"). text = lo que hay que escribir (vacío si aún no lo dijo).
+- "save_achievement": guardar un LOGRO en su perfil ("guarda este logro", "es un logro", "agrégalo a mi perfil" hablando de un logro, "quiero agregar un logro"). text = el logro en sí, corto, como título ("Publiqué dos apps"), tomándolo de mensajes anteriores si se refiere a algo que ya contó; vacío si aún no dijo cuál.
+- "none": cualquier otra cosa: conversar, contar cómo se siente, preguntar algo, saludar, responder sí/no o una hora a una pregunta de Bless que no forme una acción completa, o si dudas.
+
+Reglas:
+- "mi diario", "el diario", "tu diario" = la sección Diario de la app, NUNCA significa "todos los días".
+- Contar algo que logró ("hoy logré X") NO es save_achievement todavía: es "none" (Bless lo celebra y pregunta). Solo es save_achievement si pide guardarlo o confirma que es un logro.
+- Si la persona responde a una pregunta de Bless y con eso se completa una acción (Bless preguntó "¿a qué hora quieres correr?" y responde "todos los días a las 7"), devuelve la acción completa usando el contexto.
+- Si Bless preguntó "¿quieres que lo guarde como logro?" y responde sí, devuelve "none" (la app ya maneja esa confirmación).
+- Nunca inventes datos que no estén en la conversación. Si falta la hora o la fecha, déjala vacía.
+- Si el mensaje es una pregunta sobre cómo usar la app, es "none"."""
+
+
+def consume_route_quota(user_id):
+    day = time.strftime("%Y-%m-%d", time.gmtime()) + "-r"
+    conn = get_db()
+    row = conn.execute("SELECT count FROM ai_usage WHERE user_id = ? AND day = ?", (user_id, day)).fetchone()
+    if row and row[0] >= ROUTE_REQUESTS_PER_DAY:
+        conn.close()
+        return False
+    conn.execute("""
+        INSERT INTO ai_usage (user_id, day, count) VALUES (?, ?, 1)
+        ON CONFLICT(user_id, day) DO UPDATE SET count = count + 1
+    """, (user_id, day))
+    conn.commit()
+    conn.close()
+    return True
+
+
+def _clean_route(raw):
+    try:
+        out = json.loads(raw or "{}")
+    except Exception:
+        return None
+    if not isinstance(out, dict):
+        return None
+    action = str(out.get("action") or "none").strip()
+    if action not in ROUTE_ACTIONS:
+        action = "none"
+    text = str(out.get("text") or "").strip()[:300]
+    date = str(out.get("date") or "").strip()
+    if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", date):
+        date = ""
+    tm = str(out.get("time") or "").strip()
+    m = re.fullmatch(r"(\d{1,2}):(\d{2})", tm)
+    tm = f"{int(m.group(1)):02d}:{m.group(2)}" if m and int(m.group(1)) < 24 and int(m.group(2)) < 60 else ""
+    days = out.get("days") or []
+    days = sorted({int(d) for d in days if isinstance(d, (int, float)) and 0 <= int(d) <= 6}) if isinstance(days, list) else []
+    return {"action": action, "text": text, "date": date, "time": tm, "days": days}
+
+
+@app.route("/api/bless-route", methods=["POST"])
+def bless_route():
+    if not session.get("user_id"):
+        return jsonify({"ok": False, "error": "No autenticado"}), 401
+    if app_lock_blocks(session["user_id"]):
+        return locked_response()
+    if not consume_route_quota(session["user_id"]):
+        return jsonify({"ok": False, "error": "route_limit"}), 429
+    data = request.get_json(force=True) or {}
+    text = str(data.get("text") or "").strip()[:1000]
+    if not text:
+        return jsonify({"ok": False, "error": "Falta el texto."}), 400
+    ctx = data.get("context") or {}
+    context_lines = [
+        f"Fecha y hora actual: {str(ctx.get('now') or '')[:40]} ({str(ctx.get('weekday') or '')[:20]})",
+        f"Idioma: {str(ctx.get('lang') or 'es')[:5]}",
+        f"Hábitos que ya tiene: {str(ctx.get('habits') or 'ninguno')[:300]}",
+        f"Pregunta pendiente de Bless: {str(ctx.get('pending') or 'ninguna')[:200]}",
+    ]
+    history = data.get("history") or []
+    convo = []
+    if isinstance(history, list):
+        for turn in history[-8:]:
+            if isinstance(turn, dict) and turn.get("role") in ("user", "assistant") and turn.get("content"):
+                who = "Persona" if turn["role"] == "user" else "Bless"
+                convo.append(f"{who}: {str(turn['content'])[:400]}")
+    user_msg = "CONTEXTO:\n" + "\n".join(context_lines) + "\n\nCONVERSACIÓN RECIENTE:\n" + ("\n".join(convo) or "(vacía)") + f"\n\nÚLTIMO MENSAJE DE LA PERSONA:\n{text}"
+    try:
+        client = get_client()
+        if client is None:
+            return jsonify({"ok": False, "error": "no_ai"}), 400
+        resp = client.chat.completions.create(
+            model=OPENAI_MODEL,
+            messages=[{"role": "system", "content": ROUTER_SYSTEM}, {"role": "user", "content": user_msg}],
+            temperature=0,
+            max_tokens=120,
+            response_format={"type": "json_object"},
+        )
+        route = _clean_route(resp.choices[0].message.content)
+        if route is None:
+            return jsonify({"ok": False, "error": "bad_json"}), 502
+        return jsonify({"ok": True, "route": route})
+    except Exception as e:
+        print(f"[openai] error en /api/bless-route: {e}")
+        return jsonify({"ok": False, "error": str(e)}), 500
+
+
 @app.route("/api/bless-reply", methods=["POST"])
 def bless_reply():
     # Solo para usuarios con sesión: si no, cualquiera en internet podría usar

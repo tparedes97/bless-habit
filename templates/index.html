@@ -1415,6 +1415,102 @@ async function classifyAchievementMessage(text) {
   } catch (e) { return null; }
   finally { clearTimeout(timeoutId); }
 }
+// Router de intenciones (ver /api/bless-route en app.py): la IA decide si el
+// mensaje pide una acción de la app y con qué datos. Devuelve
+// { action, text, date, time, days } o null si no hay IA / no contestó.
+const BLESS_ROUTE_TIMEOUT_MS = 7000;
+function pendingDescription() {
+  const p = state.pending;
+  const lastBless = [...chatMemory].reverse().find(m => m.role === 'assistant');
+  const q = lastBless ? String(lastBless.content).slice(0, 160) : '';
+  if (!p) return q ? `(última frase de Bless: "${q}")` : 'ninguna';
+  const what = p.task || p.detail || p.text || '';
+  return `${p.type}${what ? ` sobre "${what}"` : ''}${q ? ` — Bless dijo: "${q}"` : ''}`;
+}
+async function routeIntent(text) {
+  if (!aiEnabled()) return null;
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), BLESS_ROUTE_TIMEOUT_MS);
+  try {
+    const now = new Date();
+    const res = await fetch('/api/bless-route', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        text,
+        history: recentHistoryFor(text).slice(-8),
+        context: {
+          now: `${ymd(now)} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`,
+          weekday: DAY_NAMES_ES[now.getDay()],
+          lang: currentLang(),
+          habits: (state.profile.habitos || []).map(h => h.label).join(', ') || 'ninguno',
+          pending: pendingDescription(),
+        },
+      }),
+      signal: controller.signal,
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    return data && data.ok && data.route ? data.route : null;
+  } catch (e) { return null; }
+  finally { clearTimeout(timeoutId); }
+}
+// Ejecuta lo que decidió el router. Devuelve true si se encargó del mensaje.
+async function executeRoute(route) {
+  const text = (route.text || '').trim();
+  const nowHM = (() => { const n = new Date(); return String(n.getHours()).padStart(2, '0') + ':' + String(n.getMinutes()).padStart(2, '0'); })();
+  switch (route.action) {
+    case 'add_habit': {
+      state.pending = null; state.pendingHabitSuggestion = null;
+      if (text && state.profile.habitos.some(h => h.label.toLowerCase() === text.toLowerCase() || habitDisplayLabel(h).toLowerCase() === text.toLowerCase())) {
+        const idx = state.profile.habitos.findIndex(h => h.label.toLowerCase() === text.toLowerCase() || habitDisplayLabel(h).toLowerCase() === text.toLowerCase());
+        markAppActed();
+        await agentSay(chatScroll, t('habitAlreadyChat', habitDisplayLabel(state.profile.habitos[idx])), 300, '🌱');
+        openHabitEditor(idx);
+        return true;
+      }
+      await offerHabitFromChat({ label: text, time: route.time || null, days: route.days && route.days.length ? route.days : null });
+      return true;
+    }
+    case 'add_task': {
+      state.pending = null;
+      if (!text) { await handleTaskOrNoteRequest({ kind: 'askTask', date: route.date || ymd(new Date()), time: route.time || null }); return true; }
+      let date = route.date || ymd(new Date());
+      if (!route.date && route.time && route.time <= nowHM) date = ymd(addDays(new Date(), 1)); // esa hora ya pasó hoy
+      if (date < ymd(new Date())) date = ymd(new Date());
+      await handleTaskOrNoteRequest({ kind: 'task', text: text.charAt(0).toUpperCase() + text.slice(1), date, time: route.time || null });
+      return true;
+    }
+    case 'add_note': {
+      if (!text) return false;
+      state.pending = null;
+      await handleTaskOrNoteRequest({ kind: 'note', text: text.charAt(0).toUpperCase() + text.slice(1), date: route.date && route.date >= ymd(new Date()) ? route.date : ymd(new Date()) });
+      return true;
+    }
+    case 'write_diary': {
+      state.pending = null;
+      await handleDiaryRequest({ text: text ? text.charAt(0).toUpperCase() + text.slice(1) : '' });
+      return true;
+    }
+    case 'save_achievement': {
+      state.pending = null;
+      const title = cleanLogroText(text);
+      if (!title) {
+        state.pending = { type: 'needsAchievementDetail' };
+        await agentSay(chatScroll, tp('achievementAskDetailFallback'), 300, '🏆');
+        return true;
+      }
+      addLogro(title);
+      const idx = state.profile.logros.length - 1;
+      setAvatarMood('proud', 1500);
+      await agentSay(chatScroll, t('logroSavedNamed', state.profile.logros[idx].text), 300, '🏆');
+      addNote(chatScroll, t('shareLogroPrompt'), 'agenda-note', () => openLogroShareCard(idx));
+      openLogroShareCard(idx);
+      return true;
+    }
+  }
+  return false;
+}
 function blessContextSnapshot() {
   const today = todayStr();
   const habits = Array.isArray(state.profile.habitos) ? state.profile.habitos : [];
@@ -1976,6 +2072,7 @@ const I18N = {
     noteSavedChat: (date) => `Guardé tu nota en el día de ${date} 📝`,
     diarySavedChat: 'Listo, lo escribí en tu diario de hoy 📔 Puedes verlo o agregarle foto y stickers en la pestaña Diario.',
     diaryAskChat: '¡Claro! ¿Qué quieres escribir en tu diario de hoy? Escríbemelo y lo guardo 📔',
+    habitAlreadyChat: (x) => `Ya tienes el hábito "${x}" 🌱 Te lo abro por si quieres cambiarle los días o la hora.`,
     openDiaryNote: '📔 Prefiero abrir mi diario',
     seeInDiaryNote: '📔 Ver en mi diario',
     alarmToggle: '⏰ Crear también una alarma en el reloj',
@@ -2458,6 +2555,7 @@ const I18N = {
     noteSavedChat: (date) => `I saved your note on ${date} 📝`,
     diarySavedChat: "Done, I wrote it in today's journal 📔 You can see it or add a photo and stickers in the Journal tab.",
     diaryAskChat: "Sure! What would you like to write in today's journal? Type it and I'll save it 📔",
+    habitAlreadyChat: (x) => `You already have the habit "${x}" 🌱 I'll open it in case you want to change its days or time.`,
     openDiaryNote: "📔 I'd rather open my journal",
     seeInDiaryNote: '📔 See it in my journal',
     alarmToggle: '⏰ Also set an alarm on the clock',
@@ -5833,9 +5931,17 @@ async function handleUserMessageInner(text) {
   addBubble(chatScroll, text, 'user');
   pushChatMemory('user', text);
 
+  // 1) La IA decide si es una acción de la app (más inteligente que las reglas
+  // de palabras). Si dice que es solo conversación, las reglas de palabras que
+  // disparan acciones se saltan (así "mi diario de hoy" no crea un hábito).
+  // Si la IA no está o no contesta, todo sigue como antes, con las reglas.
+  const route = await routeIntent(text);
+  if (route && route.action !== 'none' && await executeRoute(route)) return;
+  const routerSaysChat = !!(route && route.action === 'none');
+
   // "Escribe en mi diario…" → entrada de hoy del Diario.
   {
-    const dreq = parseDiaryRequest(text);
+    const dreq = routerSaysChat ? null : parseDiaryRequest(text);
     if (dreq) { state.pending = null; await handleDiaryRequest(dreq); return; }
     if (state.pending && state.pending.type === 'diaryText') {
       state.pending = null;
@@ -5845,7 +5951,7 @@ async function handleUserMessageInner(text) {
   // "Recuérdame X el viernes a las 6" / "anota que…" → tarea o nota del día.
   // Son pedidos explícitos: mandan sobre cualquier pregunta pendiente.
   {
-    const req = parseTaskOrNoteRequest(text);
+    const req = routerSaysChat ? null : parseTaskOrNoteRequest(text);
     // "Recuérdame meditar todos los días a las 7" se repite → es un hábito.
     if (req && (req.kind === 'task' || req.kind === 'askTask') && parseRepeatDays(text)) {
       const name = habitNameFromText(req.text || '') ;
@@ -5861,7 +5967,7 @@ async function handleUserMessageInner(text) {
   // repite → es un hábito. Se abre el editor ya lleno para elegir días y hora
   // (antes se agendaba como tarea suelta y chocaba con el límite de tareas).
   {
-    const repeatDays = parseRepeatDays(text);
+    const repeatDays = routerSaysChat ? null : parseRepeatDays(text);
     const pend = state.pending;
     if (repeatDays && (!pend || pend.type === 'needsTime' || pend.type === 'offerRecurring' || pend.type === 'offerSuggestion')) {
       const name = habitNameFromText(text) || (pend && pend.task ? pend.task : '');
@@ -5885,7 +5991,7 @@ async function handleUserMessageInner(text) {
     }
   }
   // Solo una hora ("A las 3:22 pm", "en 10 minutos"): va a la última tarea sin hora.
-  if (!state.pending) {
+  if (!state.pending && !routerSaysChat) {
     const when = parseWhenFromText(text);
     if (when.time && !cleanTaskText(when.rest) && await applyTimeToRecentTask(when.time, when.explicitDate ? when.date : null)) return;
   }
@@ -5939,7 +6045,7 @@ async function handleUserMessageInner(text) {
   if (wasOfferingSuggestion) state.pending = null;
   const pending = state.pending;
 
-  if (!pending && detectAddHabitIntent(text)) {
+  if (!pending && !routerSaysChat && detectAddHabitIntent(text)) {
     await agentSay(chatScroll, tp('addHabitFallback'), 300);
     openHabitEditor(null);
     return;
@@ -5968,7 +6074,7 @@ async function handleUserMessageInner(text) {
   const textNoRepeats = collapseRepeatedLetters(text);
   // "Es un logro", "guárdalo como logro", "agrégalo a mi perfil" (hablando de un
   // logro) → se guarda de verdad lo que contó justo antes.
-  if (looksLikeSaveAsLogro(textNoRepeats)) {
+  if (!routerSaysChat && looksLikeSaveAsLogro(textNoRepeats)) {
     const candidate = logroCandidateFromContext(state.pending || pending, text);
     if (candidate) {
       state.pending = null;
@@ -5983,7 +6089,7 @@ async function handleUserMessageInner(text) {
     await agentSay(chatScroll, tp('achievementAskDetailFallback'), 300, '🏆');
     return;
   }
-  if (!pending && /\b(agreg|añad|anad|guard|registr|anot|sum|nuev|otro|tengo|add|save|log|new)\w*\s+(?:(?:un|una|otro|mi|el|an?|another|my)\s+)?(?:nuevo\s+|new\s+)?(logro|achievement)s?\b/i.test(textNoRepeats)) {
+  if (!pending && !routerSaysChat && /\b(agreg|añad|anad|guard|registr|anot|sum|nuev|otro|tengo|add|save|log|new)\w*\s+(?:(?:un|una|otro|mi|el|an?|another|my)\s+)?(?:nuevo\s+|new\s+)?(logro|achievement)s?\b/i.test(textNoRepeats)) {
     const detail = cleanLogroText(textNoRepeats);
     if (!detail) {
       state.pending = { type: 'needsAchievementDetail' };
@@ -6172,7 +6278,7 @@ async function handleUserMessageInner(text) {
     state.pending = null;
   }
 
-  const time = extractTime(text);
+  const time = routerSaysChat ? null : extractTime(text);
   if (time) {
     if (overlapsWork(time)) {
       const alt = minutesToTime(findFreeSlotNear(timeToMinutes(time)));
@@ -6221,7 +6327,7 @@ async function handleUserMessageInner(text) {
   // gym"). Antes era al revés y "terminé con mi novio" acababa en "¿a qué hora
   // quieres practicar tu instrumento?".
   const inDifficultMoment = state.recentDifficultyAt && (Date.now() - state.recentDifficultyAt < 20 * 60 * 1000);
-  if (inDifficultMoment || looksLikeConversationalStatement(text) || looksLikeGoalOrAdvice(text) || !looksLikeTaskName(text)) {
+  if (routerSaysChat || inDifficultMoment || looksLikeConversationalStatement(text) || looksLikeGoalOrAdvice(text) || !looksLikeTaskName(text)) {
     const nudge = proactiveNudge();
     // Si suena a que está pasando por un momento difícil, Bless valida lo que
     // siente y le recuerda con calidez que tiene el diario como espacio seguro
