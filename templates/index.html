@@ -1906,6 +1906,7 @@ const I18N = {
     aiLimitNote: (price) => `🤍 Hoy ya conversamos un montón. En el plan gratis Bless tiene hasta ~15 mensajes al día; mañana seguimos. Con Premium (${price}) conversamos sin límite y Bless recuerda lo importante de ti. Toca aquí para verlo.`,
     memoriesFreeTeaser: 'Con Premium, Bless recuerda lo importante de lo que le cuentas (por ejemplo, "quiere retomar la guitarra") y te acompaña con eso los días siguientes. En el plan gratis, cada día empieza desde cero.',
     habitLimitMsg: (n) => `En el plan gratis puedes tener hasta ${n} hábitos 🌱. Con Premium son ilimitados. ¿Quieres verlo?`,
+    habitLimitYours: (x) => `Tus hábitos ahora: ${x}. Puedes borrar uno desde Perfil (✏️ → Eliminar hábito).`,
     habitLimitOk: 'Ver Premium',
     habitLimitOnboarding: (n) => `En el plan gratis puedes empezar con hasta ${n} hábitos — es justo lo que mejor funciona al comienzo 🌱. Con Premium son ilimitados.`,
     diaryPremiumStyleMsg: 'Este estilo es parte de Premium ✨ Incluye temas y stickers exclusivos para tu diario. ¿Quieres verlo?',
@@ -2382,6 +2383,7 @@ const I18N = {
     aiLimitNote: (price) => `🤍 We've talked a lot today. On the free plan Bless has up to ~15 messages a day; we'll pick it up tomorrow. With Premium (${price.replace('/mes', '/month')}) we talk without limits and Bless remembers what matters to you. Tap here to see it.`,
     memoriesFreeTeaser: 'With Premium, Bless remembers the important things you share (for example, "wants to get back to guitar") and supports you with that in the following days. On the free plan, each day starts from scratch.',
     habitLimitMsg: (n) => `On the free plan you can have up to ${n} habits 🌱. With Premium they're unlimited. Want to see it?`,
+    habitLimitYours: (x) => `Your habits now: ${x}. You can delete one from Profile (✏️ → Delete habit).`,
     habitLimitOk: 'See Premium',
     habitLimitOnboarding: (n) => `On the free plan you can start with up to ${n} habits — which is exactly what works best at the beginning 🌱. With Premium they're unlimited.`,
     diaryPremiumStyleMsg: 'This style is part of Premium ✨ It includes exclusive themes and stickers for your journal. Want to see it?',
@@ -3146,7 +3148,10 @@ function canAddHabit(extra = 1) {
   return isPremium || ((state.profile.habitos || []).length + extra) <= FREE_HABIT_LIMIT;
 }
 async function promptHabitLimit() {
-  if (await uiConfirm(t('habitLimitMsg', FREE_HABIT_LIMIT), { okText: t('habitLimitOk') })) openPremiumSheet();
+  // Se nombran los hábitos que cuentan, para que se vea cuáles son (alguno puede
+  // no aparecer hoy en el Calendario porque no le toca este día).
+  const names = (state.profile.habitos || []).map(h => `${h.icon || '🎯'} ${habitDisplayLabel(h)}`).join(', ');
+  if (await uiConfirm(t('habitLimitMsg', FREE_HABIT_LIMIT) + (names ? '\n\n' + t('habitLimitYours', names) : ''), { okText: t('habitLimitOk') })) openPremiumSheet();
 }
 const HABIT_SUGGESTED_MINUTES = { ejercicio: 30, caminar: 20, lectura: 15, meditacion: 10, escritura: 10, estudio: 30, orden: 15, finanzas: 10, gratitud: 5, musica: 20, idioma: 15, familia: 30 };
 function renderHabitSchedule() {
@@ -3860,6 +3865,8 @@ async function bootstrapApp() {
       Object.assign(state, stateData.state);
       state.settings = Object.assign({ language: null, country: null, theme: 'light' }, state.settings || {});
       state.profile.logros = state.profile.logros || [];
+      // Hábitos vacíos o rotos no deben contar para el límite.
+      state.profile.habitos = (state.profile.habitos || []).filter(h => h && String(h.label || '').trim());
       // Logros guardados con el pedido incluido ("Agreguemos un logro — Hoy logré…"):
       // se deja solo el logro.
       state.profile.logros.forEach(l => { if (l && l.text && LOGRO_LEADIN_RE.test(l.text)) { const c = cleanLogroText(l.text); if (c) l.text = c; } });
