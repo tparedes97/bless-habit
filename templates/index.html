@@ -559,6 +559,9 @@
   .task-sheet .tk-row label { flex: 1; display: flex; flex-direction: column; gap: 4px; font-size: 11.5px; color: var(--text-dim); }
   .task-sheet .tk-row input { padding: 9px; border-radius: 10px; border: 1px solid var(--border); background: var(--panel); color: var(--text); font-size: 14px; min-height: 40px; }
   .task-sheet .tk-sub { font-size: 12px; color: var(--text-dim); margin: 18px 0 8px; }
+  .day-off-habits { font-size: 12px; color: var(--text-dim); margin: 8px 2px 4px; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+  .day-off-chip { border: 1px dashed var(--border, rgba(127,127,127,.35)); background: transparent; color: var(--text-dim); border-radius: 999px; padding: 5px 10px; font-size: 12px; cursor: pointer; }
+  .day-off-chip em { font-style: normal; opacity: .8; }
   .task-sheet .tk-hint { font-size: 11.5px; color: var(--text-dim); margin-top: 6px; }
   .alarm-toggle { display: none; align-items: center; gap: 8px; margin-top: 12px; font-size: 13px; color: var(--text); cursor: pointer; }
   .alarm-toggle input { width: 18px; height: 18px; accent-color: var(--accent, #7C6CF0); }
@@ -1907,6 +1910,8 @@ const I18N = {
     memoriesFreeTeaser: 'Con Premium, Bless recuerda lo importante de lo que le cuentas (por ejemplo, "quiere retomar la guitarra") y te acompaña con eso los días siguientes. En el plan gratis, cada día empieza desde cero.',
     habitLimitMsg: (n) => `En el plan gratis puedes tener hasta ${n} hábitos 🌱. Con Premium son ilimitados. ¿Quieres verlo?`,
     habitLimitYours: (x) => `Tus hábitos ahora: ${x}. Puedes borrar uno desde Perfil (✏️ → Eliminar hábito).`,
+    deleteHabitConfirmQ: (x) => `¿Eliminar el hábito ${x}? Se borra de todos los días.`,
+    dayOffHabits: 'No salen este día:', daySkippedTag: 'quitado solo hoy (toca para volver)', dayNotScheduledTag: 'no le toca',
     habitLimitOk: 'Ver Premium',
     habitLimitOnboarding: (n) => `En el plan gratis puedes empezar con hasta ${n} hábitos — es justo lo que mejor funciona al comienzo 🌱. Con Premium son ilimitados.`,
     diaryPremiumStyleMsg: 'Este estilo es parte de Premium ✨ Incluye temas y stickers exclusivos para tu diario. ¿Quieres verlo?',
@@ -2384,6 +2389,8 @@ const I18N = {
     memoriesFreeTeaser: 'With Premium, Bless remembers the important things you share (for example, "wants to get back to guitar") and supports you with that in the following days. On the free plan, each day starts from scratch.',
     habitLimitMsg: (n) => `On the free plan you can have up to ${n} habits 🌱. With Premium they're unlimited. Want to see it?`,
     habitLimitYours: (x) => `Your habits now: ${x}. You can delete one from Profile (✏️ → Delete habit).`,
+    deleteHabitConfirmQ: (x) => `Delete the habit ${x}? It will be removed from every day.`,
+    dayOffHabits: 'Not on this day:', daySkippedTag: 'removed just today (tap to bring back)', dayNotScheduledTag: 'not scheduled',
     habitLimitOk: 'See Premium',
     habitLimitOnboarding: (n) => `On the free plan you can start with up to ${n} habits — which is exactly what works best at the beginning 🌱. With Premium they're unlimited.`,
     diaryPremiumStyleMsg: 'This style is part of Premium ✨ It includes exclusive themes and stickers for your journal. Want to see it?',
@@ -8239,6 +8246,19 @@ function promptDeleteDayItem(dateStr, item) {
       closeDayItemAction();
     };
     wrap.appendChild(skipBtn);
+
+    const delBtn = document.createElement('button');
+    delBtn.className = 'qr-btn';
+    delBtn.style.color = '#d9534f';
+    delBtn.textContent = '🗑️ ' + t('heDeleteBtn');
+    delBtn.onclick = async () => {
+      closeDayItemAction();
+      const h = state.profile.habitos[habitIdx];
+      if (!h || !(await uiConfirm(t('deleteHabitConfirmQ', `${h.icon} ${habitDisplayLabel(h)}`), { danger: true, okText: t('deleteWord') }))) return;
+      editingHabitIndex = habitIdx;
+      deleteHabitFromEditor();
+    };
+    wrap.appendChild(delBtn);
   }
 
   document.getElementById('day-item-action-cancel-btn').textContent = t('cancelBtn');
@@ -8268,6 +8288,11 @@ function renderCalDay() {
     </div>`).join('') : `<div style="font-size:12px;color:var(--text-dim);">${t('sinActividades')}</div>`;
   const pctLabel = day.pct !== null ? t('pctCumplido', day.pct) : (day.items.length ? t('programadoConBless') : t('sinDatos'));
   const isPast = dateStr < ymd(new Date());
+  // Hábitos que existen pero no salen este día (no les toca, o se quitaron
+  // "solo por hoy"): se muestran aparte, así no parece que "desaparecieron"
+  // y se entiende por qué cuentan para el límite.
+  const offHabits = isPast ? [] : (state.profile.habitos || []).map((h, i) => ({ h, i })).filter(({ h }) => !day.items.some(it => it.habitKey === h.key && (it.label === h.label || it.task === h.label)));
+  const offHtml = offHabits.length ? `<div class="day-off-habits">${t('dayOffHabits')} ${offHabits.map(({ h, i }) => `<button type="button" class="day-off-chip" data-off-habit="${i}">${h.icon || '🎯'} ${escapeHtml(habitDisplayLabel(h))} · <em>${(h.skippedDates || []).includes(dateStr) ? t('daySkippedTag') : t('dayNotScheduledTag')}</em></button>`).join('')}</div>` : '';
   const tasks = tasksForDate(dateStr);
   const notes = notesForDate(dateStr);
   const tasksHtml = tasks.length ? tasks.map(tk => `
@@ -8287,7 +8312,7 @@ function renderCalDay() {
       <button id="day-next" ${calDayOffset >= CAL_DAY_MAX_AHEAD ? 'disabled' : ''}>›</button>
     </div>
     <div class="day-section-head"><span>🌱 ${t('daySecHabits')}</span><button type="button" class="day-sec-add" id="day-add-habit">＋ ${t('daySecAdd')}</button></div>
-    <div id="day-items">${itemsHtml}</div>
+    <div id="day-items">${itemsHtml}</div>${offHtml}
     <div class="day-section-head"><span>✅ ${t('daySecTasks')}</span>${isPast ? '' : `<button type="button" class="day-sec-add" id="day-add-task">＋ ${t('daySecAdd')}</button>`}</div>
     <div id="day-tasks">${tasksHtml}</div>
     <div class="day-section-head"><span>📝 ${t('daySecNotes')}</span><button type="button" class="day-sec-add" id="day-add-note">＋ ${t('daySecAdd')}</button></div>
@@ -8296,6 +8321,19 @@ function renderCalDay() {
   document.getElementById('day-prev').onclick = () => { calDayOffset--; renderCalDay(); };
   document.getElementById('day-next').onclick = () => { if (calDayOffset < CAL_DAY_MAX_AHEAD) { calDayOffset++; renderCalDay(); } };
   document.getElementById('day-add-habit').onclick = () => openAddHabitPicker();
+  calBody.querySelectorAll('[data-off-habit]').forEach(b => {
+    b.onclick = () => {
+      const h = state.profile.habitos[parseInt(b.dataset.offHabit, 10)];
+      if (h && (h.skippedDates || []).includes(dateStr)) {
+        // Se había quitado solo por hoy: tocarlo lo devuelve a este día.
+        h.skippedDates = h.skippedDates.filter(d => d !== dateStr);
+        if (isToday) syncTodayAgendaForHabit(h);
+        saveStateToServer(); refreshHabitViews();
+        return;
+      }
+      openHabitEditor(parseInt(b.dataset.offHabit, 10));
+    };
+  });
   const addTaskBtn = document.getElementById('day-add-task');
   if (addTaskBtn) addTaskBtn.onclick = () => openTaskEditor(null, dateStr);
   document.getElementById('day-add-note').onclick = () => openNoteEditor(null, dateStr);
