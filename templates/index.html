@@ -188,6 +188,7 @@
   .tag-chip { display: inline-block; background: var(--panel-3); border-radius: 999px; padding: 5px 11px; font-size: 12px; margin: 3px 4px 3px 0; }
   .logros-card { border-color: #7a5f1e; background: linear-gradient(135deg, #2a2311, #1c1810); }
   .logros-card h4 { color: #f0d78c; }
+  .logro-thumb { width: 28px; height: 28px; border-radius: 8px; object-fit: cover; flex-shrink: 0; }
   .logro-custom-label { font-size: 11px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--text-dim); margin: 12px 0 6px; }
   .logro-custom-row { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
   .logro-swatch { width: 30px; height: 30px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; padding: 0; box-shadow: 0 1px 4px rgba(0,0,0,.25); }
@@ -1117,9 +1118,10 @@
         <label class="qr-btn" style="cursor:pointer;margin:0;"><span data-i18n="logroAddPhoto">📷 Agregar foto</span><input type="file" id="logro-photo-input" accept="image/*" style="display:none;"></label>
         <button type="button" class="qr-btn" id="logro-photo-remove" style="display:none;margin:0;" data-i18n="logroRemovePhoto">Quitar foto</button>
       </div>
-      <div style="display:flex;gap:8px;margin-top:14px;">
-        <button class="send-btn" id="logro-share-download-btn" style="flex:1;" data-i18n="downloadBtn">📥 Descargar</button>
-        <button class="send-btn" id="logro-share-native-btn" style="flex:1;display:none;background:linear-gradient(135deg, var(--accent-2), var(--accent-3));" data-i18n="shareBtn">📤 Compartir</button>
+      <button type="button" class="send-btn" id="logro-save-btn" style="width:100%;min-height:48px;flex-shrink:0;margin-top:14px;background:linear-gradient(135deg, var(--accent-2), var(--accent-3));" data-i18n="logroSaveBtn">💾 Guardar cambios</button>
+      <div style="display:flex;gap:8px;margin-top:8px;">
+        <button class="send-btn" id="logro-share-download-btn" style="flex:1;min-height:48px;" data-i18n="downloadBtn">📥 Descargar</button>
+        <button class="send-btn" id="logro-share-native-btn" style="flex:1;min-height:48px;display:none;background:linear-gradient(135deg, var(--accent-2), var(--accent-3));" data-i18n="shareBtn">📤 Compartir</button>
       </div>
       <div style="text-align:center;margin-top:14px;"><span class="logout-link" id="logro-share-close-btn" data-i18n="cancelBtn"></span></div>
     </div>
@@ -1927,6 +1929,8 @@ const I18N = {
     downloadBtn: '📥 Descargar', shareBtn: '📤 Compartir',
     logroCardUnlocked: 'LOGRO DESBLOQUEADO', logroCardBrand: 'blesshabit.app',
     logroColorLabel: 'Color', logroIconLabel: 'Ícono', logroAddPhoto: '📷 Agregar foto', logroRemovePhoto: 'Quitar foto',
+    logroSaveBtn: '💾 Guardar cambios', logroSaving: 'Guardando…', logroSavedBtn: '✓ Guardado', logroDiscardBtn: 'Descartar',
+    logroUnsavedQ: '¿Guardar los cambios de tu tarjeta (color, ícono y foto)?', logroPhotoSaveFailed: 'No se pudo guardar la foto. Revisa tu conexión e intenta de nuevo.',
     shareLogroPrompt: '📤 Compartir este logro en tus historias',
     shareLogroDownloadedNote: '¡Listo! Se descargó la imagen de tu logro. 🎉',
     diaryTitle: '📔 Tu diario', diaryTodayLabel: 'Hoy',
@@ -2410,6 +2414,8 @@ const I18N = {
     downloadBtn: '📥 Download', shareBtn: '📤 Share',
     logroCardUnlocked: 'ACHIEVEMENT UNLOCKED', logroCardBrand: 'blesshabit.app',
     logroColorLabel: 'Color', logroIconLabel: 'Icon', logroAddPhoto: '📷 Add photo', logroRemovePhoto: 'Remove photo',
+    logroSaveBtn: '💾 Save changes', logroSaving: 'Saving…', logroSavedBtn: '✓ Saved', logroDiscardBtn: 'Discard',
+    logroUnsavedQ: 'Save the changes to your card (color, icon and photo)?', logroPhotoSaveFailed: "Couldn't save the photo. Check your connection and try again.",
     shareLogroPrompt: '📤 Share this achievement to your stories',
     shareLogroDownloadedNote: 'Done! Your achievement image was downloaded. 🎉',
     diaryTitle: '📔 Your journal', diaryTodayLabel: 'Today',
@@ -5436,12 +5442,34 @@ async function logroCardBlob() {
   const canvas = document.getElementById('logro-share-canvas');
   return new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
 }
+// Lo que se va eligiendo en la tarjeta (color, ícono, foto) queda como
+// borrador hasta tocar "Guardar cambios"; la foto se sube a las fotos de la
+// cuenta (como las del diario) y el logro guarda solo su URL.
+let logroDraft = null; // { color, icon, photoData, photoUrl, dirty }
+function logroForDrawing(logro) {
+  return Object.assign({}, logro, logroDraft ? { color: logroDraft.color, icon: logroDraft.icon } : {});
+}
+function setLogroSharePhotoFrom(src) {
+  if (!src) { logroSharePhoto = null; redrawLogroShare(); return; }
+  const img = new Image();
+  img.onload = () => { logroSharePhoto = img; redrawLogroShare(); };
+  img.onerror = () => { logroSharePhoto = null; redrawLogroShare(); };
+  img.src = src;
+}
+function refreshLogroSaveBtn() {
+  const btn = document.getElementById('logro-save-btn');
+  btn.disabled = !(logroDraft && logroDraft.dirty);
+  btn.style.opacity = btn.disabled ? '.55' : '1';
+}
 function openLogroShareCard(idx) {
   const logro = state.profile.logros && state.profile.logros[idx];
   if (!logro) return;
-  if (currentShareLogroIdx !== idx) logroSharePhoto = null;
   currentShareLogroIdx = idx;
-  redrawLogroShare();
+  logroDraft = { color: logro.color || null, icon: logro.icon || null, photoData: null, photoUrl: logro.photo || null, dirty: false };
+  logroSharePhoto = null;
+  document.getElementById('logro-save-btn').textContent = t('logroSaveBtn');
+  refreshLogroSaveBtn();
+  setLogroSharePhotoFrom(logro.photo || null);
   const nativeBtn = document.getElementById('logro-share-native-btn');
   // Se detecta soporte real de "compartir con archivo adjunto" (no solo texto) —
   // en desktop casi nunca está disponible, así que el botón queda oculto y solo
@@ -5453,8 +5481,8 @@ function openLogroShareCard(idx) {
 function redrawLogroShare() {
   const logro = state.profile.logros && state.profile.logros[currentShareLogroIdx];
   if (!logro) return;
-  drawLogroCard(document.getElementById('logro-share-canvas'), logro);
-  const style = logroCardStyle(logro);
+  drawLogroCard(document.getElementById('logro-share-canvas'), logroForDrawing(logro));
+  const style = logroCardStyle(logroForDrawing(logro));
   const colors = document.getElementById('logro-colors');
   colors.innerHTML = '';
   LOGRO_COLORS.forEach(c => {
@@ -5462,7 +5490,7 @@ function redrawLogroShare() {
     b.type = 'button';
     b.className = 'logro-swatch' + (style.gradient === c.gradient ? ' selected' : '');
     b.style.background = `linear-gradient(135deg, ${c.gradient[0]}, ${c.gradient[1]})`;
-    b.onclick = () => { logro.color = c.key; saveStateToServer(); redrawLogroShare(); };
+    b.onclick = () => { logroDraft.color = c.key; logroDraft.dirty = true; refreshLogroSaveBtn(); redrawLogroShare(); };
     colors.appendChild(b);
   });
   const icons = document.getElementById('logro-icons');
@@ -5472,25 +5500,64 @@ function redrawLogroShare() {
     b.type = 'button';
     b.className = 'logro-icon-opt' + (style.icon === ic ? ' selected' : '');
     b.textContent = ic;
-    b.onclick = () => { logro.icon = ic; saveStateToServer(); redrawLogroShare(); };
+    b.onclick = () => { logroDraft.icon = ic; logroDraft.dirty = true; refreshLogroSaveBtn(); redrawLogroShare(); };
     icons.appendChild(b);
   });
   document.getElementById('logro-photo-remove').style.display = logroSharePhoto ? 'inline-flex' : 'none';
 }
-document.getElementById('logro-photo-input').addEventListener('change', (e) => {
+document.getElementById('logro-photo-input').addEventListener('change', async (e) => {
   const file = e.target.files && e.target.files[0];
   e.target.value = '';
-  if (!file) return;
-  const url = URL.createObjectURL(file);
-  const img = new Image();
-  img.onload = () => { logroSharePhoto = img; redrawLogroShare(); setTimeout(() => URL.revokeObjectURL(url), 1000); };
-  img.src = url;
+  if (!file || !logroDraft) return;
+  try {
+    const dataUrl = await resizeImageFile(file, 1000, 0.82);
+    logroDraft.photoData = dataUrl; logroDraft.photoUrl = null; logroDraft.dirty = true;
+    refreshLogroSaveBtn();
+    setLogroSharePhotoFrom(dataUrl);
+  } catch (err) { /* imagen ilegible: se ignora */ }
 });
-document.getElementById('logro-photo-remove').onclick = () => { logroSharePhoto = null; redrawLogroShare(); };
-function closeLogroShareCard() {
+document.getElementById('logro-photo-remove').onclick = () => {
+  if (!logroDraft) return;
+  logroDraft.photoData = null; logroDraft.photoUrl = null; logroDraft.dirty = true;
+  refreshLogroSaveBtn();
+  setLogroSharePhotoFrom(null);
+};
+async function saveLogroDraft() {
+  const logro = state.profile.logros && state.profile.logros[currentShareLogroIdx];
+  if (!logro || !logroDraft || !logroDraft.dirty) return true;
+  const btn = document.getElementById('logro-save-btn');
+  btn.disabled = true; btn.textContent = t('logroSaving');
+  let photo = logroDraft.photoUrl;
+  if (logroDraft.photoData) {
+    const url = await uploadDiaryPhoto(logroDraft.photoData);
+    if (!url || url.startsWith('data:')) { btn.textContent = t('logroSaveBtn'); refreshLogroSaveBtn(); await uiAlert(t('logroPhotoSaveFailed')); return false; }
+    photo = url;
+  }
+  logro.color = logroDraft.color || undefined;
+  logro.icon = logroDraft.icon || undefined;
+  if (photo) logro.photo = photo; else delete logro.photo;
+  logroDraft = { color: logro.color || null, icon: logro.icon || null, photoData: null, photoUrl: logro.photo || null, dirty: false };
+  saveStateToServer();
+  renderProfile();
+  btn.textContent = t('logroSavedBtn');
+  refreshLogroSaveBtn();
+  setTimeout(() => { if (logroDraft && !logroDraft.dirty) btn.textContent = t('logroSaveBtn'); }, 2200);
+  return true;
+}
+document.getElementById('logro-save-btn').onclick = () => { saveLogroDraft(); };
+function closeLogroShareCardNow() {
   document.getElementById('logro-share-overlay').style.display = 'none';
   currentShareLogroIdx = null;
   logroSharePhoto = null;
+  logroDraft = null;
+}
+// Al cerrar con cambios sin guardar, se pregunta si guardarlos.
+async function closeLogroShareCard() {
+  if (logroDraft && logroDraft.dirty) {
+    const save = await uiDialog({ message: t('logroUnsavedQ'), okText: t('logroSaveBtn'), cancelText: t('logroDiscardBtn') });
+    if (save && !(await saveLogroDraft())) return;
+  }
+  closeLogroShareCardNow();
 }
 document.getElementById('logro-share-close-btn').onclick = closeLogroShareCard;
 document.getElementById('logro-share-overlay').addEventListener('click', (e) => {
@@ -6511,7 +6578,7 @@ function renderProfile() {
     <div class="profile-card"><h4>${t('diasDificilesTitle')}</h4>${chipList(optLabelList('diasDificiles', p.diasDificiles))}</div>
     <div class="profile-card"><h4>${t('habitosTitle')}${isPremium ? '' : ` <span class="day-habit-count">${t('habitCountFree', (p.habitos || []).length, FREE_HABIT_LIMIT)}</span>`}</h4><div>${habitsHtml || '—'}</div></div>
     <div class="profile-card logros-card"><h4>${t('logrosTitle')}</h4>
-      ${(p.logros && p.logros.length) ? p.logros.map((l, i) => ({l, i})).reverse().map(({l, i}) => `<div class="logro-chip">${l.icon || '🏆'} ${l.text}<span class="logro-share-btn" data-logro-idx="${i}" title="${t('shareLogroIconTitle')}">📤</span><span class="logro-delete-btn" data-logro-idx="${i}" title="${t('deleteLogroIconTitle')}">🗑️</span><span class="logro-date">${l.date}</span></div>`).join('') : `<div style="font-size:13px;color:var(--text-dim);">${t('noLogros')}</div>`}
+      ${(p.logros && p.logros.length) ? p.logros.map((l, i) => ({l, i})).reverse().map(({l, i}) => `<div class="logro-chip">${l.photo ? `<img class="logro-thumb" src="${escapeHtml(l.photo)}" alt="">` : (l.icon || '🏆')} ${l.text}<span class="logro-share-btn" data-logro-idx="${i}" title="${t('shareLogroIconTitle')}">📤</span><span class="logro-delete-btn" data-logro-idx="${i}" title="${t('deleteLogroIconTitle')}">🗑️</span><span class="logro-date">${l.date}</span></div>`).join('') : `<div style="font-size:13px;color:var(--text-dim);">${t('noLogros')}</div>`}
     </div>
     <div class="profile-card">
       <h4>${t('addHabitTitle')}</h4>
