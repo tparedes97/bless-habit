@@ -294,8 +294,8 @@
   .delete-account-link { background: none; border: none; color: #d9534f; font-size: 13px; text-decoration: underline; cursor: pointer; padding: 8px; }
   .ui-choice-list { display: flex; flex-direction: column; gap: 8px; }
   .ui-choice-list button { width: 100%; min-height: 46px; }
-  body.ad-banner-on #view-calendar, body.ad-banner-on #view-metrics { padding-bottom: var(--ad-banner-h, 60px); }
-  body.ad-banner-on .day-add-fab { bottom: calc(76px + var(--ad-banner-h, 60px) + env(safe-area-inset-bottom, 0px)); }
+  body.ad-banner-on #view-calendar, body.ad-banner-on #view-metrics { padding-bottom: calc(var(--ad-banner-h, 60px) + 8px); }
+  body.ad-banner-on .day-add-fab { bottom: calc(84px + var(--ad-banner-h, 60px) + env(safe-area-inset-bottom, 0px)); }
   .terms-gate { position: fixed; inset: 0; z-index: 120; background: var(--bg); display: flex; align-items: center; justify-content: center; padding: 20px 16px; overflow-y: auto; }
   .terms-card { width: 100%; max-width: 420px; background: var(--panel); border-radius: 22px; padding: 26px 22px; box-shadow: 0 12px 40px rgba(0,0,0,.12); text-align: left; margin: auto; }
   .terms-emoji { font-size: 40px; text-align: center; }
@@ -4217,7 +4217,8 @@ async function updateAdBanner(tab) {
   try {
     if (want && !adBannerShown) {
       const bar = document.getElementById('tabbar');
-      const margin = bar ? Math.round(bar.getBoundingClientRect().height) : 64;
+      // + 8 dp de aire: AdMob pide que el banner no quede pegado a botones (clics accidentales).
+      const margin = (bar ? Math.round(bar.getBoundingClientRect().height) : 64) + 8;
       await A.showBanner({ adId: ADMOB.bannerId, adSize: 'ADAPTIVE_BANNER', position: 'BOTTOM_CENTER', margin, isTesting: !!ADMOB.testing });
       adBannerShown = true; adBannerHidden = false;
       document.body.classList.add('ad-banner-on');
