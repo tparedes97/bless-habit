@@ -292,6 +292,17 @@ def init_db():
             PRIMARY KEY (user_id, day)
         )
     """)
+    # Recompensas de AdMob confirmadas por Google (verificación del lado del
+    # servidor, SSV): cada anuncio visto completo llega aquí firmado por Google.
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS ad_rewards (
+            transaction_id TEXT PRIMARY KEY,
+            user_id INTEGER NOT NULL,
+            custom_data TEXT,
+            used INTEGER NOT NULL DEFAULT 0,
+            created_at REAL NOT NULL
+        )
+    """)
     # Reportes de respuestas de la IA (requisito de Google Play para apps con
     # contenido generado por IA: poder reportarlo desde la app).
     conn.execute("""
@@ -811,6 +822,7 @@ def api_me():
         "premium": bool(user["is_premium"]),
         "appLock": bool(user.get("app_pin_hash")),
         "termsAccepted": user.get("terms_version") == TERMS_VERSION,
+        "uid": user_id,
     })
 
 
@@ -1630,6 +1642,112 @@ def _register_legal_routes():
 _register_legal_routes()
 
 
+# ============================================================
+# app-ads.txt — AdMob lo busca en el sitio web de la ficha de Play Store para
+# confirmar que los anuncios de la app son tuyos (sin él, limita los anuncios).
+# ADMOB_PUBLISHER_ID = "pub-XXXXXXXXXXXXXXXX" (AdMob → Configuración → ID de editor).
+# ============================================================
+@app.route("/app-ads.txt")
+def app_ads_txt():
+    pub = os.environ.get("ADMOB_PUBLISHER_ID", "").strip()
+    if pub.startswith("ca-app-"):
+        pub = pub[len("ca-app-"):]
+    body = f"google.com, {pub}, DIRECT, f08c47fec0942fa0\n" if pub else "# Configura ADMOB_PUBLISHER_ID en Render\n"
+    return Response(body, mimetype="text/plain")
+
+
+# ============================================================
+# VERIFICACIÓN DE RECOMPENSAS DE ADMOB (SSV) — Google llama a esta URL cuando
+# alguien termina un anuncio con recompensa, firmando los datos con su clave.
+# Se configura en AdMob → bloque Bonificado → "Verificación del lado del
+# servidor" → URL: https://bless-habit.onrender.com/admob/ssv
+# Con ADMOB_SSV_REQUIRED=1, los mensajes extra y el resumen semanal solo se
+# dan si Google confirmó el anuncio (nadie puede pedirlos sin verlo).
+# ============================================================
+ADMOB_SSV_REQUIRED = os.environ.get("ADMOB_SSV_REQUIRED", "").strip() in ("1", "true", "yes")
+ADMOB_VERIFIER_KEYS_URL = "https://www.gstatic.com/admob/reward/verifier-keys.json"
+_admob_keys_cache = {"at": 0, "keys": {}}
+
+
+def admob_verifier_keys(force=False):
+    if not force and _admob_keys_cache["keys"] and time.time() - _admob_keys_cache["at"] < 12 * 3600:
+        return _admob_keys_cache["keys"]
+    resp = requests.get(ADMOB_VERIFIER_KEYS_URL, timeout=10)
+    resp.raise_for_status()
+    keys = {str(k["keyId"]): k["pem"] for k in resp.json().get("keys", []) if k.get("keyId") is not None and k.get("pem")}
+    _admob_keys_cache.update(at=time.time(), keys=keys)
+    return keys
+
+
+def verify_admob_ssv(query_string):
+    """True si la firma de Google es válida para estos parámetros."""
+    from cryptography.hazmat.primitives import hashes, serialization
+    from cryptography.hazmat.primitives.asymmetric import ec
+    from urllib.parse import parse_qs
+    if "&signature=" not in query_string:
+        return False
+    content, rest = query_string.split("&signature=", 1)
+    params = parse_qs(rest)
+    sig_b64 = rest.split("&", 1)[0]
+    key_id = (params.get("key_id") or [""])[0]
+    if not sig_b64 or not key_id:
+        return False
+    signature = base64.urlsafe_b64decode(sig_b64 + "=" * (-len(sig_b64) % 4))
+    for force in (False, True):
+        pem = admob_verifier_keys(force=force).get(key_id)
+        if pem:
+            break
+    if not pem:
+        return False
+    public_key = serialization.load_pem_public_key(pem.encode())
+    try:
+        public_key.verify(signature, content.encode(), ec.ECDSA(hashes.SHA256()))
+        return True
+    except Exception:
+        return False
+
+
+@app.route("/admob/ssv")
+def admob_ssv():
+    qs = request.query_string.decode("utf-8", "replace")
+    if not qs:
+        return "ok"  # AdMob prueba la URL sin parámetros al configurarla
+    try:
+        if not verify_admob_ssv(qs):
+            return "invalid signature", 400
+    except Exception as e:
+        print(f"[admob ssv] error verificando: {e}")
+        return "error", 500
+    tx = request.args.get("transaction_id", "")[:120]
+    try:
+        uid = int(request.args.get("user_id", ""))
+    except ValueError:
+        return "ok"  # anuncio de prueba sin usuario: se acepta y se ignora
+    if tx:
+        conn = get_db()
+        conn.execute("INSERT OR IGNORE INTO ad_rewards (transaction_id, user_id, custom_data, used, created_at) VALUES (?, ?, ?, 0, ?)",
+                     (tx, uid, request.args.get("custom_data", "")[:120], time.time()))
+        conn.execute("DELETE FROM ad_rewards WHERE created_at < ?", (time.time() - 7 * 86400,))
+        conn.commit()
+        conn.close()
+    return "ok"
+
+
+def consume_ssv_reward(conn, user_id, kind, nonce):
+    """Con SSV obligatorio: busca la recompensa confirmada por Google para este
+    anuncio (custom_data = "tipo:nonce") y la marca como usada."""
+    if not ADMOB_SSV_REQUIRED:
+        return True
+    if not nonce:
+        return False
+    row = conn.execute("SELECT transaction_id FROM ad_rewards WHERE user_id = ? AND custom_data = ? AND used = 0",
+                       (user_id, f"{kind}:{nonce}")).fetchone()
+    if not row:
+        return False
+    conn.execute("UPDATE ad_rewards SET used = 1 WHERE transaction_id = ?", (row[0],))
+    return True
+
+
 @app.route("/healthz")
 def healthz():
     # Para un servicio externo gratis (ej. cron-job.org) que lo visite cada 10
@@ -1746,8 +1864,12 @@ def api_ad_reward():
         return jsonify({"ok": False, "error": "No autenticado"}), 401
     data = request.get_json(force=True) or {}
     kind = data.get("kind")
+    nonce = str(data.get("nonce") or "")[:64]
     conn = get_db()
     try:
+        if kind in ("ai", "weekly") and not consume_ssv_reward(conn, user_id, kind, nonce):
+            # Google todavía no confirmó el anuncio (puede tardar unos segundos): la app reintenta.
+            return jsonify({"ok": False, "error": "pending"}), 409
         if kind == "ai":
             key = time.strftime("%Y-%m-%d", time.gmtime()) + "-b"
             if _usage_get(conn, user_id, key) >= AD_AI_REWARDS_PER_DAY:
@@ -1761,7 +1883,7 @@ def api_ad_reward():
                 return jsonify({"ok": False, "error": "bad_week"}), 400
             if _usage_get(conn, user_id, "wk-" + week) == 0:
                 _usage_add(conn, user_id, "wk-" + week)
-                conn.commit()
+            conn.commit()
             return jsonify({"ok": True})
         return jsonify({"ok": False, "error": "bad_kind"}), 400
     finally:

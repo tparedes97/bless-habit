@@ -1954,6 +1954,7 @@ const I18N = {
     shareLogroTitle: 'Comparte tu logro',
     downloadBtn: '📥 Descargar', shareBtn: '📤 Compartir',
     logroCardUnlocked: 'LOGRO DESBLOQUEADO', logroCardBrand: 'blesshabit.app',
+    rewardNotConfirmed: 'No pudimos confirmar el anuncio con Google. Revisa tu conexión e intenta de nuevo en un momento 🙏',
     rewardDailyCapMsg: 'Por hoy ya viste todos los anuncios disponibles 🌙 Mañana puedes ver más, o hacerte Premium para no tener límites.',
     farDateMsg: (n) => `En el plan gratis puedes programar tareas hasta ${n} días adelante 📅. Puedes ver un anuncio corto para desbloquear este día, o hacerte Premium para programar sin límite de fecha.`,
     farDateHint: (n) => `Plan gratis: tareas hasta ${n} días adelante. Desbloquea ese día con un anuncio corto 🙂`,
@@ -2468,6 +2469,7 @@ const I18N = {
     shareLogroTitle: 'Share your achievement',
     downloadBtn: '📥 Download', shareBtn: '📤 Share',
     logroCardUnlocked: 'ACHIEVEMENT UNLOCKED', logroCardBrand: 'blesshabit.app',
+    rewardNotConfirmed: "We couldn't confirm the ad with Google. Check your connection and try again in a moment 🙏",
     rewardDailyCapMsg: "You've watched all the ads available today 🌙 You can watch more tomorrow, or go Premium for no limits.",
     farDateMsg: (n) => `On the free plan you can schedule tasks up to ${n} days ahead 📅. Watch a short ad to unlock this day, or go Premium to schedule with no date limit.`,
     farDateHint: (n) => `Free plan: tasks up to ${n} days ahead. Unlock that day with a short ad 🙂`,
@@ -4105,6 +4107,7 @@ async function bootstrapApp() {
     isPremium = !!me.premium;
     premiumSource = me.premiumSource || null;
     currentUserEmail = me.email || '';
+    currentUserId = me.uid || null;
     loginBtn.style.display = 'none';
     loginLoading.style.display = 'block';
     appLockEnabled = !!me.appLock;
@@ -4283,6 +4286,7 @@ async function syncAdBannerVisibility() {
 })();
 // --- Tope diario de anuncios con recompensa (para que nunca se sienta una app de anuncios) ---
 const REWARDED_DAILY_CAP = 8;
+let currentUserId = null, lastRewardNonce = null;
 function adStatsToday() {
   const today = ymd(new Date());
   if (!state.adStats || state.adStats.date !== today) state.adStats = { date: today, rewarded: 0 };
@@ -4298,12 +4302,15 @@ async function offerAdOrPremium(message, adLabel) {
     { key: null, label: t('dialogCancel') },
   ]);
   if (choice === 'premium') { openPremiumSheet(); return false; }
-  return choice === 'ad' ? await watchRewardedAd() : false;
+  return choice === 'ad' ? await watchRewardedAd(adLabel === t('diaryAdBtn') ? 'diary' : 'generic') : false;
 }
 // --- Anuncio con recompensa: +1 tarea en un día ---
 function taskBonusFor(date) { return Math.min(REWARD_TASKS_MAX_PER_DAY, ((state.taskBonus || {})[date]) || 0); }
 function canWatchAdForTask(date) { return canWatchRewarded() && taskBonusFor(date) < REWARD_TASKS_MAX_PER_DAY; }
-async function watchRewardedAd() {
+// kind: para qué es el anuncio ("ai", "weekly", "task", "far", "diary"). Va en
+// la verificación de Google (SSV) junto con un código único, para que el
+// servidor confirme que ese anuncio se vio de verdad.
+async function watchRewardedAd(kind = 'generic') {
   const A = admob();
   if (!A || !canWatchRewarded()) { if (A) await uiAlert(t('rewardDailyCapMsg')); return false; }
   if (!(await initNativeAds())) { await uiAlert(t('rewardAdUnavailable')); return false; }
@@ -4315,7 +4322,9 @@ async function watchRewardedAd() {
       A.addListener('onRewardedVideoAdDismissed', res).then(h => handles.push(h));
       A.addListener('onRewardedVideoAdFailedToShow', res).then(h => handles.push(h));
     });
-    await A.prepareRewardVideoAd({ adId: ADMOB.rewardedId, isTesting: !!ADMOB.testing.rewarded });
+    lastRewardNonce = Math.random().toString(36).slice(2) + Date.now().toString(36);
+    const ssv = currentUserId ? { ssv: { userId: String(currentUserId), customData: `${kind}:${lastRewardNonce}` } } : {};
+    await A.prepareRewardVideoAd(Object.assign({ adId: ADMOB.rewardedId, isTesting: !!ADMOB.testing.rewarded }, ssv));
     await A.showRewardVideoAd();
     await Promise.race([closed, new Promise(r => setTimeout(r, 3000))]);
   } catch (e) {
@@ -4336,7 +4345,7 @@ function dateBeyondFree(date) {
   return !((state.farDays || {})[date]);
 }
 async function unlockFarDay(date) {
-  if (!(await watchRewardedAd())) return false;
+  if (!(await watchRewardedAd('far'))) return false;
   const today = ymd(new Date());
   state.farDays = state.farDays || {};
   Object.keys(state.farDays).forEach(d => { if (d < today) delete state.farDays[d]; });
@@ -4356,13 +4365,25 @@ async function promptFarDate(date) {
   return choice === 'ad' ? await unlockFarDay(date) : false;
 }
 
+// Pide la recompensa al servidor; si Google aún no confirmó el anuncio (SSV),
+// reintenta unos segundos.
+async function postAdReward(body) {
+  for (let i = 0; i < 8; i++) {
+    try {
+      const res = await fetch('/api/ad-reward', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(Object.assign({ nonce: lastRewardNonce }, body)) });
+      const data = await res.json().catch(() => null);
+      if (res.status === 409 && data && data.error === 'pending') { await new Promise(r => setTimeout(r, 1500)); continue; }
+      return { ok: res.ok && !!(data && data.ok), data };
+    } catch (e) { await new Promise(r => setTimeout(r, 1500)); }
+  }
+  return { ok: false, data: { error: 'timeout' } };
+}
 // --- Más mensajes con Bless hoy (el servidor suma el cupo) ---
 async function watchAdForChat() {
-  if (!(await watchRewardedAd())) return false;
+  if (!(await watchRewardedAd('ai'))) return false;
   try {
-    const res = await fetch('/api/ad-reward', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ kind: 'ai' }) });
-    const data = await res.json().catch(() => null);
-    if (!res.ok || !data || !data.ok) { await agentSay(chatScroll, t('chatExtraMaxMsg'), 200); return false; }
+    const r = await postAdReward({ kind: 'ai' });
+    if (!r.ok) { await agentSay(chatScroll, r.data && r.data.error === 'max_today' ? t('chatExtraMaxMsg') : t('rewardNotConfirmed'), 200); return false; }
     dailyAiLimitNotified = false;
     await agentSay(chatScroll, t('chatExtraUnlocked'), 200, '🎬');
     return true;
@@ -4372,11 +4393,9 @@ async function watchAdForChat() {
 // --- Resumen semanal de Bless con un anuncio (plan gratis) ---
 async function watchAdForWeekly() {
   const key = lastCompletedWeekStart();
-  if (!(await watchRewardedAd())) return;
-  try {
-    const res = await fetch('/api/ad-reward', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ kind: 'weekly', week: key }) });
-    if (!res.ok) return;
-  } catch (e) { return; }
+  if (!(await watchRewardedAd('weekly'))) return;
+  const r = await postAdReward({ kind: 'weekly', week: key });
+  if (!r.ok) { await uiAlert(t('rewardNotConfirmed')); return; }
   state.weeklyUnlocked = state.weeklyUnlocked || {};
   state.weeklyUnlocked[key] = true;
   saveStateToServer();
@@ -4422,7 +4441,7 @@ async function maybeShowDayCompleteAd() {
 }
 async function watchAdForExtraTask(date) {
   if (!canWatchAdForTask(date)) return false;
-  if (!(await watchRewardedAd())) return false;
+  if (!(await watchRewardedAd('task'))) return false;
   state.taskBonus = state.taskBonus || {};
   // Solo se guardan los días de hoy en adelante (lo viejo se limpia).
   const today = ymd(new Date());

@@ -286,3 +286,38 @@ En el plan gratis (Premium no ve ninguno):
   - ID de dispositivo u otros IDs → **ID de dispositivo u otros IDs**
 - **Clasificación de contenido**: vuelve a responder el cuestionario y marca que la app **muestra anuncios**.
 - La Política de privacidad ya menciona AdMob (sección "Anuncios en la app de Android").
+
+### 8.4 app-ads.txt (obligatorio para que AdMob pague bien)
+1. AdMob → **Configuración** → copia tu **ID de editor** (`pub-XXXXXXXXXXXXXXXX`).
+2. Render → Environment → `ADMOB_PUBLISHER_ID` = ese ID → Save.
+3. Revisa que abra bien: `https://bless-habit.onrender.com/app-ads.txt`.
+4. Play Console → **Ficha de Play Store → Detalles de contacto → Sitio web**: `https://bless-habit.onrender.com` (AdMob busca el archivo en ese sitio).
+5. AdMob → Apps → Bless Habit → **app-ads.txt** → "Buscar actualizaciones". Puede tardar hasta 24 h en verificarse.
+
+### 8.5 Verificación de recompensas en el servidor (SSV)
+Para que nadie reciba mensajes extra o el resumen semanal sin ver el anuncio:
+1. AdMob → Apps → Bless Habit → **Bloques de anuncios** → tu bloque **Bonificado** → **Verificación del lado del servidor** → URL: `https://bless-habit.onrender.com/admob/ssv` → Verificar URL → Guardar.
+2. Render → Environment → `ADMOB_SSV_REQUIRED` = `1` → Save.
+3. Prueba en el teléfono "5 mensajes más": después del anuncio, la app espera unos segundos la confirmación de Google y suma los mensajes.
+> Actívalo **después** de configurar la URL en AdMob; si lo activas antes, las recompensas de mensajes y resumen no se confirmarán.
+
+---
+
+## 9. Notas de la versión 1.1 (pégalas en "Notas de la versión")
+
+```
+<es-419>
+• Bless entiende mejor lo que le pides: hábitos, tareas, notas, diario y logros desde el chat.
+• Crea una alarma en el reloj de tu teléfono para tus hábitos y tareas.
+• Personaliza la tarjeta de tus logros con color, ícono y foto.
+• Plan gratis: anuncios discretos y la opción de ver un anuncio para sumar tareas, más mensajes con Bless o tu resumen semanal.
+• Correcciones y mejoras.
+</es-419>
+<en-US>
+• Bless understands you better: habits, tasks, notes, journal and achievements from the chat.
+• Set an alarm in your phone's clock for your habits and tasks.
+• Customize your achievement card with a color, icon and photo.
+• Free plan: light ads, plus the option to watch an ad for extra tasks, more messages with Bless or your weekly summary.
+• Fixes and improvements.
+</en-US>
+```
