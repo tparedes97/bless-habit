@@ -317,6 +317,9 @@ def init_db():
         ("gplay_expiry", "ALTER TABLE users ADD COLUMN gplay_expiry REAL"),
         ("gplay_checked_at", "ALTER TABLE users ADD COLUMN gplay_checked_at REAL"),
         ("gplay_plan", "ALTER TABLE users ADD COLUMN gplay_plan TEXT"),
+        # Aceptación de Términos y Privacidad (fecha y versión aceptada).
+        ("terms_accepted_at", "ALTER TABLE users ADD COLUMN terms_accepted_at TEXT"),
+        ("terms_version", "ALTER TABLE users ADD COLUMN terms_version TEXT"),
     ]:
         if col not in existing_cols:
             conn.execute(ddl)
@@ -762,6 +765,23 @@ def auth_logout():
     return redirect("/")
 
 
+# Versión vigente de los Términos y la Política de privacidad. Si se cambian de
+# forma importante, se sube este valor y la app vuelve a pedir que se acepten.
+TERMS_VERSION = os.environ.get("TERMS_VERSION", "2026-10")
+
+
+@app.route("/api/accept-terms", methods=["POST"])
+def api_accept_terms():
+    user_id = session.get("user_id")
+    if not user_id:
+        return jsonify({"ok": False, "error": "No autenticado"}), 401
+    conn = get_db()
+    conn.execute("UPDATE users SET terms_accepted_at = datetime('now'), terms_version = ? WHERE id = ?", (TERMS_VERSION, user_id))
+    conn.commit()
+    conn.close()
+    return jsonify({"ok": True, "version": TERMS_VERSION})
+
+
 @app.route("/api/me")
 def api_me():
     user_id = session.get("user_id")
@@ -780,6 +800,7 @@ def api_me():
         "picture": user["picture"],
         "premium": bool(user["is_premium"]),
         "appLock": bool(user.get("app_pin_hash")),
+        "termsAccepted": user.get("terms_version") == TERMS_VERSION,
     })
 
 

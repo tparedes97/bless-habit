@@ -292,6 +292,21 @@
   .pin-link:empty { visibility: hidden; }
   .premium-tag { font-size: 10px; font-weight: 800; color: var(--on-accent); background: linear-gradient(135deg, var(--accent), var(--accent-2)); padding: 2px 7px; border-radius: 999px; vertical-align: middle; margin-left: 6px; }
   .delete-account-link { background: none; border: none; color: #d9534f; font-size: 13px; text-decoration: underline; cursor: pointer; padding: 8px; }
+  .terms-gate { position: fixed; inset: 0; z-index: 120; background: var(--bg); display: flex; align-items: center; justify-content: center; padding: 20px 16px; overflow-y: auto; }
+  .terms-card { width: 100%; max-width: 420px; background: var(--panel); border-radius: 22px; padding: 26px 22px; box-shadow: 0 12px 40px rgba(0,0,0,.12); text-align: left; margin: auto; }
+  .terms-emoji { font-size: 40px; text-align: center; }
+  .terms-card h2 { text-align: center; margin: 8px 0 10px; font-size: 22px; }
+  .terms-card p { font-size: 14.5px; line-height: 1.55; color: var(--text-dim); margin: 0 0 10px; }
+  .terms-points { margin: 0 0 14px; padding-left: 18px; font-size: 13.5px; line-height: 1.5; color: var(--text-dim); }
+  .terms-points li { margin-bottom: 6px; }
+  .terms-links { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
+  .terms-links button { flex: 1; min-width: 140px; border: 1px solid var(--border, rgba(127,127,127,.3)); background: transparent; color: var(--text); border-radius: 12px; padding: 10px; font-size: 13.5px; font-weight: 700; cursor: pointer; }
+  .terms-check { display: flex; gap: 10px; align-items: flex-start; font-size: 14px; line-height: 1.45; color: var(--text); cursor: pointer; margin-bottom: 14px; }
+  .terms-check input { width: 20px; height: 20px; margin-top: 1px; flex-shrink: 0; accent-color: var(--accent, #7C6CF0); }
+  .terms-error { color: #d9534f; font-size: 13px; min-height: 0; margin-bottom: 6px; }
+  #terms-accept-btn { width: 100%; min-height: 50px; }
+  #terms-accept-btn:disabled { opacity: .5; }
+  .terms-logout { display: block; text-align: center; margin-top: 14px; font-size: 13px; color: var(--text-dim); }
   .login-legal { margin-top: 22px; font-size: 12.5px; color: var(--text-dim); }
   .login-legal a { color: var(--text-dim); }
   .weekly-card { border: 1px solid color-mix(in srgb, var(--accent) 35%, var(--border)); }
@@ -1928,6 +1943,15 @@ const I18N = {
     shareLogroTitle: 'Comparte tu logro',
     downloadBtn: '📥 Descargar', shareBtn: '📤 Compartir',
     logroCardUnlocked: 'LOGRO DESBLOQUEADO', logroCardBrand: 'blesshabit.app',
+    termsGateTitle: 'Antes de empezar',
+    termsGateBody: 'Para usar Bless Habit necesitamos que leas y aceptes nuestros Términos y condiciones y nuestra Política de privacidad.',
+    termsGatePoint1: 'Guardamos tu perfil, hábitos, tareas, diario y chat para que Bless te acompañe. Puedes borrarlos cuando quieras desde tu Perfil.',
+    termsGatePoint2: 'Bless usa inteligencia artificial: puede equivocarse y no reemplaza la ayuda de un profesional de salud.',
+    termsGatePoint3: 'Debes tener al menos 13 años (o la edad mínima de tu país) para usar la app.',
+    termsGateTermsLink: 'Términos y condiciones', termsGatePrivacyLink: 'Política de privacidad',
+    termsGateCheck: 'He leído y acepto los Términos y condiciones y la Política de privacidad.',
+    termsGateAccept: 'Aceptar y continuar', termsGateLogout: 'No acepto, cerrar sesión',
+    termsGateError: 'No pudimos guardar tu aceptación. Revisa tu conexión e intenta de nuevo.',
     logroColorLabel: 'Color', logroIconLabel: 'Ícono', logroAddPhoto: '📷 Agregar foto', logroRemovePhoto: 'Quitar foto',
     logroSaveBtn: '💾 Guardar cambios', logroSaving: 'Guardando…', logroSavedBtn: '✓ Guardado', logroDiscardBtn: 'Descartar',
     logroUnsavedQ: '¿Guardar los cambios de tu tarjeta (color, ícono y foto)?', logroPhotoSaveFailed: 'No se pudo guardar la foto. Revisa tu conexión e intenta de nuevo.',
@@ -2413,6 +2437,15 @@ const I18N = {
     shareLogroTitle: 'Share your achievement',
     downloadBtn: '📥 Download', shareBtn: '📤 Share',
     logroCardUnlocked: 'ACHIEVEMENT UNLOCKED', logroCardBrand: 'blesshabit.app',
+    termsGateTitle: 'Before you start',
+    termsGateBody: 'To use Bless Habit, please read and accept our Terms of Service and our Privacy Policy.',
+    termsGatePoint1: 'We store your profile, habits, tasks, journal and chat so Bless can walk with you. You can delete them anytime from your Profile.',
+    termsGatePoint2: "Bless uses artificial intelligence: it can make mistakes and it doesn't replace help from a health professional.",
+    termsGatePoint3: 'You must be at least 13 years old (or the minimum age in your country) to use the app.',
+    termsGateTermsLink: 'Terms of Service', termsGatePrivacyLink: 'Privacy Policy',
+    termsGateCheck: 'I have read and accept the Terms of Service and the Privacy Policy.',
+    termsGateAccept: 'Accept and continue', termsGateLogout: "I don't accept, sign out",
+    termsGateError: "We couldn't save your acceptance. Check your connection and try again.",
     logroColorLabel: 'Color', logroIconLabel: 'Icon', logroAddPhoto: '📷 Add photo', logroRemovePhoto: 'Remove photo',
     logroSaveBtn: '💾 Save changes', logroSaving: 'Saving…', logroSavedBtn: '✓ Saved', logroDiscardBtn: 'Discard',
     logroUnsavedQ: 'Save the changes to your card (color, icon and photo)?', logroPhotoSaveFailed: "Couldn't save the photo. Check your connection and try again.",
@@ -3961,6 +3994,54 @@ async function deleteMyAccount() {
   window.location.href = '/';
 }
 
+function openLegalPage(path) {
+  const B = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Browser;
+  if (IS_NATIVE_APP && B) { B.open({ url: window.location.origin + path }); return; }
+  window.open(path, '_blank', 'noopener');
+}
+function requireTermsAcceptance() {
+  return new Promise((resolve) => {
+    const en = currentLang() === 'en';
+    const overlay = document.createElement('div');
+    overlay.className = 'terms-gate';
+    overlay.innerHTML = `
+      <div class="terms-card" role="dialog" aria-modal="true">
+        <div class="terms-emoji">🌱</div>
+        <h2>${t('termsGateTitle')}</h2>
+        <p>${t('termsGateBody')}</p>
+        <ul class="terms-points">
+          <li>${t('termsGatePoint1')}</li>
+          <li>${t('termsGatePoint2')}</li>
+          <li>${t('termsGatePoint3')}</li>
+        </ul>
+        <div class="terms-links">
+          <button type="button" data-legal="${en ? '/terms' : '/terminos'}">📄 ${t('termsGateTermsLink')}</button>
+          <button type="button" data-legal="${en ? '/privacy' : '/privacidad'}">🔒 ${t('termsGatePrivacyLink')}</button>
+        </div>
+        <label class="terms-check"><input type="checkbox" id="terms-check"> <span>${t('termsGateCheck')}</span></label>
+        <div class="terms-error" id="terms-error"></div>
+        <button type="button" class="send-btn" id="terms-accept-btn" disabled>${t('termsGateAccept')}</button>
+        <a class="terms-logout" href="/auth/logout">${t('termsGateLogout')}</a>
+      </div>`;
+    document.body.appendChild(overlay);
+    overlay.querySelectorAll('[data-legal]').forEach(b => { b.onclick = () => openLegalPage(b.dataset.legal); });
+    const check = overlay.querySelector('#terms-check'), btn = overlay.querySelector('#terms-accept-btn');
+    check.onchange = () => { btn.disabled = !check.checked; };
+    btn.onclick = async () => {
+      btn.disabled = true;
+      try {
+        const res = await fetch('/api/accept-terms', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
+        const data = await res.json().catch(() => null);
+        if (!res.ok || !data || !data.ok) throw new Error('fail');
+        overlay.remove();
+        resolve();
+      } catch (e) {
+        overlay.querySelector('#terms-error').textContent = t('termsGateError');
+        btn.disabled = !check.checked;
+      }
+    };
+  });
+}
 async function bootstrapApp() {
   const loginLoading = document.getElementById('login-loading');
   const loginBtn = document.getElementById('google-login-btn');
@@ -3979,6 +4060,15 @@ async function bootstrapApp() {
 
     const stateRes = await fetch('/api/load-state');
     const stateData = await stateRes.json();
+    // Antes de usar la app, la persona acepta los Términos y la Política de
+    // privacidad (una vez, o de nuevo si cambia la versión).
+    if (!me.termsAccepted) {
+      const savedLang = stateData && stateData.state && stateData.state.settings && stateData.state.settings.language;
+      if (savedLang) state.settings.language = savedLang;
+      loginLoading.style.display = 'none';
+      await requireTermsAcceptance();
+      loginLoading.style.display = 'block';
+    }
     if (stateData.ok && stateData.state && stateData.state.profile && stateData.state.profile.nombre) {
       Object.assign(state, stateData.state);
       state.settings = Object.assign({ language: null, country: null, theme: 'light' }, state.settings || {});
