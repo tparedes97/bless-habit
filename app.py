@@ -122,6 +122,8 @@ ADMOB_TEST_BANNER_ID = "ca-app-pub-3940256099942544/9214589741"
 ADMOB_TEST_REWARDED_ID = "ca-app-pub-3940256099942544/5224354917"
 ADMOB_BANNER_ID = os.environ.get("ADMOB_BANNER_ID", "").strip()
 ADMOB_REWARDED_ID = os.environ.get("ADMOB_REWARDED_ID", "").strip()
+ADMOB_TEST_INTERSTITIAL_ID = "ca-app-pub-3940256099942544/1033173712"
+ADMOB_INTERSTITIAL_ID = os.environ.get("ADMOB_INTERSTITIAL_ID", "").strip()
 
 # ============================================================
 # NOTIFICACIONES PUSH (Web Push + VAPID) — para el reenganche compasivo
@@ -1557,7 +1559,9 @@ def index():
         admob_config={
             "bannerId": ADMOB_BANNER_ID or ADMOB_TEST_BANNER_ID,
             "rewardedId": ADMOB_REWARDED_ID or ADMOB_TEST_REWARDED_ID,
-            "testing": not (ADMOB_BANNER_ID and ADMOB_REWARDED_ID),
+            "interstitialId": ADMOB_INTERSTITIAL_ID or ADMOB_TEST_INTERSTITIAL_ID,
+            # Cada bloque sin ID real usa el de prueba de Google (y se marca como prueba).
+            "testing": {"banner": not ADMOB_BANNER_ID, "rewarded": not ADMOB_REWARDED_ID, "interstitial": not ADMOB_INTERSTITIAL_ID},
         },
         paddle_price_label=PADDLE_PRICE_LABEL,
         native_app_url_scheme=NATIVE_APP_URL_SCHEME,
@@ -1689,7 +1693,9 @@ def consume_ai_quota(user_id):
     cur = conn.execute("SELECT count FROM ai_usage WHERE user_id = ? AND day = ?", (user_id, day))
     row = cur.fetchone()
     used = row[0] if row else 0
-    if used >= FREE_AI_REQUESTS_PER_DAY:
+    bonus_row = conn.execute("SELECT count FROM ai_usage WHERE user_id = ? AND day = ?", (user_id, day + "-b")).fetchone()
+    limit = FREE_AI_REQUESTS_PER_DAY + (bonus_row[0] if bonus_row else 0) * AD_AI_CALLS_PER_REWARD
+    if used >= limit:
         conn.close()
         return False
     conn.execute("""
@@ -1700,6 +1706,66 @@ def consume_ai_quota(user_id):
     conn.commit()
     conn.close()
     return True
+
+
+# ============================================================
+# RECOMPENSAS POR VER UN ANUNCIO (app de Android, plan gratis)
+#   - "ai": 5 mensajes más con Bless hoy (10 llamadas), hasta 3 veces al día.
+#   - "weekly": leer el resumen semanal de Bless de esa semana.
+# (Las tareas extra y los días lejanos se guardan en el estado de la app.)
+# ============================================================
+AD_AI_CALLS_PER_REWARD = 10
+AD_AI_REWARDS_PER_DAY = 3
+
+
+def _usage_get(conn, user_id, key):
+    row = conn.execute("SELECT count FROM ai_usage WHERE user_id = ? AND day = ?", (user_id, key)).fetchone()
+    return row[0] if row else 0
+
+
+def _usage_add(conn, user_id, key):
+    conn.execute("""
+        INSERT INTO ai_usage (user_id, day, count) VALUES (?, ?, 1)
+        ON CONFLICT(user_id, day) DO UPDATE SET count = count + 1
+    """, (user_id, key))
+
+
+def weekly_unlocked(user_id, week):
+    if not week or not re.fullmatch(r"\d{4}-\d{2}-\d{2}", str(week)):
+        return False
+    conn = get_db()
+    ok = _usage_get(conn, user_id, "wk-" + week) > 0
+    conn.close()
+    return ok
+
+
+@app.route("/api/ad-reward", methods=["POST"])
+def api_ad_reward():
+    user_id = session.get("user_id")
+    if not user_id:
+        return jsonify({"ok": False, "error": "No autenticado"}), 401
+    data = request.get_json(force=True) or {}
+    kind = data.get("kind")
+    conn = get_db()
+    try:
+        if kind == "ai":
+            key = time.strftime("%Y-%m-%d", time.gmtime()) + "-b"
+            if _usage_get(conn, user_id, key) >= AD_AI_REWARDS_PER_DAY:
+                return jsonify({"ok": False, "error": "max_today"}), 429
+            _usage_add(conn, user_id, key)
+            conn.commit()
+            return jsonify({"ok": True, "left": AD_AI_REWARDS_PER_DAY - _usage_get(conn, user_id, key)})
+        if kind == "weekly":
+            week = str(data.get("week") or "")
+            if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", week):
+                return jsonify({"ok": False, "error": "bad_week"}), 400
+            if _usage_get(conn, user_id, "wk-" + week) == 0:
+                _usage_add(conn, user_id, "wk-" + week)
+                conn.commit()
+            return jsonify({"ok": True})
+        return jsonify({"ok": False, "error": "bad_kind"}), 400
+    finally:
+        conn.close()
 
 
 def premium_required_response():
@@ -1985,9 +2051,9 @@ def weekly_summary():
         return jsonify({"ok": False, "error": "No autenticado"}), 401
     if app_lock_blocks(user_id):
         return locked_response()
-    if not user_is_premium(user_id):
-        return premium_required_response()
     data = request.get_json(force=True) or {}
+    if not user_is_premium(user_id) and not weekly_unlocked(user_id, data.get("week")):
+        return premium_required_response()
     lang = "inglés" if data.get("language") == "en" else "español"
     name = str(data.get("name") or "")[:60]
     lines = []

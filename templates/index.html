@@ -292,6 +292,7 @@
   .pin-link:empty { visibility: hidden; }
   .premium-tag { font-size: 10px; font-weight: 800; color: var(--on-accent); background: linear-gradient(135deg, var(--accent), var(--accent-2)); padding: 2px 7px; border-radius: 999px; vertical-align: middle; margin-left: 6px; }
   .delete-account-link { background: none; border: none; color: #d9534f; font-size: 13px; text-decoration: underline; cursor: pointer; padding: 8px; }
+  .ad-reward-btn { margin-top: 10px; border-style: dashed; }
   .ui-choice-list { display: flex; flex-direction: column; gap: 8px; }
   .ui-choice-list button { width: 100%; min-height: 46px; }
   body.ad-banner-on #view-calendar, body.ad-banner-on #view-metrics { padding-bottom: calc(var(--ad-banner-h, 60px) + 8px); }
@@ -1383,7 +1384,13 @@ let dailyAiLimitNotified = false;
 function notifyDailyAiLimit() {
   if (dailyAiLimitNotified || isPremium) return;
   dailyAiLimitNotified = true;
-  if (IS_NATIVE_APP) { setTimeout(() => addNote(chatScroll, t('aiLimitNoteNative'), 'agenda-note', () => openPremiumSheet()), 600); return; }
+  if (IS_NATIVE_APP) {
+    setTimeout(() => {
+      if (canWatchRewarded()) addNote(chatScroll, t('watchAdForChatNote'), 'agenda-note', () => watchAdForChat());
+      addNote(chatScroll, t('aiLimitNoteNative'), 'agenda-note', () => openPremiumSheet());
+    }, 600);
+    return;
+  }
   setTimeout(() => {
     addNote(chatScroll, t('aiLimitNote', monthlyPriceLabel()), 'agenda-note', () => openPremiumSheet());
   }, 600);
@@ -1603,7 +1610,7 @@ SOBRE LA APP (úsalo solo si preguntan; nunca inventes menús, pantallas ni prec
 - Secciones: Bless (chat), Calendario (día/semana/mes; cada día tiene Hábitos, Tareas con recordatorio y Notas del día), Métricas, Diario y Perfil.
 - La persona puede pedirte tareas o notas escribiendo "recuérdame…" o "anota…", y escribir en su diario con "escribe en mi diario: …" (la app los guarda sola); si pregunta cómo, explícale eso.
 - NUNCA digas que agendaste, anotaste, guardaste, agregaste, escribiste o programaste algo (tampoco en el diario, ni hábitos ni logros), ni "te recordaré" o "te aviso": tú no puedes hacerlo, lo hace la app sola y ella misma lo confirma. Si la persona quiere guardar algo, dile que te lo pida empezando con "recuérdame…", "anota…" o "escribe en mi diario: …".
-- Plan gratis de tareas y notas: hasta 3 tareas y 10 notas por día (un día con sus 3 tareas no deja borrarlas, solo editarlas); hábitos: 3 en total. Premium ilimitado.
+- Plan gratis de tareas y notas: hasta 3 tareas y 10 notas por día, y tareas hasta 14 días adelante (un día con sus 3 tareas no deja borrarlas, solo editarlas); hábitos: 3 en total. En la app de Android, viendo un anuncio corto se puede sumar 1 tarea a un día, desbloquear un día más lejano, tener 5 mensajes más con Bless, leer el resumen semanal o usar estilos Premium del diario por 24 h. Premium: ilimitado y sin anuncios.
 - Plan gratis: chat con Bless (límite diario de mensajes), hasta 3 hábitos, calendario, diario y recordatorios a la hora de cada hábito.
 - Bless Habit Premium incluye: chat ilimitado y memoria (Bless recuerda lo importante de días anteriores), hábitos ilimitados, resumen semanal escrito por Bless, análisis de ánimo, recordatorios personalizados (avisar 10, 15, 30 o 60 minutos antes), temas y stickers extra para el diario, exportar el diario a PDF y bloqueo con PIN o huella.
 - Esta persona ${isPremium ? 'YA tiene Premium: agradécele y no le ofrezcas comprarlo' : 'todavía no tiene Premium'}.
@@ -1947,6 +1954,20 @@ const I18N = {
     shareLogroTitle: 'Comparte tu logro',
     downloadBtn: '📥 Descargar', shareBtn: '📤 Compartir',
     logroCardUnlocked: 'LOGRO DESBLOQUEADO', logroCardBrand: 'blesshabit.app',
+    rewardDailyCapMsg: 'Por hoy ya viste todos los anuncios disponibles 🌙 Mañana puedes ver más, o hacerte Premium para no tener límites.',
+    farDateMsg: (n) => `En el plan gratis puedes programar tareas hasta ${n} días adelante 📅. Puedes ver un anuncio corto para desbloquear este día, o hacerte Premium para programar sin límite de fecha.`,
+    farDateHint: (n) => `Plan gratis: tareas hasta ${n} días adelante. Desbloquea ese día con un anuncio corto 🙂`,
+    farDateChat: (n, d) => `En el plan gratis puedes programar hasta ${n} días adelante, y ${d} queda un poco más lejos 📅`,
+    unlockDayAdBtn: '🎬 Ver un anuncio y desbloquear ese día',
+    unlockDaySaveTaskNote: '🎬 Ver un anuncio y guardar esta tarea',
+    farDayUnlockedChat: (d) => `¡Listo! 🎬 Ya puedes programar tareas para ${d}.`,
+    watchAdForChatNote: '🎬 Ver un anuncio = 5 mensajes más con Bless hoy',
+    chatExtraUnlocked: '¡Gracias! 🎬 Tienes 5 mensajes más conmigo hoy. ¿En qué estábamos? 🤍',
+    chatExtraMaxMsg: 'Por hoy ya usaste los mensajes extra 🌙 Mañana seguimos, o con Premium conversamos sin límite.',
+    weeklyTeaser: 'Bless ya puede escribir tu resumen de la semana pasada: tus logros, lo que costó y un paso para esta semana ✨',
+    weeklyAdBtn: '🎬 Ver mi resumen con un anuncio',
+    diaryPremiumStyleMsgAd: 'Este estilo es de Premium ✨ Puedes usar todos los temas y stickers Premium durante 24 horas viendo un anuncio corto, o hacerte Premium.',
+    diaryAdBtn: '🎬 Ver un anuncio (24 h de estilos Premium)',
     taskLimitMsgAd: (n, left) => `Este día ya tiene sus ${n} tareas del plan gratis ✅. Puedes ver un anuncio corto para sumar 1 tarea más a este día (te quedan ${left} hoy), o hacerte Premium para tenerlas ilimitadas y sin anuncios.`,
     watchAdForTaskBtn: '🎬 Ver un anuncio (+1 tarea)',
     watchAdSaveTaskNote: '🎬 Ver un anuncio y guardar esta tarea',
@@ -2069,7 +2090,7 @@ const I18N = {
     openConfigBtn: 'Abrir configuración',
     planTitle: 'Plan', premiumBadge: '✨ Bless Habit Premium', cancelSubLink: 'Cancelar suscripción',
     freePlanDesc: 'Estás en el plan gratis. Con Premium tienes:',
-    premiumBenefits: ['💬 Conversa con Bless sin límite, y Bless recuerda lo importante de ti', '📬 Cada lunes, tu resumen semanal escrito por Bless', '😊 Tu ánimo en el tiempo y qué hábitos acompañan tus días buenos', '🌱 Hábitos ilimitados (gratis: 3 en total)', '⏰ Recordatorios a tu medida: 10, 15, 30 o 60 min antes', '✅ Tareas y notas ilimitadas (gratis: 3 tareas y 10 notas por día)', '📔 Diario con temas y stickers exclusivos, y exportar a PDF', '🔒 Bloqueo con PIN (y huella o rostro en Android)', '🚫 Sin anuncios · ✨ Tema dorado'],
+    premiumBenefits: ['💬 Conversa con Bless sin límite, y Bless recuerda lo importante de ti', '📬 Cada lunes, tu resumen semanal escrito por Bless', '😊 Tu ánimo en el tiempo y qué hábitos acompañan tus días buenos', '🌱 Hábitos ilimitados (gratis: 3 en total)', '⏰ Recordatorios a tu medida: 10, 15, 30 o 60 min antes', '✅ Tareas y notas ilimitadas y sin límite de fecha (gratis: 3 tareas y 10 notas por día, hasta 14 días adelante)', '📔 Diario con temas y stickers exclusivos, y exportar a PDF', '🔒 Bloqueo con PIN (y huella o rostro en Android)', '🚫 Sin anuncios · ✨ Tema dorado'],
     premiumCancelNote: 'Pago mensual con Paddle. Cancelas cuando quieras.',
     heRemindQ: '¿Cuándo te aviso?', heRemindPremiumTag: '✨ Premium para más opciones',
     daySecHabits: 'Hábitos', daySecTasks: 'Tareas', daySecNotes: 'Notas del día', daySecAdd: 'Agregar',
@@ -2447,6 +2468,20 @@ const I18N = {
     shareLogroTitle: 'Share your achievement',
     downloadBtn: '📥 Download', shareBtn: '📤 Share',
     logroCardUnlocked: 'ACHIEVEMENT UNLOCKED', logroCardBrand: 'blesshabit.app',
+    rewardDailyCapMsg: "You've watched all the ads available today 🌙 You can watch more tomorrow, or go Premium for no limits.",
+    farDateMsg: (n) => `On the free plan you can schedule tasks up to ${n} days ahead 📅. Watch a short ad to unlock this day, or go Premium to schedule with no date limit.`,
+    farDateHint: (n) => `Free plan: tasks up to ${n} days ahead. Unlock that day with a short ad 🙂`,
+    farDateChat: (n, d) => `On the free plan you can schedule up to ${n} days ahead, and ${d} is a bit further 📅`,
+    unlockDayAdBtn: '🎬 Watch an ad and unlock that day',
+    unlockDaySaveTaskNote: '🎬 Watch an ad and save this task',
+    farDayUnlockedChat: (d) => `Done! 🎬 You can now schedule tasks for ${d}.`,
+    watchAdForChatNote: '🎬 Watch an ad = 5 more messages with Bless today',
+    chatExtraUnlocked: "Thanks! 🎬 You have 5 more messages with me today. Where were we? 🤍",
+    chatExtraMaxMsg: "You've used today's extra messages 🌙 Let's continue tomorrow, or chat without limits with Premium.",
+    weeklyTeaser: 'Bless can write your summary of last week: your wins, what was hard, and one step for this week ✨',
+    weeklyAdBtn: '🎬 See my summary with an ad',
+    diaryPremiumStyleMsgAd: 'This style is Premium ✨ Use all Premium themes and stickers for 24 hours by watching a short ad, or go Premium.',
+    diaryAdBtn: '🎬 Watch an ad (24 h of Premium styles)',
     taskLimitMsgAd: (n, left) => `This day already has its ${n} free-plan tasks ✅. You can watch a short ad to add 1 more task to this day (${left} left today), or go Premium for unlimited tasks and no ads.`,
     watchAdForTaskBtn: '🎬 Watch an ad (+1 task)',
     watchAdSaveTaskNote: '🎬 Watch an ad and save this task',
@@ -2569,7 +2604,7 @@ const I18N = {
     openConfigBtn: 'Open settings',
     planTitle: 'Plan', premiumBadge: '✨ Bless Habit Premium', cancelSubLink: 'Cancel subscription',
     freePlanDesc: "You're on the free plan. With Premium you get:",
-    premiumBenefits: ['💬 Talk with Bless without limits, and Bless remembers what matters to you', '📬 Every Monday, your weekly summary written by Bless', '😊 Your mood over time and which habits come with your good days', '🌱 Unlimited habits (free: 3 in total)', '⏰ Reminders your way: 10, 15, 30 or 60 min before', '✅ Unlimited tasks and notes (free: 3 tasks and 10 notes per day)', '📔 Journal with exclusive themes and stickers, plus PDF export', '🔒 PIN lock (plus fingerprint or face on Android)', '🚫 No ads · ✨ Gold theme'],
+    premiumBenefits: ['💬 Talk with Bless without limits, and Bless remembers what matters to you', '📬 Every Monday, your weekly summary written by Bless', '😊 Your mood over time and which habits come with your good days', '🌱 Unlimited habits (free: 3 in total)', '⏰ Reminders your way: 10, 15, 30 or 60 min before', '✅ Unlimited tasks and notes with no date limit (free: 3 tasks and 10 notes per day, up to 14 days ahead)', '📔 Journal with exclusive themes and stickers, plus PDF export', '🔒 PIN lock (plus fingerprint or face on Android)', '🚫 No ads · ✨ Gold theme'],
     premiumCancelNote: 'Monthly payment via Paddle. Cancel anytime.',
     heRemindQ: 'When should I remind you?', heRemindPremiumTag: '✨ Premium for more options',
     daySecHabits: 'Habits', daySecTasks: 'Tasks', daySecNotes: "Today's notes", daySecAdd: 'Add',
@@ -4191,7 +4226,7 @@ function initNativeAds() {
     const A = admob();
     if (!A || isPremium) return false;
     try {
-      await A.initialize({ maxAdContentRating: 'Teen', initializeForTesting: !!ADMOB.testing });
+      await A.initialize({ maxAdContentRating: 'Teen', initializeForTesting: !!(ADMOB.testing.banner && ADMOB.testing.rewarded) });
       try {
         let info = await A.requestConsentInfo();
         if (info && info.status === 'REQUIRED' && info.isConsentFormAvailable) info = await A.showConsentForm();
@@ -4219,7 +4254,7 @@ async function updateAdBanner(tab) {
       const bar = document.getElementById('tabbar');
       // + 8 dp de aire: AdMob pide que el banner no quede pegado a botones (clics accidentales).
       const margin = (bar ? Math.round(bar.getBoundingClientRect().height) : 64) + 8;
-      await A.showBanner({ adId: ADMOB.bannerId, adSize: 'ADAPTIVE_BANNER', position: 'BOTTOM_CENTER', margin, isTesting: !!ADMOB.testing });
+      await A.showBanner({ adId: ADMOB.bannerId, adSize: 'ADAPTIVE_BANNER', position: 'BOTTOM_CENTER', margin, isTesting: !!ADMOB.testing.banner });
       adBannerShown = true; adBannerHidden = false;
       document.body.classList.add('ad-banner-on');
       if (!adBannerWatcher) adBannerWatcher = setInterval(syncAdBannerVisibility, 600);
@@ -4246,12 +4281,32 @@ async function syncAdBannerVisibility() {
   if (!A || !A.addListener) return;
   try { A.addListener('bannerAdSizeChanged', (info) => { document.documentElement.style.setProperty('--ad-banner-h', ((info && info.height) || 60) + 'px'); }); } catch (e) {}
 })();
+// --- Tope diario de anuncios con recompensa (para que nunca se sienta una app de anuncios) ---
+const REWARDED_DAILY_CAP = 8;
+function adStatsToday() {
+  const today = ymd(new Date());
+  if (!state.adStats || state.adStats.date !== today) state.adStats = { date: today, rewarded: 0 };
+  return state.adStats;
+}
+function canWatchRewarded() { return !!admob() && !isPremium && adStatsToday().rewarded < REWARDED_DAILY_CAP; }
+// Ofrece "ver un anuncio" o Premium; devuelve true si vio el anuncio completo.
+async function offerAdOrPremium(message, adLabel) {
+  if (!canWatchRewarded()) { await promptPremiumFeature(message); return false; }
+  const choice = await uiChoice(message, [
+    { key: 'ad', label: adLabel, primary: true },
+    { key: 'premium', label: t('habitLimitOk') },
+    { key: null, label: t('dialogCancel') },
+  ]);
+  if (choice === 'premium') { openPremiumSheet(); return false; }
+  return choice === 'ad' ? await watchRewardedAd() : false;
+}
 // --- Anuncio con recompensa: +1 tarea en un día ---
 function taskBonusFor(date) { return Math.min(REWARD_TASKS_MAX_PER_DAY, ((state.taskBonus || {})[date]) || 0); }
-function canWatchAdForTask(date) { return !!admob() && !isPremium && taskBonusFor(date) < REWARD_TASKS_MAX_PER_DAY; }
+function canWatchAdForTask(date) { return canWatchRewarded() && taskBonusFor(date) < REWARD_TASKS_MAX_PER_DAY; }
 async function watchRewardedAd() {
   const A = admob();
-  if (!A || !(await initNativeAds())) return false;
+  if (!A || !canWatchRewarded()) { if (A) await uiAlert(t('rewardDailyCapMsg')); return false; }
+  if (!(await initNativeAds())) { await uiAlert(t('rewardAdUnavailable')); return false; }
   let earned = false;
   const handles = [];
   try {
@@ -4260,7 +4315,7 @@ async function watchRewardedAd() {
       A.addListener('onRewardedVideoAdDismissed', res).then(h => handles.push(h));
       A.addListener('onRewardedVideoAdFailedToShow', res).then(h => handles.push(h));
     });
-    await A.prepareRewardVideoAd({ adId: ADMOB.rewardedId, isTesting: !!ADMOB.testing });
+    await A.prepareRewardVideoAd({ adId: ADMOB.rewardedId, isTesting: !!ADMOB.testing.rewarded });
     await A.showRewardVideoAd();
     await Promise.race([closed, new Promise(r => setTimeout(r, 3000))]);
   } catch (e) {
@@ -4268,7 +4323,102 @@ async function watchRewardedAd() {
   } finally {
     handles.forEach(h => { try { h.remove(); } catch (e) {} });
   }
+  if (earned) { adStatsToday().rewarded++; saveStateToServer(); }
   return earned;
+}
+
+// --- Programar con más anticipación: gratis hasta FREE_SCHEDULE_DAYS días;
+// un anuncio desbloquea un día más lejano (hasta CAL_DAY_MAX_AHEAD). ---
+const FREE_SCHEDULE_DAYS = 14;
+function dateBeyondFree(date) {
+  if (isPremium || !date) return false;
+  if (date <= ymd(addDays(new Date(), FREE_SCHEDULE_DAYS))) return false;
+  return !((state.farDays || {})[date]);
+}
+async function unlockFarDay(date) {
+  if (!(await watchRewardedAd())) return false;
+  const today = ymd(new Date());
+  state.farDays = state.farDays || {};
+  Object.keys(state.farDays).forEach(d => { if (d < today) delete state.farDays[d]; });
+  state.farDays[date] = true;
+  saveStateToServer();
+  return true;
+}
+async function promptFarDate(date) {
+  const msg = t('farDateMsg', FREE_SCHEDULE_DAYS);
+  if (!canWatchRewarded()) { await promptPremiumFeature(msg); return false; }
+  const choice = await uiChoice(msg, [
+    { key: 'ad', label: t('unlockDayAdBtn'), primary: true },
+    { key: 'premium', label: t('habitLimitOk') },
+    { key: null, label: t('dialogCancel') },
+  ]);
+  if (choice === 'premium') { openPremiumSheet(); return false; }
+  return choice === 'ad' ? await unlockFarDay(date) : false;
+}
+
+// --- Más mensajes con Bless hoy (el servidor suma el cupo) ---
+async function watchAdForChat() {
+  if (!(await watchRewardedAd())) return false;
+  try {
+    const res = await fetch('/api/ad-reward', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ kind: 'ai' }) });
+    const data = await res.json().catch(() => null);
+    if (!res.ok || !data || !data.ok) { await agentSay(chatScroll, t('chatExtraMaxMsg'), 200); return false; }
+    dailyAiLimitNotified = false;
+    await agentSay(chatScroll, t('chatExtraUnlocked'), 200, '🎬');
+    return true;
+  } catch (e) { return false; }
+}
+
+// --- Resumen semanal de Bless con un anuncio (plan gratis) ---
+async function watchAdForWeekly() {
+  const key = lastCompletedWeekStart();
+  if (!(await watchRewardedAd())) return;
+  try {
+    const res = await fetch('/api/ad-reward', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ kind: 'weekly', week: key }) });
+    if (!res.ok) return;
+  } catch (e) { return; }
+  state.weeklyUnlocked = state.weeklyUnlocked || {};
+  state.weeklyUnlocked[key] = true;
+  saveStateToServer();
+  renderMetrics();
+  if (await ensureWeeklySummary()) renderMetrics();
+  else renderMetrics();
+}
+function weeklyTeaserHtml() {
+  const key = lastCompletedWeekStart();
+  if ((state.weeklySummaries || {})[key] && (state.weeklyUnlocked || {})[key]) return weeklySummaryHtml();
+  if ((state.weeklyUnlocked || {})[key]) return weeklySummaryHtml(); // desbloqueado, generándose
+  if (!canWatchRewarded() || !weekDaysData(key).length || !aiEnabled()) return '';
+  return `<div class="metrics-section weekly-card"><h4>${t('weeklyTitle')} <span class="weekly-range">${weekRangeLabel(key)}</span></h4>
+    <div class="weekly-empty">${t('weeklyTeaser')}</div>
+    <button type="button" class="qr-btn ad-reward-btn" id="weekly-ad-btn">${t('weeklyAdBtn')}</button></div>`;
+}
+
+// --- Temas y stickers Premium del diario por 24 h con un anuncio ---
+function diaryPremiumActive() { return isPremium || Date.now() < (state.diaryUnlockUntil || 0); }
+async function promptDiaryPremium() {
+  if (!(await offerAdOrPremium(t('diaryPremiumStyleMsgAd'), t('diaryAdBtn')))) return;
+  state.diaryUnlockUntil = Date.now() + 24 * 3600000;
+  saveStateToServer();
+  try { refreshDiaryThemePicker(); refreshDiaryStickerPicker(); } catch (e) {}
+}
+
+// --- Anuncio de pantalla completa al completar todo el día (máx. 1 al día) ---
+async function maybeShowDayCompleteAd() {
+  const A = admob();
+  if (!A || isPremium) return;
+  const today = ymd(new Date());
+  if (state.lastInterstitialDate === today) return;
+  if (state.recentDifficultyAt && Date.now() - state.recentDifficultyAt < 3 * 3600000) return; // no en un día difícil
+  state.lastInterstitialDate = today;
+  saveStateToServer();
+  setTimeout(async () => {
+    if (anyOverlayOpen() || !(await initNativeAds())) return;
+    try {
+      await A.prepareInterstitial({ adId: ADMOB.interstitialId, isTesting: !!ADMOB.testing.interstitial });
+      await A.showInterstitial();
+    } catch (e) {}
+  }, 3500); // primero se ve la celebración
 }
 async function watchAdForExtraTask(date) {
   if (!canWatchAdForTask(date)) return false;
@@ -5413,7 +5563,7 @@ function toggleDone(idx) {
     if (!item.xpAwarded) { item.xpAwarded = true; awardXp(10); }
     if (pct === 100 && total > 0) {
       const todayStr = ymd(new Date());
-      if (state.profile.xpAllDoneDate !== todayStr) { state.profile.xpAllDoneDate = todayStr; awardXp(25); }
+      if (state.profile.xpAllDoneDate !== todayStr) { state.profile.xpAllDoneDate = todayStr; awardXp(25); maybeShowDayCompleteAd(); }
     }
   } else {
     // Al desmarcar (ej. lo tildó por error), bajamos la marca de "ya celebrado" al
@@ -6171,7 +6321,7 @@ function scheduleFromChat(time, rawText) {
   let date = when.explicitDate ? when.date : ymd(new Date());
   const now = new Date(), nowHM = String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
   if (!when.explicitDate && time && time <= nowHM) date = ymd(addDays(now, 1)); // esa hora ya pasó hoy
-  if (!canAddTask(date)) { lastBlockedTask = { text, date, time }; return null; }
+  if (dateBeyondFree(date) || !canAddTask(date)) { lastBlockedTask = { text, date, time }; return null; }
   return addTask({ text, date, time });
 }
 async function applyTimeToRecentTask(time, date) {
@@ -6191,6 +6341,23 @@ async function sayTaskLimit(req) {
   req = req || lastBlockedTask || {};
   lastBlockedTask = null;
   const date = req.date || ymd(new Date());
+  if (dateBeyondFree(date)) {
+    await agentSay(chatScroll, t('farDateChat', FREE_SCHEDULE_DAYS, friendlyDateLabel(date)));
+    if (canWatchRewarded()) {
+      addNote(chatScroll, req.text ? t('unlockDaySaveTaskNote') : t('unlockDayAdBtn'), 'agenda-note', async () => {
+        if (!(await unlockFarDay(date))) return;
+        if (req.text && canAddTask(date)) {
+          const tk = addTask({ text: req.text, date, time: req.time || null });
+          if (tk.time) maybeEnableRemindersForTask();
+          await agentSay(chatScroll, tk.time ? t('taskSavedChat', tk.text, friendlyDateLabel(tk.date), tk.time) : t('taskSavedNoTimeChat', tk.text, friendlyDateLabel(tk.date)), 300, '✅');
+        } else {
+          await agentSay(chatScroll, t('farDayUnlockedChat', friendlyDateLabel(date)), 300, '🎬');
+        }
+      });
+    }
+    addNote(chatScroll, t('seePremiumNote'), 'agenda-note', () => openPremiumSheet());
+    return;
+  }
   await agentSay(chatScroll, t('taskLimitChat', taskLimitFor(date)));
   if (canWatchAdForTask(date)) {
     addNote(chatScroll, req.text ? t('watchAdSaveTaskNote') : t('watchAdForTaskBtn'), 'agenda-note', async () => {
@@ -6217,7 +6384,7 @@ async function handleTaskOrNoteRequest(req) {
     return;
   }
   if (req.kind === 'task') {
-    if (!canAddTask(req.date)) { await sayTaskLimit({ text: req.text, date: req.date, time: req.time }); return; }
+    if (dateBeyondFree(req.date) || !canAddTask(req.date)) { await sayTaskLimit({ text: req.text, date: req.date, time: req.time }); return; }
     const tk = addTask({ text: req.text, date: req.date, time: req.time });
     setAvatarMood('happy', 1500);
     await agentSay(chatScroll, req.time
@@ -7582,13 +7749,13 @@ function refreshDiaryThemePicker() {
   const themePicker = document.getElementById('diary-theme-picker');
   const noneSwatch = `<span class="diary-theme-swatch none${diaryComposerTheme ? '' : ' selected'}" data-theme="" title="${t('diaryThemeLabel')}">✕</span>`;
   const themeSwatches = DIARY_THEMES.map(th => th.name
-    ? `<span class="diary-theme-swatch named${diaryComposerTheme === th.key ? ' selected' : ''}${th.premium && !isPremium ? ' locked' : ''}" data-theme="${th.key}" style="background:linear-gradient(135deg, ${th.gradient[0]}, ${th.gradient[1]});color:${th.text};"><span class="swatch-dot" style="background:linear-gradient(135deg, ${th.gradient[0]}, ${th.gradient[1]});"></span>${th.icon} ${th.name}</span>`
+    ? `<span class="diary-theme-swatch named${diaryComposerTheme === th.key ? ' selected' : ''}${th.premium && !diaryPremiumActive() ? ' locked' : ''}" data-theme="${th.key}" style="background:linear-gradient(135deg, ${th.gradient[0]}, ${th.gradient[1]});color:${th.text};"><span class="swatch-dot" style="background:linear-gradient(135deg, ${th.gradient[0]}, ${th.gradient[1]});"></span>${th.icon} ${th.name}</span>`
     : `<span class="diary-theme-swatch${diaryComposerTheme === th.key ? ' selected' : ''}" data-theme="${th.key}" style="background:linear-gradient(135deg, ${th.gradient[0]}, ${th.gradient[1]});"></span>`
   ).join('');
   themePicker.innerHTML = noneSwatch + themeSwatches;
   themePicker.querySelectorAll('.diary-theme-swatch').forEach(sw => {
     sw.onclick = () => {
-      if (sw.classList.contains('locked')) { promptPremiumFeature(t('diaryPremiumStyleMsg')); return; }
+      if (sw.classList.contains('locked')) { promptDiaryPremium(); return; }
       diaryComposerTheme = sw.dataset.theme; themePicker.querySelectorAll('.diary-theme-swatch').forEach(s => s.classList.remove('selected')); sw.classList.add('selected'); refreshDiaryStickerStage();
     };
   });
@@ -7739,10 +7906,10 @@ function refreshDiaryBlessNote() {
 }
 function refreshDiaryStickerPicker() {
   const tabs = document.getElementById('diary-sticker-cat-tabs');
-  tabs.innerHTML = DIARY_STICKER_CATEGORIES.map(cat => `<span class="diary-sticker-cat-tab${diaryActiveStickerCategory === cat.key ? ' active' : ''}${cat.premium && !isPremium ? ' locked' : ''}" data-cat="${cat.key}" title="${t('diaryStickerCat_' + cat.key)}">${cat.icon}</span>`).join('');
+  tabs.innerHTML = DIARY_STICKER_CATEGORIES.map(cat => `<span class="diary-sticker-cat-tab${diaryActiveStickerCategory === cat.key ? ' active' : ''}${cat.premium && !diaryPremiumActive() ? ' locked' : ''}" data-cat="${cat.key}" title="${t('diaryStickerCat_' + cat.key)}">${cat.icon}</span>`).join('');
   tabs.querySelectorAll('.diary-sticker-cat-tab').forEach(tab => {
     tab.onclick = () => {
-      if (tab.classList.contains('locked')) { promptPremiumFeature(t('diaryPremiumStyleMsg')); return; }
+      if (tab.classList.contains('locked')) { promptDiaryPremium(); return; }
       diaryActiveStickerCategory = tab.dataset.cat; refreshDiaryStickerPicker();
     };
   });
@@ -8761,13 +8928,15 @@ function renderCalDay() {
     <div class="day-section-head"><span>🌱 ${t('daySecHabits')}${isPremium ? '' : ` <span class="day-habit-count">${t('habitCountFree', (state.profile.habitos || []).length, FREE_HABIT_LIMIT)}</span>`}</span><button type="button" class="day-sec-add" id="day-add-habit">＋ ${t('daySecAdd')}</button></div>
     <div id="day-items">${itemsHtml}</div>${offHtml}
     <div class="day-section-head"><span>✅ ${t('daySecTasks')}</span>${isPast ? '' : `<button type="button" class="day-sec-add" id="day-add-task">＋ ${t('daySecAdd')}</button>`}</div>
-    <div id="day-tasks">${tasksHtml}</div>
+    <div id="day-tasks">${tasksHtml}</div>${!isPast && dateBeyondFree(dateStr) ? `<div class="day-off-habits">📅 ${t('farDateHint', FREE_SCHEDULE_DAYS)} ${canWatchRewarded() ? `<button type="button" class="day-off-chip" id="day-unlock-far">${t('unlockDayAdBtn')}</button>` : ''}</div>` : ''}
     <div class="day-section-head"><span>📝 ${t('daySecNotes')}</span><button type="button" class="day-sec-add" id="day-add-note">＋ ${t('daySecAdd')}</button></div>
     <div id="day-notes">${notesHtml}</div>
   `;
   document.getElementById('day-prev').onclick = () => { calDayOffset--; renderCalDay(); };
   document.getElementById('day-next').onclick = () => { if (calDayOffset < CAL_DAY_MAX_AHEAD) { calDayOffset++; renderCalDay(); } };
   document.getElementById('day-add-habit').onclick = () => openAddHabitPicker();
+  const unlockFarBtn = document.getElementById('day-unlock-far');
+  if (unlockFarBtn) unlockFarBtn.onclick = async () => { if (await unlockFarDay(dateStr)) renderCalDay(); };
   calBody.querySelectorAll('[data-off-habit]').forEach(b => {
     b.onclick = () => {
       const h = state.profile.habitos[parseInt(b.dataset.offHabit, 10)];
@@ -8872,6 +9041,7 @@ async function promptNoteLimit() {
 // Hoja inferior para crear/editar una tarea (texto, día, hora, recordatorio).
 function openTaskEditor(id, defaultDate) {
   const existing = id ? tasksList().find(x => x.id === id) : null;
+  if (!existing && defaultDate && dateBeyondFree(defaultDate)) { promptFarDate(defaultDate).then(ok => { if (ok) openTaskEditor(null, defaultDate); }); return; }
   if (!existing && !canAddTask(defaultDate)) { promptTaskLimit(defaultDate); return; }
   document.querySelectorAll('.task-sheet-overlay').forEach(x => x.remove());
   const overlay = document.createElement('div');
@@ -8934,6 +9104,19 @@ function openTaskEditor(id, defaultDate) {
     const text = textEl.value.trim();
     if (!text) { textEl.focus(); return; }
     const date = dateEl.value || ymd(new Date());
+    // Más allá de FREE_SCHEDULE_DAYS días: se desbloquea ese día con un anuncio.
+    if ((!existing || existing.date !== date) && dateBeyondFree(date)) {
+      const m = overlay.querySelector('#tk-alarm-msg');
+      m.textContent = t('farDateHint', FREE_SCHEDULE_DAYS); m.style.display = '';
+      if (canWatchRewarded()) {
+        const adBtn = document.createElement('button');
+        adBtn.type = 'button'; adBtn.className = 'qr-btn ad-reward-btn'; adBtn.style.marginTop = '8px';
+        adBtn.textContent = t('unlockDayAdBtn');
+        adBtn.onclick = async () => { if (await unlockFarDay(date)) { m.style.display = 'none'; overlay.querySelector('.tk-save').click(); } };
+        m.appendChild(document.createElement('br')); m.appendChild(adBtn);
+      }
+      return;
+    }
     // Cambiar la tarea a otro día (o crearla) cuenta para el límite de ese día.
     if ((!existing || existing.date !== date) && !canAddTask(date)) {
       const m = overlay.querySelector('#tk-alarm-msg');
@@ -9278,8 +9461,8 @@ function weekDaysData(weekStartStr) {
 }
 let weeklySummaryLoading = false;
 async function ensureWeeklySummary() {
-  if (!isPremium || !aiEnabled() || weeklySummaryLoading) return false;
   const key = lastCompletedWeekStart();
+  if (!(isPremium || (state.weeklyUnlocked || {})[key]) || !aiEnabled() || weeklySummaryLoading) return false;
   state.weeklySummaries = state.weeklySummaries || {};
   const existing = state.weeklySummaries[key];
   if (existing && (existing.lang || 'es') === currentLang()) return false; // si cambió el idioma, se reescribe
@@ -9288,7 +9471,7 @@ async function ensureWeeklySummary() {
   weeklySummaryLoading = true;
   try {
     const res = await fetch('/api/weekly-summary', { method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name: state.profile.nombre, language: currentLang(), days }) });
+      body: JSON.stringify({ name: state.profile.nombre, language: currentLang(), days, week: key }) });
     const data = await res.json().catch(() => null);
     if (!res.ok || !data || !data.ok) return false;
     state.weeklySummaries[key] = Object.assign({ createdAt: Date.now(), lang: currentLang() }, data.summary);
@@ -9412,11 +9595,13 @@ function renderMetrics() {
         <div class="kpi-tile"><div class="kpi-num">${isPremium ? m.rachaActual+' 🔥' : '🔒'}</div><div class="kpi-lbl">${t('rachaActualLbl')}</div><div class="kpi-sub" style="color:var(--text-dim);">${isPremium ? t('maximaLbl', m.rachaMax) : t('soloPremium')}</div></div>
       </div>
 
-      ${isPremium ? (m.hasHistory ? fullSectionsHtml : weeklySummaryHtml() + moodInsightsHtml(computeMoodInsights()) + emptyHistoryHtml) : ((m.hasHistory ? '' : emptyHistoryHtml) + lockedSectionHtml)}
+      ${isPremium ? (m.hasHistory ? fullSectionsHtml : weeklySummaryHtml() + moodInsightsHtml(computeMoodInsights()) + emptyHistoryHtml) : (weeklyTeaserHtml() + (m.hasHistory ? '' : emptyHistoryHtml) + lockedSectionHtml)}
 
       ${adBannerHtml()}
     </div>
   `;
+  const weeklyAdBtn = document.getElementById('weekly-ad-btn');
+  if (weeklyAdBtn) weeklyAdBtn.onclick = () => watchAdForWeekly();
   if (!isPremium) {
     const btn = document.getElementById('unlock-premium-btn');
     if (btn) btn.onclick = () => openPremiumSheet();
