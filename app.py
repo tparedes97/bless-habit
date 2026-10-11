@@ -115,6 +115,14 @@ PADDLE_PRICE_LABEL_YEARLY = os.environ.get("PADDLE_PRICE_LABEL_YEARLY", "$24.99/
 ADSENSE_CLIENT_ID = os.environ.get("ADSENSE_CLIENT_ID", "")
 ADSENSE_SLOT_ID = os.environ.get("ADSENSE_SLOT_ID", "")
 
+# Google AdMob — anuncios dentro de la app de Android (plan gratis). Los IDs de
+# los bloques se configuran en Render → Environment; si faltan, se usan los
+# bloques de PRUEBA de Google (no pagan, pero sirven para ver que todo funciona).
+ADMOB_TEST_BANNER_ID = "ca-app-pub-3940256099942544/9214589741"
+ADMOB_TEST_REWARDED_ID = "ca-app-pub-3940256099942544/5224354917"
+ADMOB_BANNER_ID = os.environ.get("ADMOB_BANNER_ID", "").strip()
+ADMOB_REWARDED_ID = os.environ.get("ADMOB_REWARDED_ID", "").strip()
+
 # ============================================================
 # NOTIFICACIONES PUSH (Web Push + VAPID) — para el reenganche compasivo
 # ("no te sientas culpable, siempre se puede comenzar de nuevo") que hasta
@@ -1546,6 +1554,11 @@ def index():
         "index.html",
         adsense_client_id=ADSENSE_CLIENT_ID,
         adsense_slot_id=ADSENSE_SLOT_ID,
+        admob_config={
+            "bannerId": ADMOB_BANNER_ID or ADMOB_TEST_BANNER_ID,
+            "rewardedId": ADMOB_REWARDED_ID or ADMOB_TEST_REWARDED_ID,
+            "testing": not (ADMOB_BANNER_ID and ADMOB_REWARDED_ID),
+        },
         paddle_price_label=PADDLE_PRICE_LABEL,
         native_app_url_scheme=NATIVE_APP_URL_SCHEME,
     )

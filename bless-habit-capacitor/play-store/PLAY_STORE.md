@@ -145,7 +145,7 @@ Bless is a wellbeing and personal organization tool. It does not replace help fr
 | Sección | Respuesta |
 |---|---|
 | Política de privacidad | `https://bless-habit.onrender.com/privacidad` |
-| Anuncios | **No**, la app no tiene anuncios |
+| Anuncios | Versión 1.0: **No**. Desde la **1.1: Sí** (AdMob, ver sección 8) |
 | Acceso a la app | **Toda la funcionalidad requiere acceso** → "Inicia sesión con cualquier cuenta de Google. No hace falta cuenta especial." |
 | Clasificación de contenido | Ver abajo |
 | Público objetivo | **18 y más** (evitas requisitos de apps para menores) |
@@ -243,3 +243,36 @@ Instala la app desde el enlace de Prueba interna con esa cuenta: al comprar, Goo
 - Si alguien cancela o pide reembolso, el servidor lo detecta (revisa con Google cada 12 h) y Premium se apaga al terminar lo pagado.
 - Quien pagó en la web (Paddle) también tiene Premium en la app con la misma cuenta, y al revés.
 - "Restaurar compra" (en Perfil y en la ventana de planes) recupera Premium al cambiar de celular.
+
+
+---
+
+## 8. Anuncios con AdMob (versión 1.1)
+
+En el plan gratis: un **banner** abajo en Calendario y Métricas (nunca en el chat ni el diario) y un **anuncio con recompensa**: al llegar a las 3 tareas de un día, la persona puede ver un anuncio para sumar **1 tarea más ese día** (hasta 3 anuncios por día). Premium no ve anuncios. Antes de mostrar anuncios, la app pide el consentimiento de Google a quien lo necesite (Europa, etc.).
+
+### 8.1 Crear la cuenta y los bloques de anuncios
+1. Entra a **https://admob.google.com** con tu cuenta de Google y completa el registro (país, zona horaria, pagos).
+2. **Apps → Agregar app → Android** → ¿Está publicada? Si aún no sale en Play Store, elige **No** (después la vinculas) → nombre **Bless Habit**.
+3. Copia el **ID de la app** (formato `ca-app-pub-XXXXXXXXXXXXXXXX~YYYYYYYYYY`, con **~**).
+4. En esa app → **Bloques de anuncios → Agregar**:
+   - **Banner** → nombre "Banner calendario" → copia su ID (`ca-app-pub-…/…`, con **/**).
+   - **Bonificado (Rewarded)** → nombre "Tarea extra" → recompensa: cantidad **1**, artículo **tarea** → copia su ID.
+5. **Privacidad y mensajes → Configuración de GDPR → Crear mensaje** para Android, idiomas español e inglés, y **publícalo**. Sin esto, en Europa no se muestran anuncios.
+
+### 8.2 Poner los IDs
+- **ID de la app** (con ~): en `android/gradle.properties`, cambia la línea `ADMOB_APP_ID=…` por el tuyo **antes de generar el AAB**.
+- **IDs de los bloques** (con /): en **Render → Environment** agrega `ADMOB_BANNER_ID` y `ADMOB_REWARDED_ID` → Save (se redeploya solo). Mientras falten, la app muestra **anuncios de prueba** de Google (no pagan, pero sirven para probar).
+
+> Nunca toques tus propios anuncios reales para "probar": AdMob puede bloquear la cuenta por clics inválidos. Para probar con anuncios reales, agrega tu teléfono como **dispositivo de prueba** (AdMob → Configuración → Dispositivos de prueba).
+
+### 8.3 Cambios en Play Console al subir la 1.1
+- **Contenido de la app → Anuncios**: **Sí, mi app contiene anuncios**.
+- **ID de publicidad**: **Sí** → propósitos: **Publicidad o marketing** y **Análisis**.
+- **Seguridad de los datos** → ahora **sí comparte** datos (lo hace el SDK de AdMob). Agrega, como **recopilados y compartidos**, propósitos **Publicidad o marketing**, **Análisis** y **Prevención de fraudes, seguridad y cumplimiento**:
+  - Ubicación → **Ubicación aproximada** (por la IP)
+  - Actividad en la app → **Interacciones en la app**
+  - Información y rendimiento de la app → **Registros de fallas** y **Diagnóstico**
+  - ID de dispositivo u otros IDs → **ID de dispositivo u otros IDs**
+- **Clasificación de contenido**: vuelve a responder el cuestionario y marca que la app **muestra anuncios**.
+- La Política de privacidad ya menciona AdMob (sección "Anuncios en la app de Android").

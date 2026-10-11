@@ -292,6 +292,10 @@
   .pin-link:empty { visibility: hidden; }
   .premium-tag { font-size: 10px; font-weight: 800; color: var(--on-accent); background: linear-gradient(135deg, var(--accent), var(--accent-2)); padding: 2px 7px; border-radius: 999px; vertical-align: middle; margin-left: 6px; }
   .delete-account-link { background: none; border: none; color: #d9534f; font-size: 13px; text-decoration: underline; cursor: pointer; padding: 8px; }
+  .ui-choice-list { display: flex; flex-direction: column; gap: 8px; }
+  .ui-choice-list button { width: 100%; min-height: 46px; }
+  body.ad-banner-on #view-calendar, body.ad-banner-on #view-metrics { padding-bottom: var(--ad-banner-h, 60px); }
+  body.ad-banner-on .day-add-fab { bottom: calc(76px + var(--ad-banner-h, 60px) + env(safe-area-inset-bottom, 0px)); }
   .terms-gate { position: fixed; inset: 0; z-index: 120; background: var(--bg); display: flex; align-items: center; justify-content: center; padding: 20px 16px; overflow-y: auto; }
   .terms-card { width: 100%; max-width: 420px; background: var(--panel); border-radius: 22px; padding: 26px 22px; box-shadow: 0 12px 40px rgba(0,0,0,.12); text-align: left; margin: auto; }
   .terms-emoji { font-size: 40px; text-align: center; }
@@ -1943,6 +1947,12 @@ const I18N = {
     shareLogroTitle: 'Comparte tu logro',
     downloadBtn: '📥 Descargar', shareBtn: '📤 Compartir',
     logroCardUnlocked: 'LOGRO DESBLOQUEADO', logroCardBrand: 'blesshabit.app',
+    taskLimitMsgAd: (n, left) => `Este día ya tiene sus ${n} tareas del plan gratis ✅. Puedes ver un anuncio corto para sumar 1 tarea más a este día (te quedan ${left} hoy), o hacerte Premium para tenerlas ilimitadas y sin anuncios.`,
+    watchAdForTaskBtn: '🎬 Ver un anuncio (+1 tarea)',
+    watchAdSaveTaskNote: '🎬 Ver un anuncio y guardar esta tarea',
+    extraTaskUnlockedChat: (d) => `¡Listo! 🎬 Ya puedes agregar 1 tarea más para ${d}.`,
+    rewardAdUnavailable: 'Ahora no hay un anuncio disponible. Intenta de nuevo en un ratito 🙂',
+    adPrivacyLink: 'Privacidad de anuncios',
     termsGateTitle: 'Antes de empezar',
     termsGateBody: 'Para usar Bless Habit necesitamos que leas y aceptes nuestros Términos y condiciones y nuestra Política de privacidad.',
     termsGatePoint1: 'Guardamos tu perfil, hábitos, tareas, diario y chat para que Bless te acompañe. Puedes borrarlos cuando quieras desde tu Perfil.',
@@ -2437,6 +2447,12 @@ const I18N = {
     shareLogroTitle: 'Share your achievement',
     downloadBtn: '📥 Download', shareBtn: '📤 Share',
     logroCardUnlocked: 'ACHIEVEMENT UNLOCKED', logroCardBrand: 'blesshabit.app',
+    taskLimitMsgAd: (n, left) => `This day already has its ${n} free-plan tasks ✅. You can watch a short ad to add 1 more task to this day (${left} left today), or go Premium for unlimited tasks and no ads.`,
+    watchAdForTaskBtn: '🎬 Watch an ad (+1 task)',
+    watchAdSaveTaskNote: '🎬 Watch an ad and save this task',
+    extraTaskUnlockedChat: (d) => `Done! 🎬 You can now add 1 more task for ${d}.`,
+    rewardAdUnavailable: "There's no ad available right now. Try again in a little while 🙂",
+    adPrivacyLink: 'Ad privacy',
     termsGateTitle: 'Before you start',
     termsGateBody: 'To use Bless Habit, please read and accept our Terms of Service and our Privacy Policy.',
     termsGatePoint1: 'We store your profile, habits, tasks, journal and chat so Bless can walk with you. You can delete them anytime from your Profile.',
@@ -3619,6 +3635,7 @@ let isPremium = false;
 let currentUserEmail = ''; // se llena en bootstrapApp() — Paddle lo usa para correlacionar el pago con la cuenta
 const ADSENSE_CLIENT_ID = {{ adsense_client_id | tojson }};
 const ADSENSE_SLOT_ID = {{ adsense_slot_id | tojson }};
+const ADMOB = {{ admob_config | tojson }};
 const PADDLE_PRICE_LABEL = {{ paddle_price_label | tojson }};
 const NATIVE_APP_URL_SCHEME = {{ native_app_url_scheme | tojson }};
 
@@ -4153,6 +4170,139 @@ document.addEventListener('visibilitychange', () => {
    real si ya configuraste ADSENSE_CLIENT_ID / ADSENSE_SLOT_ID en las Secrets del servidor
    y tu cuenta de AdSense ya aprobó el sitio. Mientras tanto muestra un rótulo de repuesto
    para que se note dónde va a aparecer el anuncio. */
+/* ============================================================
+   ANUNCIOS EN LA APP DE ANDROID (AdMob) — solo plan gratis.
+   - Banner abajo, solo en Calendario y Métricas (nunca en el chat ni el
+     diario, que son espacios personales). Se esconde mientras haya una
+     ventana abierta, para que no tape botones.
+   - Anuncio con recompensa: "ver un anuncio = +1 tarea ese día" (hasta
+     REWARD_TASKS_MAX_PER_DAY por día).
+   - Antes de mostrar anuncios se pide el consentimiento de Google (UMP) a
+     quien lo necesite (Europa, etc.).
+   Requiere la app 1.1+ (plugin AdMob); en la 1.0 y en la web no hace nada.
+   ============================================================ */
+const REWARD_TASKS_MAX_PER_DAY = 3;
+const AD_BANNER_TABS = new Set(['calendar', 'metrics']);
+function admob() { return IS_NATIVE_APP && window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.AdMob; }
+let adsInitPromise = null, adsCanRequest = false, adsPrivacyRequired = false;
+function initNativeAds() {
+  if (adsInitPromise) return adsInitPromise;
+  adsInitPromise = (async () => {
+    const A = admob();
+    if (!A || isPremium) return false;
+    try {
+      await A.initialize({ maxAdContentRating: 'Teen', initializeForTesting: !!ADMOB.testing });
+      try {
+        let info = await A.requestConsentInfo();
+        if (info && info.status === 'REQUIRED' && info.isConsentFormAvailable) info = await A.showConsentForm();
+        adsPrivacyRequired = !!(info && info.privacyOptionsRequirementStatus === 'REQUIRED');
+        adsCanRequest = !(info && info.canRequestAds === false);
+      } catch (e) { adsCanRequest = true; }
+      return adsCanRequest;
+    } catch (e) { return false; }
+  })();
+  return adsInitPromise;
+}
+let adBannerShown = false, adBannerHidden = false, adBannerTab = 'chat', adBannerWatcher = null;
+function anyOverlayOpen() {
+  if (document.querySelector('.ui-dialog-overlay, .task-sheet-overlay, .terms-gate')) return true;
+  return [...document.querySelectorAll('[id$="-overlay"]')].some(el => el.style.display && el.style.display !== 'none');
+}
+async function updateAdBanner(tab) {
+  if (tab) adBannerTab = tab;
+  const A = admob();
+  if (!A) return;
+  const want = !isPremium && AD_BANNER_TABS.has(adBannerTab);
+  if (want && !(await initNativeAds())) return;
+  try {
+    if (want && !adBannerShown) {
+      const bar = document.getElementById('tabbar');
+      const margin = bar ? Math.round(bar.getBoundingClientRect().height) : 64;
+      await A.showBanner({ adId: ADMOB.bannerId, adSize: 'ADAPTIVE_BANNER', position: 'BOTTOM_CENTER', margin, isTesting: !!ADMOB.testing });
+      adBannerShown = true; adBannerHidden = false;
+      document.body.classList.add('ad-banner-on');
+      if (!adBannerWatcher) adBannerWatcher = setInterval(syncAdBannerVisibility, 600);
+    } else if (!want && adBannerShown) {
+      await A.removeBanner();
+      adBannerShown = false;
+      document.body.classList.remove('ad-banner-on');
+    }
+  } catch (e) { /* sin anuncio disponible: no pasa nada */ }
+}
+// Con una ventana abierta el banner se esconde (no debe tapar "Guardar").
+async function syncAdBannerVisibility() {
+  const A = admob();
+  if (!A || !adBannerShown) return;
+  if (isPremium) { updateAdBanner(); return; }
+  const hide = anyOverlayOpen();
+  try {
+    if (hide && !adBannerHidden) { await A.hideBanner(); adBannerHidden = true; }
+    else if (!hide && adBannerHidden) { await A.resumeBanner(); adBannerHidden = false; }
+  } catch (e) {}
+}
+(function listenBannerSize() {
+  const A = admob();
+  if (!A || !A.addListener) return;
+  try { A.addListener('bannerAdSizeChanged', (info) => { document.documentElement.style.setProperty('--ad-banner-h', ((info && info.height) || 60) + 'px'); }); } catch (e) {}
+})();
+// --- Anuncio con recompensa: +1 tarea en un día ---
+function taskBonusFor(date) { return Math.min(REWARD_TASKS_MAX_PER_DAY, ((state.taskBonus || {})[date]) || 0); }
+function canWatchAdForTask(date) { return !!admob() && !isPremium && taskBonusFor(date) < REWARD_TASKS_MAX_PER_DAY; }
+async function watchRewardedAd() {
+  const A = admob();
+  if (!A || !(await initNativeAds())) return false;
+  let earned = false;
+  const handles = [];
+  try {
+    handles.push(await A.addListener('onRewardedVideoAdReward', () => { earned = true; }));
+    const closed = new Promise(res => {
+      A.addListener('onRewardedVideoAdDismissed', res).then(h => handles.push(h));
+      A.addListener('onRewardedVideoAdFailedToShow', res).then(h => handles.push(h));
+    });
+    await A.prepareRewardVideoAd({ adId: ADMOB.rewardedId, isTesting: !!ADMOB.testing });
+    await A.showRewardVideoAd();
+    await Promise.race([closed, new Promise(r => setTimeout(r, 3000))]);
+  } catch (e) {
+    if (!earned) { await uiAlert(t('rewardAdUnavailable')); }
+  } finally {
+    handles.forEach(h => { try { h.remove(); } catch (e) {} });
+  }
+  return earned;
+}
+async function watchAdForExtraTask(date) {
+  if (!canWatchAdForTask(date)) return false;
+  if (!(await watchRewardedAd())) return false;
+  state.taskBonus = state.taskBonus || {};
+  // Solo se guardan los días de hoy en adelante (lo viejo se limpia).
+  const today = ymd(new Date());
+  Object.keys(state.taskBonus).forEach(d => { if (d < today) delete state.taskBonus[d]; });
+  state.taskBonus[date] = taskBonusFor(date) + 1;
+  saveStateToServer();
+  return true;
+}
+// Elegir entre varias opciones (botones apilados), con el mismo estilo de las ventanas de la app.
+function uiChoice(message, choices) {
+  if (uiDialogClose) uiDialogClose(null);
+  return new Promise((resolve) => {
+    const overlay = document.createElement('div');
+    overlay.className = 'ui-dialog-overlay';
+    overlay.innerHTML = `<div class="ui-dialog" role="dialog" aria-modal="true"><div class="ui-dialog-msg"></div><div class="ui-choice-list"></div></div>`;
+    overlay.querySelector('.ui-dialog-msg').textContent = message;
+    const finish = (v) => { if (!overlay.isConnected) return; overlay.remove(); uiDialogClose = null; resolve(v); };
+    const list = overlay.querySelector('.ui-choice-list');
+    choices.forEach(c => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = c.primary ? 'ui-dialog-ok' : 'ui-dialog-cancel';
+      b.textContent = c.label;
+      b.onclick = () => finish(c.key);
+      list.appendChild(b);
+    });
+    uiDialogClose = () => finish(null);
+    overlay.addEventListener('click', (e) => { if (e.target === overlay) finish(null); });
+    document.body.appendChild(overlay);
+  });
+}
 function adBannerHtml() {
   // AdSense no permite mostrarse dentro de apps (WebView); en la app iría AdMob.
   if (isPremium || IS_NATIVE_APP) return '';
@@ -6020,7 +6170,7 @@ function scheduleFromChat(time, rawText) {
   let date = when.explicitDate ? when.date : ymd(new Date());
   const now = new Date(), nowHM = String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
   if (!when.explicitDate && time && time <= nowHM) date = ymd(addDays(now, 1)); // esa hora ya pasó hoy
-  if (!canAddTask(date)) return null;
+  if (!canAddTask(date)) { lastBlockedTask = { text, date, time }; return null; }
   return addTask({ text, date, time });
 }
 async function applyTimeToRecentTask(time, date) {
@@ -6034,8 +6184,25 @@ async function applyTimeToRecentTask(time, date) {
   await agentSay(chatScroll, t('taskSavedChat', recent.text, friendlyDateLabel(recent.date), recent.time), 300, '⏰');
   return true;
 }
-async function sayTaskLimit() {
-  await agentSay(chatScroll, t('taskLimitChat', FREE_TASK_LIMIT));
+// La tarea que no se pudo guardar por el límite (para guardarla tras ver un anuncio).
+let lastBlockedTask = null;
+async function sayTaskLimit(req) {
+  req = req || lastBlockedTask || {};
+  lastBlockedTask = null;
+  const date = req.date || ymd(new Date());
+  await agentSay(chatScroll, t('taskLimitChat', taskLimitFor(date)));
+  if (canWatchAdForTask(date)) {
+    addNote(chatScroll, req.text ? t('watchAdSaveTaskNote') : t('watchAdForTaskBtn'), 'agenda-note', async () => {
+      if (!(await watchAdForExtraTask(date))) return;
+      if (req.text && canAddTask(date)) {
+        const tk = addTask({ text: req.text, date, time: req.time || null });
+        if (tk.time) maybeEnableRemindersForTask();
+        await agentSay(chatScroll, tk.time ? t('taskSavedChat', tk.text, friendlyDateLabel(tk.date), tk.time) : t('taskSavedNoTimeChat', tk.text, friendlyDateLabel(tk.date)), 300, '✅');
+      } else {
+        await agentSay(chatScroll, t('extraTaskUnlockedChat', friendlyDateLabel(date)), 300, '🎬');
+      }
+    });
+  }
   addNote(chatScroll, t('seePremiumNote'), 'agenda-note', () => openPremiumSheet());
 }
 async function handleTaskOrNoteRequest(req) {
@@ -6043,17 +6210,13 @@ async function handleTaskOrNoteRequest(req) {
     // Solo dio la hora ("programa tarea para las 3:25"): si hay una tarea
     // reciente sin hora, se le pone; si no, se pregunta cuál.
     if (req.time && await applyTimeToRecentTask(req.time, req.date)) return;
-    if (req.time && !canAddTask(req.date)) { await sayTaskLimit(); return; }
+    if (req.time && !canAddTask(req.date)) { await sayTaskLimit({ date: req.date }); return; }
     state.pending = { type: 'taskNew', time: req.time || null, date: req.time ? req.date : null };
     await agentSay(chatScroll, req.time ? t('askTaskForTimeChat', req.time) : t('askTaskChat'), 300);
     return;
   }
   if (req.kind === 'task') {
-    if (!canAddTask(req.date)) {
-      await agentSay(chatScroll, t('taskLimitChat', FREE_TASK_LIMIT));
-      addNote(chatScroll, t('seePremiumNote'), 'agenda-note', () => openPremiumSheet());
-      return;
-    }
+    if (!canAddTask(req.date)) { await sayTaskLimit({ text: req.text, date: req.date, time: req.time }); return; }
     const tk = addTask({ text: req.text, date: req.date, time: req.time });
     setAvatarMood('happy', 1500);
     await agentSay(chatScroll, req.time
@@ -6600,6 +6763,7 @@ document.getElementById('chat-text').addEventListener('keydown', e => { if (e.ke
    ============================================================ */
 const ALL_VIEWS = ['view-chat', 'view-calendar', 'view-metrics', 'view-diary', 'view-profile'];
 function switchTab(which) {
+  updateAdBanner(which);
   document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active-tab', t.dataset.tab === which));
   ALL_VIEWS.forEach(id => document.getElementById(id).classList.remove('active'));
   if (which === 'chat') {
@@ -6707,7 +6871,7 @@ function renderProfile() {
     <div style="text-align:center; margin-top: 14px;"><a href="/auth/logout" class="logout-link">${t('logoutLink')}</a></div>
     <div style="text-align:center; margin-top: 18px;"><button type="button" class="delete-account-link" id="delete-account-btn">${t('deleteAccountLink')}</button></div>
     <div class="login-legal" style="text-align:center;">${IS_NATIVE_APP
-      ? (currentLang() === 'en' ? '<a href="/terms" target="_blank">Terms</a> · <a href="/privacy" target="_blank">Privacy</a>' : '<a href="/terminos" target="_blank">Términos</a> · <a href="/privacidad" target="_blank">Privacidad</a>')
+      ? (currentLang() === 'en' ? '<a href="/terms" target="_blank">Terms</a> · <a href="/privacy" target="_blank">Privacy</a>' : '<a href="/terminos" target="_blank">Términos</a> · <a href="/privacidad" target="_blank">Privacidad</a>') + (adsPrivacyRequired && !isPremium ? ` · <a href="#" id="ad-privacy-link">${t('adPrivacyLink')}</a>` : '')
       : currentLang() === 'en'
       ? '<a href="/pricing" target="_blank">Pricing</a> · <a href="/terms" target="_blank">Terms</a> · <a href="/privacy" target="_blank">Privacy</a> · <a href="/refunds" target="_blank">Refunds</a>'
       : '<a href="/precios" target="_blank">Precios</a> · <a href="/terminos" target="_blank">Términos</a> · <a href="/privacidad" target="_blank">Privacidad</a> · <a href="/reembolsos" target="_blank">Reembolsos</a>'}</div>
@@ -6725,6 +6889,8 @@ function renderProfile() {
   bindAppLockCard();
   const memPremiumBtn = document.getElementById('memories-premium-btn');
   if (memPremiumBtn) memPremiumBtn.onclick = () => openPremiumSheet();
+  const adPrivacyLink = document.getElementById('ad-privacy-link');
+  if (adPrivacyLink) adPrivacyLink.onclick = (e) => { e.preventDefault(); const A = admob(); if (A) A.showPrivacyOptionsForm().catch(() => {}); };
   const delBtn = document.getElementById('delete-account-btn');
   if (delBtn) delBtn.onclick = deleteMyAccount;
   document.querySelectorAll('.memory-del').forEach(btn => {
@@ -8648,8 +8814,10 @@ function tasksForDate(dateStr) {
 function notesForDate(dateStr) { return notesList().filter(n => n.date === dateStr).sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0)); }
 // Plan gratis: hasta 3 tareas y 10 notas POR DÍA. Un día con sus 3 tareas no
 // deja borrarlas (para no "rotarlas"), solo editarlas: texto, día u hora.
-function canAddTask(date) { return isPremium || tasksForDate(date || ymd(new Date())).length < FREE_TASK_LIMIT; }
-function canDeleteTask(date) { return isPremium || tasksForDate(date || ymd(new Date())).length < FREE_TASK_LIMIT; }
+// Cada anuncio con recompensa suma 1 tarea a ese día (ver watchAdForExtraTask).
+function taskLimitFor(date) { return FREE_TASK_LIMIT + taskBonusFor(date || ymd(new Date())); }
+function canAddTask(date) { return isPremium || tasksForDate(date || ymd(new Date())).length < taskLimitFor(date); }
+function canDeleteTask(date) { return isPremium || tasksForDate(date || ymd(new Date())).length < taskLimitFor(date); }
 function canAddNote(date) { return isPremium || notesForDate(date || ymd(new Date())).length < FREE_NOTE_LIMIT; }
 function afterTasksOrNotesChanged() {
   markAppActed();
@@ -8682,8 +8850,19 @@ function friendlyDateLabel(dateStr) {
   const d = new Date(dateStr + 'T00:00:00');
   return d.toLocaleDateString(currentLang() === 'en' ? 'en-US' : 'es-ES', { weekday: 'long', day: 'numeric', month: 'long' });
 }
-async function promptTaskLimit() {
-  if (await uiConfirm(t('taskLimitMsg', FREE_TASK_LIMIT), { okText: t('habitLimitOk') })) openPremiumSheet();
+async function promptTaskLimit(date) {
+  date = date || ymd(new Date());
+  if (!canWatchAdForTask(date)) {
+    if (await uiConfirm(t('taskLimitMsg', FREE_TASK_LIMIT), { okText: t('habitLimitOk') })) openPremiumSheet();
+    return;
+  }
+  const choice = await uiChoice(t('taskLimitMsgAd', FREE_TASK_LIMIT, REWARD_TASKS_MAX_PER_DAY - taskBonusFor(date)), [
+    { key: 'ad', label: t('watchAdForTaskBtn'), primary: true },
+    { key: 'premium', label: t('habitLimitOk') },
+    { key: null, label: t('dialogCancel') },
+  ]);
+  if (choice === 'premium') openPremiumSheet();
+  if (choice === 'ad' && await watchAdForExtraTask(date)) openTaskEditor(null, date);
 }
 async function promptNoteLimit() {
   if (await uiConfirm(t('noteLimitMsg', FREE_NOTE_LIMIT), { okText: t('habitLimitOk') })) openPremiumSheet();
@@ -8692,7 +8871,7 @@ async function promptNoteLimit() {
 // Hoja inferior para crear/editar una tarea (texto, día, hora, recordatorio).
 function openTaskEditor(id, defaultDate) {
   const existing = id ? tasksList().find(x => x.id === id) : null;
-  if (!existing && !canAddTask(defaultDate)) { promptTaskLimit(); return; }
+  if (!existing && !canAddTask(defaultDate)) { promptTaskLimit(defaultDate); return; }
   document.querySelectorAll('.task-sheet-overlay').forEach(x => x.remove());
   const overlay = document.createElement('div');
   overlay.className = 'ui-dialog-overlay task-sheet-overlay';
@@ -8757,7 +8936,14 @@ function openTaskEditor(id, defaultDate) {
     // Cambiar la tarea a otro día (o crearla) cuenta para el límite de ese día.
     if ((!existing || existing.date !== date) && !canAddTask(date)) {
       const m = overlay.querySelector('#tk-alarm-msg');
-      m.textContent = t('taskDayFullHint', FREE_TASK_LIMIT); m.style.display = '';
+      m.textContent = t('taskDayFullHint', taskLimitFor(date)); m.style.display = '';
+      if (canWatchAdForTask(date)) {
+        const adBtn = document.createElement('button');
+        adBtn.type = 'button'; adBtn.className = 'qr-btn'; adBtn.style.marginTop = '8px';
+        adBtn.textContent = t('watchAdForTaskBtn');
+        adBtn.onclick = async () => { if (await watchAdForExtraTask(date)) { m.style.display = 'none'; overlay.querySelector('.tk-save').click(); } };
+        m.appendChild(document.createElement('br')); m.appendChild(adBtn);
+      }
       return;
     }
     const offsets = isPremium ? Array.from(remindWrap.querySelectorAll('.qr-btn.selected')).map(b => parseInt(b.dataset.offset, 10)).sort((a, b) => b - a) : [0];
