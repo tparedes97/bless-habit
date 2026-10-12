@@ -253,6 +253,7 @@ En el plan gratis (Premium no ve ninguno):
 - **Banner** abajo en Calendario y Métricas (nunca en el chat ni el diario).
 - **Anuncios con recompensa** (la persona elige verlos), máximo **8 al día** en total:
   - **+1 tarea** en un día que ya tiene sus 3 (hasta 3 por día).
+  - **+1 hábito para siempre** cada 3 anuncios (hasta 2 extra, 5 hábitos en total). El avance se guarda en el servidor.
   - **Programar más lejos**: gratis hasta 14 días adelante; un anuncio desbloquea un día hasta 60 días adelante.
   - **5 mensajes más con Bless** al llegar al límite diario (hasta 3 veces al día).
   - **Resumen semanal de Bless** (normalmente Premium) de la semana pasada.

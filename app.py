@@ -823,6 +823,7 @@ def api_me():
         "appLock": bool(user.get("app_pin_hash")),
         "termsAccepted": user.get("terms_version") == TERMS_VERSION,
         "uid": user_id,
+        "habitAds": habit_ad_progress(user_id),
     })
 
 
@@ -1830,10 +1831,14 @@ def consume_ai_quota(user_id):
 # RECOMPENSAS POR VER UN ANUNCIO (app de Android, plan gratis)
 #   - "ai": 5 mensajes más con Bless hoy (10 llamadas), hasta 3 veces al día.
 #   - "weekly": leer el resumen semanal de Bless de esa semana.
+#   - "habit": cada 3 anuncios = 1 hábito más, para siempre (máximo 2 extra).
+#     El avance se guarda aquí, así no se pierde al cambiar de celular.
 # (Las tareas extra y los días lejanos se guardan en el estado de la app.)
 # ============================================================
 AD_AI_CALLS_PER_REWARD = 10
 AD_AI_REWARDS_PER_DAY = 3
+AD_HABIT_ADS_PER_SLOT = 3
+AD_HABIT_MAX_SLOTS = 2
 
 
 def _usage_get(conn, user_id, key):
@@ -1846,6 +1851,15 @@ def _usage_add(conn, user_id, key):
         INSERT INTO ai_usage (user_id, day, count) VALUES (?, ?, 1)
         ON CONFLICT(user_id, day) DO UPDATE SET count = count + 1
     """, (user_id, key))
+
+
+def habit_ad_progress(user_id):
+    """Anuncios vistos para hábitos extra (0 a 6) y los hábitos ya desbloqueados."""
+    conn = get_db()
+    ads = min(_usage_get(conn, user_id, "habit-ads"), AD_HABIT_ADS_PER_SLOT * AD_HABIT_MAX_SLOTS)
+    conn.close()
+    return {"ads": ads, "slots": ads // AD_HABIT_ADS_PER_SLOT,
+            "perSlot": AD_HABIT_ADS_PER_SLOT, "maxSlots": AD_HABIT_MAX_SLOTS}
 
 
 def weekly_unlocked(user_id, week):
@@ -1867,7 +1881,7 @@ def api_ad_reward():
     nonce = str(data.get("nonce") or "")[:64]
     conn = get_db()
     try:
-        if kind in ("ai", "weekly") and not consume_ssv_reward(conn, user_id, kind, nonce):
+        if kind in ("ai", "weekly", "habit") and not consume_ssv_reward(conn, user_id, kind, nonce):
             # Google todavía no confirmó el anuncio (puede tardar unos segundos): la app reintenta.
             return jsonify({"ok": False, "error": "pending"}), 409
         if kind == "ai":
@@ -1877,6 +1891,14 @@ def api_ad_reward():
             _usage_add(conn, user_id, key)
             conn.commit()
             return jsonify({"ok": True, "left": AD_AI_REWARDS_PER_DAY - _usage_get(conn, user_id, key)})
+        if kind == "habit":
+            if _usage_get(conn, user_id, "habit-ads") >= AD_HABIT_ADS_PER_SLOT * AD_HABIT_MAX_SLOTS:
+                return jsonify({"ok": False, "error": "max_slots"}), 429
+            _usage_add(conn, user_id, "habit-ads")
+            conn.commit()
+            conn.close()
+            conn = None
+            return jsonify(dict(habit_ad_progress(user_id), ok=True))
         if kind == "weekly":
             week = str(data.get("week") or "")
             if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", week):
@@ -1887,7 +1909,8 @@ def api_ad_reward():
             return jsonify({"ok": True})
         return jsonify({"ok": False, "error": "bad_kind"}), 400
     finally:
-        conn.close()
+        if conn is not None:
+            conn.close()
 
 
 def premium_required_response():

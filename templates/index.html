@@ -1610,7 +1610,7 @@ SOBRE LA APP (úsalo solo si preguntan; nunca inventes menús, pantallas ni prec
 - Secciones: Bless (chat), Calendario (día/semana/mes; cada día tiene Hábitos, Tareas con recordatorio y Notas del día), Métricas, Diario y Perfil.
 - La persona puede pedirte tareas o notas escribiendo "recuérdame…" o "anota…", y escribir en su diario con "escribe en mi diario: …" (la app los guarda sola); si pregunta cómo, explícale eso.
 - NUNCA digas que agendaste, anotaste, guardaste, agregaste, escribiste o programaste algo (tampoco en el diario, ni hábitos ni logros), ni "te recordaré" o "te aviso": tú no puedes hacerlo, lo hace la app sola y ella misma lo confirma. Si la persona quiere guardar algo, dile que te lo pida empezando con "recuérdame…", "anota…" o "escribe en mi diario: …".
-- Plan gratis de tareas y notas: hasta 3 tareas y 10 notas por día, y tareas hasta 14 días adelante (un día con sus 3 tareas no deja borrarlas, solo editarlas); hábitos: 3 en total. En la app de Android, viendo un anuncio corto se puede sumar 1 tarea a un día, desbloquear un día más lejano, tener 5 mensajes más con Bless, leer el resumen semanal o usar estilos Premium del diario por 24 h. Premium: ilimitado y sin anuncios.
+- Plan gratis de tareas y notas: hasta 3 tareas y 10 notas por día, y tareas hasta 14 días adelante (un día con sus 3 tareas no deja borrarlas, solo editarlas); hábitos: 3 en total. En la app de Android, cada 3 anuncios cortos desbloquean 1 hábito más para siempre (hasta 2 extra, 5 en total); y viendo un anuncio corto se puede sumar 1 tarea a un día, desbloquear un día más lejano, tener 5 mensajes más con Bless, leer el resumen semanal o usar estilos Premium del diario por 24 h. Premium: ilimitado y sin anuncios.
 - Plan gratis: chat con Bless (límite diario de mensajes), hasta 3 hábitos, calendario, diario y recordatorios a la hora de cada hábito.
 - Bless Habit Premium incluye: chat ilimitado y memoria (Bless recuerda lo importante de días anteriores), hábitos ilimitados, resumen semanal escrito por Bless, análisis de ánimo, recordatorios personalizados (avisar 10, 15, 30 o 60 minutos antes), temas y stickers extra para el diario, exportar el diario a PDF y bloqueo con PIN o huella.
 - Esta persona ${isPremium ? 'YA tiene Premium: agradécele y no le ofrezcas comprarlo' : 'todavía no tiene Premium'}.
@@ -2067,6 +2067,11 @@ const I18N = {
     memoriesFreeTeaser: 'Con Premium, Bless recuerda lo importante de lo que le cuentas (por ejemplo, "quiere retomar la guitarra") y te acompaña con eso los días siguientes. En el plan gratis, cada día empieza desde cero.',
     habitLimitMsg: (n) => `En el plan gratis puedes tener ${n} hábitos en total 🌱 (cuentan todos, aunque alguno no salga hoy en el Calendario). Con Premium son ilimitados. ¿Quieres verlo?`,
     habitCountFree: (n, max) => `${n} de ${max} del plan gratis`,
+    habitLimitMsgAd: (n, per, max) => `En el plan gratis puedes tener ${n} hábitos en total 🌱 (cuentan todos, aunque alguno no salga hoy en el Calendario).\n\nPuedes ver ${per} anuncios cortos para desbloquear un hábito más para siempre (hasta ${max} extra), o hacerte Premium para tenerlos ilimitados y sin anuncios.`,
+    habitAdBtn: (done, per) => `🎬 Ver anuncio (${done} de ${per})`,
+    habitAdMore: (left) => `¡Gracias! 🎬 ${left === 1 ? 'Te falta 1 anuncio' : `Te faltan ${left} anuncios`} para desbloquear un hábito más. Tu avance queda guardado, puedes seguir ahora o más tarde.`,
+    habitAdLater: 'Más tarde',
+    habitAdUnlocked: (n) => `¡Desbloqueaste un hábito más! 🌱 Ahora puedes tener ${n} hábitos. Ya puedes agregarlo.`,
     habitLimitYours: (x) => `Tus hábitos ahora: ${x}. Puedes borrar uno desde Perfil (✏️ → Eliminar hábito).`,
     deleteHabitConfirmQ: (x) => `¿Eliminar el hábito ${x}? Se borra de todos los días.`,
     dayOffHabits: 'No salen este día:', daySkippedTag: 'quitado solo hoy (toca para volver)', dayNotScheduledTag: 'no le toca',
@@ -2582,6 +2587,11 @@ const I18N = {
     memoriesFreeTeaser: 'With Premium, Bless remembers the important things you share (for example, "wants to get back to guitar") and supports you with that in the following days. On the free plan, each day starts from scratch.',
     habitLimitMsg: (n) => `On the free plan you can have ${n} habits in total 🌱 (they all count, even if one doesn't show in today's Calendar). With Premium they're unlimited. Want to see it?`,
     habitCountFree: (n, max) => `${n} of ${max} on the free plan`,
+    habitLimitMsgAd: (n, per, max) => `On the free plan you can have ${n} habits in total 🌱 (they all count, even if one doesn't show in today's Calendar).\n\nYou can watch ${per} short ads to unlock one more habit for good (up to ${max} extra), or go Premium for unlimited habits and no ads.`,
+    habitAdBtn: (done, per) => `🎬 Watch ad (${done} of ${per})`,
+    habitAdMore: (left) => `Thanks! 🎬 ${left === 1 ? '1 more ad' : `${left} more ads`} to unlock one more habit. Your progress is saved, so you can keep going now or later.`,
+    habitAdLater: 'Later',
+    habitAdUnlocked: (n) => `You unlocked one more habit! 🌱 You can now have ${n} habits. Go ahead and add it.`,
     habitLimitYours: (x) => `Your habits now: ${x}. You can delete one from Profile (✏️ → Delete habit).`,
     deleteHabitConfirmQ: (x) => `Delete the habit ${x}? It will be removed from every day.`,
     dayOffHabits: 'Not on this day:', daySkippedTag: 'removed just today (tap to bring back)', dayNotScheduledTag: 'not scheduled',
@@ -3308,7 +3318,7 @@ function renderHabitPicker() {
       const b = document.createElement('button'); b.className = 'qr-btn'; b.textContent = `${h.icon} ${t2(h)}`;
       b.onclick = () => {
         if (selected.has(h.key)) { selected.delete(h.key); b.classList.remove('selected'); return; }
-        if (!isPremium && selected.size + customList.length >= FREE_HABIT_LIMIT) { addNote(ob, t('habitLimitOnboarding', FREE_HABIT_LIMIT)); return; }
+        if (!isPremium && selected.size + customList.length >= habitLimit()) { addNote(ob, t('habitLimitOnboarding', habitLimit())); return; }
         selected.add(h.key); b.classList.add('selected');
       };
       wrap.appendChild(b);
@@ -3320,7 +3330,7 @@ function renderHabitPicker() {
     row.appendChild(custom); row.appendChild(addBtn); obControls.appendChild(row);
     addBtn.onclick = async () => {
       const val = custom.value.trim(); if (!val) return;
-      if (!isPremium && selected.size + customList.length >= FREE_HABIT_LIMIT) { addNote(ob, t('habitLimitOnboarding', FREE_HABIT_LIMIT)); return; }
+      if (!isPremium && selected.size + customList.length >= habitLimit()) { addNote(ob, t('habitLimitOnboarding', habitLimit())); return; }
       const entry = { key: pickHabitKey(val), icon: pickIcon(val), label: val };
       customList.push(entry); custom.value = '';
       await agentSay(ob, tp('customHabitAdded', entry.icon, val), 350);
@@ -3348,14 +3358,46 @@ async function promptPremiumFeature(msg) {
   if (await uiConfirm(msg, { okText: t('habitLimitOk') })) openPremiumSheet();
 }
 const FREE_HABIT_LIMIT = 3;
+// Hábitos extra desbloqueados con anuncios (cada 3 anuncios = 1 hábito, máx. 2).
+// El avance lo guarda el servidor; llega en /api/me.
+let habitAds = { ads: 0, slots: 0, perSlot: 3, maxSlots: 2 };
+function habitLimit() { return FREE_HABIT_LIMIT + (habitAds.slots || 0); }
 function canAddHabit(extra = 1) {
-  return isPremium || ((state.profile.habitos || []).length + extra) <= FREE_HABIT_LIMIT;
+  return isPremium || ((state.profile.habitos || []).length + extra) <= habitLimit();
 }
+function canWatchAdForHabit() { return canWatchRewarded() && habitAds.slots < habitAds.maxSlots; }
+// Devuelve true si se desbloqueó un hábito más (quien llamó puede seguir).
 async function promptHabitLimit() {
   // Se nombran los hábitos que cuentan, para que se vea cuáles son (alguno puede
   // no aparecer hoy en el Calendario porque no le toca este día).
   const names = (state.profile.habitos || []).map(h => `${h.icon || '🎯'} ${habitDisplayLabel(h)}`).join(', ');
-  if (await uiConfirm(t('habitLimitMsg', FREE_HABIT_LIMIT) + (names ? '\n\n' + t('habitLimitYours', names) : ''), { okText: t('habitLimitOk') })) openPremiumSheet();
+  const yours = names ? '\n\n' + t('habitLimitYours', names) : '';
+  if (!canWatchAdForHabit()) {
+    if (await uiConfirm(t('habitLimitMsg', habitLimit()) + yours, { okText: t('habitLimitOk') })) openPremiumSheet();
+    return false;
+  }
+  let msg = t('habitLimitMsgAd', habitLimit(), habitAds.perSlot, habitAds.maxSlots) + yours;
+  for (;;) {
+    const done = habitAds.ads % habitAds.perSlot;
+    const choice = await uiChoice(msg, [
+      { key: 'ad', label: t('habitAdBtn', done, habitAds.perSlot), primary: true },
+      { key: 'premium', label: t('habitLimitOk') },
+      { key: null, label: done ? t('habitAdLater') : t('dialogCancel') },
+    ]);
+    if (choice === 'premium') { openPremiumSheet(); return false; }
+    if (choice !== 'ad' || !(await watchRewardedAd('habit'))) return false;
+    const before = habitAds.slots;
+    const r = await postAdReward({ kind: 'habit' });
+    if (!r.ok) { await uiAlert(t('rewardNotConfirmed')); return false; }
+    habitAds = Object.assign(habitAds, r.data);
+    if (habitAds.slots > before) {
+      refreshHabitViews();
+      await uiAlert(t('habitAdUnlocked', habitLimit()));
+      return true;
+    }
+    if (!canWatchRewarded()) { await uiAlert(t('habitAdMore', habitAds.perSlot - habitAds.ads % habitAds.perSlot)); return false; }
+    msg = t('habitAdMore', habitAds.perSlot - habitAds.ads % habitAds.perSlot);
+  }
 }
 const HABIT_SUGGESTED_MINUTES = { ejercicio: 30, caminar: 20, lectura: 15, meditacion: 10, escritura: 10, estudio: 30, orden: 15, finanzas: 10, gratitud: 5, musica: 20, idioma: 15, familia: 30 };
 function renderHabitSchedule() {
@@ -4108,6 +4150,7 @@ async function bootstrapApp() {
     premiumSource = me.premiumSource || null;
     currentUserEmail = me.email || '';
     currentUserId = me.uid || null;
+    if (me.habitAds) habitAds = Object.assign(habitAds, me.habitAds);
     loginBtn.style.display = 'none';
     loginLoading.style.display = 'block';
     appLockEnabled = !!me.appLock;
@@ -6088,8 +6131,10 @@ function habitNameFromText(text) {
 // confirme o ajuste antes de guardar. Busca si el nombre es un hábito predefinido.
 async function offerHabitFromChat({ label, time, days, removeTaskId }) {
   markAppActed(); // abre el editor: la app sí está haciendo algo
-  if (!canAddHabit()) {
-    await agentSay(chatScroll, t('habitLimitMsg', FREE_HABIT_LIMIT));
+  if (!canAddHabit() && canWatchAdForHabit()) {
+    if (!(await promptHabitLimit())) return;
+  } else if (!canAddHabit()) {
+    await agentSay(chatScroll, t('habitLimitMsg', habitLimit()));
     addNote(chatScroll, t('seePremiumNote'), 'agenda-note', () => openPremiumSheet());
     return;
   }
@@ -6724,8 +6769,8 @@ async function handleUserMessageInner(text) {
     if (isAffirmative(text)) {
       state.pending = null;
       const label = pending.task;
-      if (!canAddHabit()) {
-        addNote(chatScroll, t('habitLimitMsg', FREE_HABIT_LIMIT), 'agenda-note', () => openPremiumSheet());
+      if (!canAddHabit() && !(canWatchAdForHabit() && await promptHabitLimit())) {
+        if (!canWatchAdForHabit()) addNote(chatScroll, t('habitLimitMsg', habitLimit()), 'agenda-note', () => openPremiumSheet());
         return;
       }
       if (!state.profile.habitos.some(h => h.label.toLowerCase() === label.toLowerCase())) {
@@ -7017,7 +7062,7 @@ function renderProfile() {
     <div class="profile-card"><h4>${t('intentosTitle')}</h4>${chipList(optLabelList('intentosPrevios', p.intentosPrevios))}</div>
     <div class="profile-card"><h4>${t('detonantesTitle')}</h4>${chipList(optLabelList('detonantes', p.detonantes))}</div>
     <div class="profile-card"><h4>${t('diasDificilesTitle')}</h4>${chipList(optLabelList('diasDificiles', p.diasDificiles))}</div>
-    <div class="profile-card"><h4>${t('habitosTitle')}${isPremium ? '' : ` <span class="day-habit-count">${t('habitCountFree', (p.habitos || []).length, FREE_HABIT_LIMIT)}</span>`}</h4><div>${habitsHtml || '—'}</div></div>
+    <div class="profile-card"><h4>${t('habitosTitle')}${isPremium ? '' : ` <span class="day-habit-count">${t('habitCountFree', (p.habitos || []).length, habitLimit())}</span>`}</h4><div>${habitsHtml || '—'}</div></div>
     <div class="profile-card logros-card"><h4>${t('logrosTitle')}</h4>
       ${(p.logros && p.logros.length) ? p.logros.map((l, i) => ({l, i})).reverse().map(({l, i}) => `<div class="logro-chip">${l.photo ? `<img class="logro-thumb" src="${escapeHtml(l.photo)}" alt="">` : (l.icon || '🏆')} ${l.text}<span class="logro-share-btn" data-logro-idx="${i}" title="${t('shareLogroIconTitle')}">📤</span><span class="logro-delete-btn" data-logro-idx="${i}" title="${t('deleteLogroIconTitle')}">🗑️</span><span class="logro-date">${l.date}</span></div>`).join('') : `<div style="font-size:13px;color:var(--text-dim);">${t('noLogros')}</div>`}
     </div>
@@ -8531,7 +8576,10 @@ function renderPerDayTimeInputs(selectedDays, existingHabit) {
 // desde el chat), la persona igual elige días, hora y recordatorios antes de guardar.
 let habitEditorPrefill = null;
 function openHabitEditor(index, prefill) {
-  if ((index === null || index === undefined || index < 0) && !canAddHabit()) { promptHabitLimit(); return; }
+  if ((index === null || index === undefined || index < 0) && !canAddHabit()) {
+    promptHabitLimit().then(ok => { if (ok) openHabitEditor(index, prefill); });
+    return;
+  }
   editingHabitIndex = (index === null || index === undefined || index < 0) ? null : index;
   const h = editingHabitIndex !== null ? state.profile.habitos[editingHabitIndex] : null;
   habitEditorPrefill = h ? null : (prefill || null);
@@ -8944,7 +8992,7 @@ function renderCalDay() {
       <div><div class="day-title">${label}</div><div class="day-pct">${pctLabel}</div></div>
       <button id="day-next" ${calDayOffset >= CAL_DAY_MAX_AHEAD ? 'disabled' : ''}>›</button>
     </div>
-    <div class="day-section-head"><span>🌱 ${t('daySecHabits')}${isPremium ? '' : ` <span class="day-habit-count">${t('habitCountFree', (state.profile.habitos || []).length, FREE_HABIT_LIMIT)}</span>`}</span><button type="button" class="day-sec-add" id="day-add-habit">＋ ${t('daySecAdd')}</button></div>
+    <div class="day-section-head"><span>🌱 ${t('daySecHabits')}${isPremium ? '' : ` <span class="day-habit-count">${t('habitCountFree', (state.profile.habitos || []).length, habitLimit())}</span>`}</span><button type="button" class="day-sec-add" id="day-add-habit">＋ ${t('daySecAdd')}</button></div>
     <div id="day-items">${itemsHtml}</div>${offHtml}
     <div class="day-section-head"><span>✅ ${t('daySecTasks')}</span>${isPast ? '' : `<button type="button" class="day-sec-add" id="day-add-task">＋ ${t('daySecAdd')}</button>`}</div>
     <div id="day-tasks">${tasksHtml}</div>${!isPast && dateBeyondFree(dateStr) ? `<div class="day-off-habits">📅 ${t('farDateHint', FREE_SCHEDULE_DAYS)} ${canWatchRewarded() ? `<button type="button" class="day-off-chip" id="day-unlock-far">${t('unlockDayAdBtn')}</button>` : ''}</div>` : ''}
