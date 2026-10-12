@@ -788,7 +788,7 @@ def auth_logout():
 
 # Versión vigente de los Términos y la Política de privacidad. Si se cambian de
 # forma importante, se sube este valor y la app vuelve a pedir que se acepten.
-TERMS_VERSION = os.environ.get("TERMS_VERSION", "2026-10")
+TERMS_VERSION = os.environ.get("TERMS_VERSION", "2026-10-18plus")
 
 
 @app.route("/api/accept-terms", methods=["POST"])

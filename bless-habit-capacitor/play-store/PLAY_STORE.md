@@ -148,7 +148,7 @@ Bless is a wellbeing and personal organization tool. It does not replace help fr
 | Anuncios | Versión 1.0: **No**. Desde la **1.1: Sí** (AdMob, ver sección 8) |
 | Acceso a la app | **Toda la funcionalidad requiere acceso** → "Inicia sesión con cualquier cuenta de Google. No hace falta cuenta especial." |
 | Clasificación de contenido | Ver abajo |
-| Público objetivo | **18 y más** (evitas requisitos de apps para menores) |
+| Público objetivo | **18 y más** (igual que los Términos: la app es solo para mayores de 18) |
 | App de noticias | No |
 | Apps de salud | Marca **No es una app de salud** o solo "Bienestar/estilo de vida" si lo pide; no hace diagnósticos |
 | Gobierno | No |
