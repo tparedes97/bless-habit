@@ -427,7 +427,7 @@ def _with_effective_premium(row):
     if not row:
         return row
     row["paddle_premium"] = bool(row.get("is_premium"))
-    row["gplay_active"] = bool(row.get("gplay_purchase_token")) and (row.get("gplay_expiry") or 0) > time.time()
+    row["gplay_active"] = bool(row.get("gplay_purchase_token")) and (row.get("gplay_expiry") or 0) + GPLAY_RENEW_GRACE_SECONDS > time.time()
     comp = (row.get("email") or "").lower() in COMP_PREMIUM_EMAILS
     row["is_premium"] = 1 if (row["paddle_premium"] or row["gplay_active"] or comp) else 0
     row["premium_source"] = "gplay" if row["gplay_active"] else ("paddle" if row["paddle_premium"] else ("comp" if comp else None))
@@ -1075,6 +1075,9 @@ GOOGLE_PLAY_PACKAGE = os.environ.get("GOOGLE_PLAY_PACKAGE", "app.blesshabit.andr
 GOOGLE_PLAY_PRODUCT_ID = os.environ.get("GOOGLE_PLAY_PRODUCT_ID", "bless_premium")
 GOOGLE_PLAY_PLANS = ("monthly", "yearly")
 GPLAY_RECHECK_SECONDS = 12 * 3600  # re-consulta a Google como máximo cada 12 h
+# Margen tras el vencimiento mientras Google procesa la renovación (en pruebas
+# las suscripciones se renuevan cada 5 minutos).
+GPLAY_RENEW_GRACE_SECONDS = 120
 _gplay_token_cache = {"token": None, "exp": 0}
 
 
@@ -1112,10 +1115,14 @@ def gplay_access_token():
     }, info["private_key"])
     if isinstance(assertion, bytes):
         assertion = assertion.decode()
-    resp = requests.post("https://oauth2.googleapis.com/token", data={
-        "grant_type": "urn:ietf:params:oauth:grant-type:jwt-bearer",
-        "assertion": assertion,
-    }, timeout=15)
+    try:
+        resp = requests.post("https://oauth2.googleapis.com/token", data={
+            "grant_type": "urn:ietf:params:oauth:grant-type:jwt-bearer",
+            "assertion": assertion,
+        }, timeout=15)
+    except Exception as e:
+        print(f"[gplay] error de red pidiendo el token OAuth: {e}")
+        return None
     if resp.status_code >= 300:
         print(f"[gplay] no se pudo obtener token OAuth: {resp.status_code} {resp.text[:300]}")
         return None
@@ -1149,23 +1156,37 @@ def gplay_account_token(user_id):
     return hmac.new(gplay_salt().encode(), f"gplay:{user_id}".encode(), hashlib.sha256).hexdigest()
 
 
+_gplay_last_error = {"code": None, "detail": ""}
+
+
+def _gplay_fail(code, detail=""):
+    """Guarda por qué falló la última consulta a Google (la app lo muestra)."""
+    _gplay_last_error["code"] = code
+    _gplay_last_error["detail"] = str(detail)[:300]
+    print(f"[gplay] {code}: {detail}")
+    return None
+
+
 def gplay_fetch_subscription(purchase_token):
     """Consulta purchases.subscriptionsv2. Devuelve el JSON de Google o None."""
     token = gplay_access_token()
     if not token:
-        return None
+        return _gplay_fail("no_token", "No se pudo obtener el token de la cuenta de servicio (revisa GOOGLE_PLAY_SERVICE_ACCOUNT_JSON en Render).")
     url = (f"https://androidpublisher.googleapis.com/androidpublisher/v3/applications/"
            f"{GOOGLE_PLAY_PACKAGE}/purchases/subscriptionsv2/tokens/{purchase_token}")
     try:
         resp = requests.get(url, headers={"Authorization": f"Bearer {token}"}, timeout=15)
     except Exception as e:
-        print(f"[gplay] error de red consultando la compra: {e}")
-        return None
+        return _gplay_fail("network", e)
     if resp.status_code == 404 or resp.status_code == 410:
         return {"subscriptionState": "SUBSCRIPTION_STATE_EXPIRED", "lineItems": []}
+    if resp.status_code in (401, 403):
+        # Lo más común: la cuenta de servicio no tiene permiso en Play Console
+        # (Usuarios y permisos → "Ver datos financieros" y "Gestionar pedidos y suscripciones").
+        return _gplay_fail("permission_denied", f"Google respondió {resp.status_code}: {resp.text[:200]}")
     if resp.status_code >= 300:
-        print(f"[gplay] Google respondió {resp.status_code}: {resp.text[:300]}")
-        return None
+        return _gplay_fail("google_error", f"Google respondió {resp.status_code}: {resp.text[:200]}")
+    _gplay_last_error["code"] = None
     return resp.json()
 
 
@@ -1210,9 +1231,12 @@ def gplay_refresh_if_stale(user):
     cancelaciones). Si Google no responde, se mantiene lo último conocido."""
     if not user or not user.get("gplay_purchase_token") or not gplay_configured():
         return user
-    stale = time.time() - (user.get("gplay_checked_at") or 0) > GPLAY_RECHECK_SECONDS
-    expired = (user.get("gplay_expiry") or 0) <= time.time()
-    if not (stale or (expired and time.time() - (user.get("gplay_checked_at") or 0) > 600)):
+    since_check = time.time() - (user.get("gplay_checked_at") or 0)
+    stale = since_check > GPLAY_RECHECK_SECONDS
+    # Ya venció (o está por vencer): se pregunta a Google cada minuto, no cada 10,
+    # para que una renovación no deje a la persona sin Premium un rato.
+    expiring = (user.get("gplay_expiry") or 0) <= time.time() + GPLAY_RENEW_GRACE_SECONDS
+    if not (stale or (expiring and since_check > 60)):
         return user
     sub = gplay_fetch_subscription(user["gplay_purchase_token"])
     if sub is None:
@@ -1263,14 +1287,17 @@ def api_gplay_verify():
         return jsonify({"ok": False, "error": "not_configured"}), 503
     sub = gplay_fetch_subscription(purchase_token)
     if sub is None:
-        return jsonify({"ok": False, "error": "google_unavailable"}), 502
+        return jsonify({"ok": False, "error": _gplay_last_error["code"] or "google_unavailable",
+                        "detail": _gplay_last_error["detail"]}), 502
     owner = ((sub.get("externalAccountIdentifiers") or {}).get("obfuscatedExternalAccountId")) or ""
     if not hmac.compare_digest(owner, gplay_account_token(user_id)):
         print(f"[gplay] compra de otra cuenta rechazada para el usuario {user_id}")
         return jsonify({"ok": False, "error": "other_account"}), 403
     expiry, plan = gplay_evaluate(sub)
     if expiry <= 0:
-        return jsonify({"ok": True, "premium": bool(get_user(user_id)["is_premium"]), "active": False})
+        print(f"[gplay] compra no activa para el usuario {user_id}: {sub.get('subscriptionState')}")
+        return jsonify({"ok": True, "premium": bool(get_user(user_id)["is_premium"]), "active": False,
+                        "state": sub.get("subscriptionState", "")})
     gplay_store(user_id, purchase_token, expiry, plan)
     print(f"[gplay] Premium activado por Google Play para el usuario {user_id} (plan {plan})")
     return jsonify({"ok": True, "premium": True, "active": True})
@@ -1930,10 +1957,12 @@ ROUTE_REQUESTS_PER_DAY = int(os.environ.get("ROUTE_REQUESTS_PER_DAY", "200"))
 ROUTE_ACTIONS = {"none", "add_habit", "add_task", "add_note", "write_diary", "save_achievement"}
 
 ROUTER_SYSTEM = """Eres el "router" de Bless Habit, una app de hábitos con un chat (Bless).
-Tu única tarea: decidir si el ÚLTIMO mensaje de la persona pide una acción de la app, y extraer sus datos.
+Tu única tarea: decidir si el ÚLTIMO mensaje de la persona pide una o VARIAS acciones de la app, y extraer sus datos.
 La persona puede escribir en español o en inglés: entiende ambos, y escribe "text" en el MISMO idioma en que escribió la persona.
 Responde SOLO un objeto JSON, sin texto extra:
-{"action": "...", "text": "...", "date": "YYYY-MM-DD o vacío", "time": "HH:MM (24 h) o vacío", "days": [números 0-6, 0 = domingo] o []}
+{"actions": [{"action": "...", "text": "...", "date": "YYYY-MM-DD o vacío", "time": "HH:MM (24 h) o vacío", "days": [números 0-6, 0 = domingo] o []}]}
+Si pide varias cosas a la vez, pon UNA acción por cada cosa (máximo 6), en el orden en que las dijo.
+Si no pide ninguna acción, devuelve {"actions": [{"action": "none", "text": "", "date": "", "time": "", "days": []}]}.
 
 Acciones:
 - "add_habit": crear un hábito que se REPITE (todos los días, a diario, de lunes a viernes, los martes… / every day, daily, on weekdays, on Tuesdays…). text = nombre corto del hábito ("Correr", "Meditar"). days = días que se repite. time = hora si la dijo.
@@ -1947,6 +1976,8 @@ Reglas:
 - "mi diario", "el diario", "tu diario" / "my journal", "my diary" = la sección Diario de la app, NUNCA significa "todos los días".
 - Contar algo que logró ("hoy logré X" / "today I managed to X") NO es save_achievement todavía: es "none" (Bless lo celebra y pregunta). Solo es save_achievement si pide guardarlo o confirma que es un logro.
 - Si la persona responde a una pregunta de Bless y con eso se completa una acción (Bless preguntó "¿a qué hora quieres correr?" y responde "todos los días a las 7"), devuelve la acción completa usando el contexto.
+- Si Bless propuso o enumeró varias cosas (por ejemplo 3 hábitos) y la persona pide agregarlas ("agrégalas", "agrega las tres", "todas", "esas", "agregarlas a mis hábitos", "add them all"), devuelve UNA acción por cada cosa, con su nombre corto tomado del mensaje de Bless. Si dice "faltan los otros dos" o "y los demás", devuelve solo las que faltan.
+- Si en un mismo mensaje pide varias cosas ("recuérdame X mañana y anota que Y", "quiero meditar y leer todos los días"), devuelve una acción por cada una.
 - Si Bless preguntó "¿quieres que lo guarde como logro?" y responde sí, devuelve "none" (la app ya maneja esa confirmación).
 - Nunca inventes datos que no estén en la conversación. Si falta la hora o la fecha, déjala vacía.
 - Si el mensaje es una pregunta sobre cómo usar la app, es "none"."""
@@ -1968,11 +1999,25 @@ def consume_route_quota(user_id):
     return True
 
 
-def _clean_route(raw):
+def _clean_routes(raw):
+    """→ lista de acciones limpias (al menos una), o None si el JSON no sirve."""
     try:
         out = json.loads(raw or "{}")
     except Exception:
         return None
+    if not isinstance(out, dict):
+        return None
+    items = out.get("actions")
+    if not isinstance(items, list):
+        items = [out]  # formato viejo: una sola acción
+    routes = [r for r in (_clean_route(x) for x in items[:6]) if r]
+    useful = [r for r in routes if r["action"] != "none"]
+    if useful:
+        return useful
+    return [{"action": "none", "text": "", "date": "", "time": "", "days": []}]
+
+
+def _clean_route(out):
     if not isinstance(out, dict):
         return None
     action = str(out.get("action") or "none").strip()
@@ -2025,13 +2070,14 @@ def bless_route():
             model=OPENAI_MODEL,
             messages=[{"role": "system", "content": ROUTER_SYSTEM}, {"role": "user", "content": user_msg}],
             temperature=0,
-            max_tokens=120,
+            max_tokens=450,
             response_format={"type": "json_object"},
         )
-        route = _clean_route(resp.choices[0].message.content)
-        if route is None:
+        routes = _clean_routes(resp.choices[0].message.content)
+        if routes is None:
             return jsonify({"ok": False, "error": "bad_json"}), 502
-        return jsonify({"ok": True, "route": route})
+        # "route" (la primera) se mantiene para versiones anteriores de la página.
+        return jsonify({"ok": True, "route": routes[0], "routes": routes})
     except Exception as e:
         print(f"[openai] error en /api/bless-route: {e}")
         return jsonify({"ok": False, "error": str(e)}), 500
@@ -2093,7 +2139,8 @@ def bless_reply():
             model=OPENAI_MODEL,
             messages=messages,
             temperature=0.9,
-            max_tokens=150,
+            # 150 cortaba las respuestas a mitad de frase cuando Bless daba consejos.
+            max_tokens=350,
         )
         reply = resp.choices[0].message.content
         return jsonify({"ok": True, "reply": reply.strip() if reply else None})

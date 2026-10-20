@@ -1479,9 +1479,83 @@ async function routeIntent(text) {
     });
     if (!res.ok) return null;
     const data = await res.json();
-    return data && data.ok && data.route ? data.route : null;
+    if (!data || !data.ok) return null;
+    // Puede pedir varias cosas a la vez ("agrega las tres"): lista de acciones.
+    if (Array.isArray(data.routes) && data.routes.length) return data.routes;
+    return data.route ? [data.route] : null;
   } catch (e) { return null; }
   finally { clearTimeout(timeoutId); }
+}
+// Varias acciones en un mismo mensaje. Los hábitos se agregan directo (sin abrir
+// el editor uno por uno) y al final Bless confirma todo en un solo mensaje.
+async function executeRoutes(routes) {
+  const habits = routes.filter(r => r.action === 'add_habit' && (r.text || '').trim());
+  const others = routes.filter(r => r.action !== 'add_habit' && r.action !== 'none');
+  if (habits.length === 1 && !others.length) return executeRoute(habits[0]);
+  let handled = false;
+  if (habits.length) {
+    state.pending = null; state.pendingHabitSuggestion = null;
+    const added = [], already = [], blocked = [];
+    for (const r of habits) {
+      const label = r.text.trim().charAt(0).toUpperCase() + r.text.trim().slice(1);
+      const res = addHabitQuietly({ label, time: r.time || null, days: r.days && r.days.length ? r.days : null });
+      if (res.status === 'added') added.push(res.habit);
+      else if (res.status === 'exists') already.push(res.habit);
+      else blocked.push(label);
+    }
+    markAppActed();
+    if (added.length) {
+      saveStateToServer();
+      scheduleNativeRemindersSoon();
+      setAvatarMood('happy');
+      refreshHabitViews();
+    }
+    const fmt = (list) => list.map(h => `${h.icon || '🌱'} ${habitDisplayLabel(h)}`).join(', ');
+    const parts = [];
+    if (added.length) parts.push(t('batchHabitsAdded', fmt(added)));
+    if (already.length) parts.push(t('batchHabitsAlready', fmt(already)));
+    if (blocked.length) parts.push(t('batchHabitsBlocked', blocked.join(', '), habitLimit()));
+    if (added.length) parts.push(t('batchHabitsEditHint'));
+    await agentSay(chatScroll, parts.join('\n\n'), 300, added.length ? '🌱' : null);
+    if (added.length && canSetClockAlarm()) addNote(chatScroll, t('clockAlarmAllNote'), 'agenda-note', () => setClockAlarmsForHabits(added));
+    if (blocked.length) {
+      if (canWatchAdForHabit()) addNote(chatScroll, t('habitLimitOk'), 'agenda-note', () => promptHabitLimit());
+      else addNote(chatScroll, t('seePremiumNote'), 'agenda-note', () => openPremiumSheet());
+    }
+    handled = true;
+  }
+  for (const r of others) {
+    if (await executeRoute(r)) handled = true;
+  }
+  return handled;
+}
+// Agrega un hábito sin abrir el editor. → { status: 'added' | 'exists' | 'limit', habit }
+function addHabitQuietly({ label, time, days }) {
+  const norm = x => String(x || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim();
+  const existing = state.profile.habitos.find(h => norm(h.label) === norm(label) || norm(habitDisplayLabel(h)) === norm(label));
+  if (existing) return { status: 'exists', habit: existing };
+  if (!canAddHabit()) return { status: 'limit' };
+  const preset = HABIT_PRESETS.find(h => norm(h.label) === norm(label) || norm(t2(h)) === norm(label));
+  const key = preset ? preset.key : pickHabitKey(label);
+  const entry = {
+    key,
+    icon: preset ? preset.icon : pickIcon(label),
+    label: preset ? preset.label : label,
+    repeatDays: days && days.length ? days : [0, 1, 2, 3, 4, 5, 6],
+    sameTimeEveryday: true,
+    time: time || defaultTimeFor(key),
+    timesByDay: {},
+    durationWeeks: null,
+    minutesPerDay: HABIT_SUGGESTED_MINUTES[key] || null,
+    reminderOffsets: [0],
+    createdAt: ymd(new Date()),
+    suggestedByBless: true,
+  };
+  entry.repeatWeekly = entry.repeatDays.length === 7;
+  state.profile.habitos.push(entry);
+  state.streaks[key] = state.streaks[key] || 0;
+  syncTodayAgendaForHabit(entry);
+  return { status: 'added', habit: entry };
 }
 // Ejecuta lo que decidió el router. Devuelve true si se encargó del mensaje.
 async function executeRoute(route) {
@@ -2145,6 +2219,17 @@ const I18N = {
     alarmTooFar: 'La alarma del reloj solo se puede crear para las próximas 24 horas. Abre la tarea el día que toca y actívala ahí 🙂',
     alarmNeedsUpdate: 'Para crear alarmas necesitas la versión más reciente de Bless Habit. Actualízala desde Play Store 🙂',
     alarmNoClock: 'No encontramos una app de reloj en tu teléfono para crear la alarma.',
+    batchHabitsAdded: (x) => `Listo, agregué a tus hábitos: ${x} 🌱`,
+    batchHabitsAlready: (x) => `Ya tenías: ${x}.`,
+    batchHabitsBlocked: (x, n) => `No pude agregar ${x}: en el plan gratis puedes tener ${n} hábitos en total.`,
+    batchHabitsEditHint: 'Puedes cambiarles los días y la hora en Calendario o en Perfil ✏️',
+    clockAlarmAllNote: '⏰ Poner también una alarma en el reloj',
+    clockAlarmAllBtn: '⏰ Poner mis hábitos en la alarma del reloj',
+    clockAlarmAllHint: 'La alarma del reloj suena fuerte aunque el teléfono esté en silencio. Se crea una por cada hábito.',
+    clockAlarmAllDone: (n) => `Listo ⏰ Se crearon ${n} alarmas en la app Reloj de tu teléfono. Si borras un hábito, borra también su alarma desde el Reloj.`,
+    clockAlarmAllNone: 'Todos tus hábitos ya tienen su alarma en el reloj ⏰',
+    notifTestChannel: 'Canal de recordatorios con sonido',
+    gplayVerifyFail: (code) => `Google recibió tu compra, pero no pudimos confirmarla todavía (código: ${code}). Vuelve a intentarlo con "Restaurar compra" en unos minutos. Si sigue, escríbenos a soporte con este código.`,
     alarmNeedsTime: 'Para crear la alarma, elige una hora 🙂',
     seeInCalendarNote: '📅 Ver en el calendario', typingLabel: 'Bless está escribiendo…',
     taskTimeNotUnderstood: 'Mmm, no entendí la hora 😅 Dímela así: "a las 5pm", "a las 17:30" o "en 10 minutos" ⏰',
@@ -2665,6 +2750,17 @@ const I18N = {
     alarmTooFar: 'Clock alarms can only be set for the next 24 hours. Open the task on the day and turn it on there 🙂',
     alarmNeedsUpdate: 'To create alarms you need the latest version of Bless Habit. Update it from the Play Store 🙂',
     alarmNoClock: "We couldn't find a clock app on your phone to create the alarm.",
+    batchHabitsAdded: (x) => `Done, I added to your habits: ${x} 🌱`,
+    batchHabitsAlready: (x) => `You already had: ${x}.`,
+    batchHabitsBlocked: (x, n) => `I couldn't add ${x}: on the free plan you can have ${n} habits in total.`,
+    batchHabitsEditHint: 'You can change their days and time in Calendar or Profile ✏️',
+    clockAlarmAllNote: '⏰ Also set an alarm on the clock',
+    clockAlarmAllBtn: '⏰ Put my habits on the clock alarm',
+    clockAlarmAllHint: 'The clock alarm rings loud even if the phone is on silent. One is created for each habit.',
+    clockAlarmAllDone: (n) => `Done ⏰ ${n} alarms were created in your phone's Clock app. If you delete a habit, delete its alarm from the Clock too.`,
+    clockAlarmAllNone: 'All your habits already have their clock alarm ⏰',
+    notifTestChannel: 'Reminder channel with sound',
+    gplayVerifyFail: (code) => `Google received your purchase, but we couldn't confirm it yet (code: ${code}). Try "Restore purchase" again in a few minutes. If it keeps happening, contact support with this code.`,
     alarmNeedsTime: 'To create the alarm, choose a time 🙂',
     seeInCalendarNote: '📅 See it in the calendar', typingLabel: 'Bless is typing…',
     taskTimeNotUnderstood: 'Hmm, I didn\'t get the time 😅 Try: "at 5pm", "at 17:30" or "in 10 minutes" ⏰',
@@ -3117,7 +3213,17 @@ function setAvatarMood(mood, revertMs) {
   if (revertMs) setTimeout(() => { avatarEl.dataset.mood = 'default'; }, revertMs);
 }
 
+// La IA a veces responde con formato Markdown (**negrita**, ## títulos) que en
+// la burbuja se ve con los símbolos. Se dejan solo las palabras.
+function stripMarkdown(text) {
+  return String(text || '')
+    .replace(/\*\*([^*\n]+)\*\*/g, '$1')
+    .replace(/__([^_\n]+)__/g, '$1')
+    .replace(/^\s{0,3}#{1,6}\s+/gm, '')
+    .replace(/^(\s*)[*-]\s+/gm, '$1• ');
+}
 function addBubble(container, text, who, reactionEmoji) {
+  if (who === 'agent') text = stripMarkdown(text);
   if (container === chatScroll && !restoringChat && (who === 'user' || who === 'agent')) logChatBubble(who, text);
   const div = document.createElement('div'); div.className = 'bubble ' + who; div.textContent = text;
   if (container === chatScroll && who === 'agent') {
@@ -4552,9 +4658,7 @@ async function pollPremiumStatus(attempts = 6, delayMs = 1500) {
       const res = await fetch('/api/subscription-status');
       const data = await res.json();
       if (data.ok && data.premium) {
-        isPremium = true;
-        renderMetrics();
-        renderProfile();
+        applyPremiumChange(true);
         return true;
       }
     } catch (e) { /* seguimos intentando */ }
@@ -4725,19 +4829,52 @@ function prepareGplay() {
 function gplayPlanProduct(plan) {
   return gplayProducts.find(p => p.identifier === plan && !p.offerId) || gplayProducts.find(p => p.identifier === plan) || null;
 }
+let lastGplayError = null; // motivo de la última verificación fallida (se muestra al restaurar)
 async function verifyGplayPurchase(purchaseToken) {
-  if (!purchaseToken) return false;
+  if (!purchaseToken) { lastGplayError = 'no_token_from_play'; return false; }
   try {
     const res = await fetch('/api/gplay/verify', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ purchaseToken }) });
     const data = await res.json();
     if (data.ok && data.premium) {
-      isPremium = true; premiumSource = premiumSource || 'gplay';
-      renderMetrics(); renderProfile();
+      lastGplayError = null;
+      premiumSource = premiumSource || 'gplay';
+      applyPremiumChange(true);
       return true;
     }
-  } catch (e) { /* se reintenta al abrir la app (restoreGplayPurchases) */ }
+    lastGplayError = data.ok ? ('not_active' + (data.state ? ':' + String(data.state).replace('SUBSCRIPTION_STATE_', '') : '')) : (data.error || ('http_' + res.status));
+  } catch (e) { lastGplayError = 'network'; /* se reintenta al abrir la app (restoreGplayPurchases) */ }
   return false;
 }
+// Premium cambió (compra, renovación o vencimiento): se vuelven a dibujar TODAS
+// las pantallas que muestran botones o límites de Premium, y se quitan/ponen los anuncios.
+function applyPremiumChange(nowPremium) {
+  const changed = isPremium !== !!nowPremium;
+  isPremium = !!nowPremium;
+  if (!changed) return;
+  try { document.querySelectorAll('.premium-sheet-overlay').forEach(x => x.remove()); } catch (e) {}
+  const safe = (fn) => { try { fn(); } catch (e) { console.warn('[premium] render', e); } };
+  safe(renderProfile);
+  safe(renderMetrics);
+  safe(renderAgenda);
+  safe(renderHeaderRing);
+  safe(renderDiary);
+  if (document.getElementById('view-calendar') && document.getElementById('view-calendar').classList.contains('active')) safe(renderCalendar);
+  safe(renderChatAdSlot);
+  safe(renderCalAdSlot);
+  safe(() => updateAdBanner());
+  scheduleNativeRemindersSoon(); // Premium cambia los avisos (minutos antes)
+}
+// Al volver a la app, se revisa si Premium cambió (renovación o vencimiento).
+let premiumCheckAt = 0;
+document.addEventListener('visibilitychange', async () => {
+  if (document.visibilityState !== 'visible' || !currentUserId) return;
+  if (Date.now() - premiumCheckAt < 30000) return;
+  premiumCheckAt = Date.now();
+  try {
+    const me = await (await fetch('/api/me')).json();
+    if (me && me.loggedIn) { premiumSource = me.premiumSource || null; applyPremiumChange(!!me.premium); }
+  } catch (e) {}
+});
 // Revisa compras que Google ya tiene para esta cuenta (cambio de celular, o si
 // la verificación falló justo después de pagar). silent = sin mensajes.
 async function restoreGplayPurchases(silent) {
@@ -4746,13 +4883,16 @@ async function restoreGplayPurchases(silent) {
   try {
     await prepareGplay();
     const res = await NP.getPurchases({ productType: 'subs' });
-    for (const p of (res && res.purchases) || []) {
+    const purchases = (res && res.purchases) || [];
+    lastGplayError = null;
+    for (const p of purchases) {
       if (p.purchaseToken && await verifyGplayPurchase(p.purchaseToken)) {
         if (!silent) uiAlert(t('gplayRestored'));
         return true;
       }
     }
-    if (!silent) uiAlert(t('gplayNothingToRestore'));
+    // Hay una compra en Google pero el servidor no la pudo confirmar: se muestra el motivo.
+    if (!silent) uiAlert(purchases.length && lastGplayError ? t('gplayVerifyFail', lastGplayError) : t('gplayNothingToRestore'));
   } catch (e) {
     if (!silent) uiAlert(t('gplayUnavailable'));
   }
@@ -4815,9 +4955,13 @@ async function buyGplay(plan) {
   if (tx && tx.purchaseState && String(tx.purchaseState).toUpperCase().includes('PENDING')) { uiAlert(t('gplayPending')); return; }
   setAvatarMood('happy');
   if (await verifyGplayPurchase(tx && tx.purchaseToken)) { uiAlert(t('gplayThanks')); return; }
-  // Google cobró pero el servidor aún no pudo confirmar: reintenta en silencio.
+  // Google cobró pero el servidor aún no pudo confirmar: reintenta y, si sigue
+  // fallando, muestra el motivo (antes fallaba en silencio).
   uiAlert(t('gplayConfirming'));
-  setTimeout(() => restoreGplayPurchases(true), 4000);
+  setTimeout(async () => {
+    if (await restoreGplayPurchases(true)) { uiAlert(t('gplayThanks')); return; }
+    if (lastGplayError) uiAlert(t('gplayVerifyFail', lastGplayError));
+  }, 5000);
 }
 
 async function cancelPremium() {
@@ -4836,9 +4980,7 @@ async function cancelPremium() {
   if (data && data.error === 'gplay') { premiumSource = 'gplay'; return cancelPremium(); }
   if (!data || !data.ok) { uiAlert(t('cancelFail')); return; }
   if (data.endsAtPeriodEnd) { uiAlert(t('cancelScheduled')); return; }
-  isPremium = !!data.premium;
-  renderMetrics();
-  renderProfile();
+  applyPremiumChange(!!data.premium);
 }
 
 /* ============================================================
@@ -4906,6 +5048,42 @@ function nativeNotifications() {
   return IS_NATIVE_APP && window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.LocalNotifications;
 }
 const NATIVE_REENGAGE_ID = 900000;
+// Canal propio para los recordatorios. Antes se usaba el canal "default" del
+// plugin, con importancia normal: en muchos teléfonos (Honor, Xiaomi, Oppo…)
+// llegaba sin sonido ni ventana emergente. Este canal es de importancia ALTA
+// (suena, vibra y aparece arriba de la pantalla). Android no deja cambiar la
+// importancia de un canal ya creado: si hay que cambiarla, se usa un id nuevo.
+const REMINDER_CHANNEL_ID = 'bless_recordatorios_v2';
+let reminderChannelReady = null;
+function ensureReminderChannel() {
+  const LN = nativeNotifications();
+  if (!LN || !LN.createChannel) return Promise.resolve(false);
+  if (reminderChannelReady) return reminderChannelReady;
+  reminderChannelReady = (async () => {
+    try {
+      await LN.createChannel({
+        id: REMINDER_CHANNEL_ID,
+        name: currentLang() === 'en' ? 'Habit reminders' : 'Recordatorios de hábitos',
+        description: currentLang() === 'en' ? 'Reminders for your habits and tasks' : 'Avisos a la hora de tus hábitos y tareas',
+        importance: 4,   // IMPORTANCE_HIGH: sonido + ventana emergente
+        visibility: 1,   // se ve en la pantalla bloqueada
+        vibration: true,
+        lights: true,
+        lightColor: '#7C6CF0',
+      });
+      return true;
+    } catch (e) {
+      console.warn('[recordatorios] no se pudo crear el canal', e);
+      reminderChannelReady = null;
+      return false;
+    }
+  })();
+  return reminderChannelReady;
+}
+async function withReminderChannel(notifications) {
+  if (!(await ensureReminderChannel())) return notifications;
+  return notifications.map(n => Object.assign({ channelId: REMINDER_CHANNEL_ID }, n));
+}
 async function scheduleNativeReminders() {
   const LN = nativeNotifications();
   if (!LN || !state.profile || !state.profile.nombre) return;
@@ -4919,7 +5097,7 @@ async function scheduleNativeReminders() {
     const perm = await LN.checkPermissions();
     if (perm.display !== 'granted') return;
     const today = ymd(new Date());
-    const notifications = [];
+    let notifications = [];
     let id = 1;
     (state.profile.habitos || []).forEach(h => {
       if (h.durationWeeks && h.createdAt && ymd(addDays(new Date(h.createdAt + 'T00:00:00'), h.durationWeeks * 7)) < today) return; // ya terminó
@@ -4964,6 +5142,7 @@ async function scheduleNativeReminders() {
     comeBack.setHours(19, 0, 0, 0);
     notifications.push({ id: NATIVE_REENGAGE_ID, title: 'Bless Habit 🤍', body: tp('reengageBody'), schedule: { at: comeBack, allowWhileIdle: true } });
     refreshReminderLinesIfNeeded(); // en segundo plano; al terminar se reprograma con las frases nuevas
+    notifications = await withReminderChannel(notifications);
     try {
       await LN.schedule({ notifications });
     } catch (e) {
@@ -5080,10 +5259,12 @@ async function runNotificationTest() {
       } catch (e) {}
     }
     const now = Date.now();
-    await LN.schedule({ notifications: [
+    const channelOk = await ensureReminderChannel();
+    lines.push(`${ok(channelOk)} ${t('notifTestChannel')}`);
+    await LN.schedule({ notifications: await withReminderChannel([
       { id: 990001, title: 'Bless Habit 🔔', body: t('notifTestNowBody'), schedule: { at: new Date(now + 3000), allowWhileIdle: true } },
       { id: 990002, title: 'Bless Habit ⏰', body: t('notifTestLaterBody'), schedule: { at: new Date(now + 60000), allowWhileIdle: true } },
-    ] });
+    ]) });
     const pending = await LN.getPending();
     const ids = (pending.notifications || []).map(n => n.id);
     lines.push(`${ok(ids.includes(990002))} ${t('notifTestScheduled')}: ${ids.length}`);
@@ -5158,6 +5339,35 @@ async function createClockAlarms(groups, message) {
     await uiAlert(t('alarmNeedsUpdate'));
   }
 }
+// Crea en la app Reloj una alarma por cada hábito que todavía no la tenga
+// (h.clockAlarm marca los que ya tienen, para no duplicarlas).
+async function setClockAlarmsForHabits(habits) {
+  const BD = blessDevice();
+  if (!BD || !canSetClockAlarm()) { await uiAlert(t('alarmNeedsUpdate')); return; }
+  const list = (habits || state.profile.habitos || []).filter(h => h && !h.clockAlarm);
+  if (!list.length) { await uiAlert(t('clockAlarmAllNone')); return; }
+  let created = 0;
+  try {
+    for (const h of list) {
+      const byTime = {};
+      habitRepeatDays(h).forEach(d => { const tm = habitTimeForDay(h, d); if (tm) (byTime[tm] = byTime[tm] || []).push(d); });
+      let okAll = true;
+      for (const tm of Object.keys(byTime)) {
+        const [hh, mm] = tm.split(':').map(n => parseInt(n, 10));
+        const res = await BD.setAlarm({ hour: hh, minutes: mm, message: `${h.icon || '🌱'} ${habitDisplayLabel(h)}`.slice(0, 60), days: byTime[tm], skipUi: true });
+        if (res && res.ok === false) { await uiAlert(t('alarmNoClock')); return; }
+        if (!res || !res.ok) okAll = false;
+      }
+      if (okAll) { h.clockAlarm = true; created++; }
+    }
+  } catch (e) {
+    await uiAlert(t('alarmNeedsUpdate'));
+    return;
+  } finally {
+    if (created) saveStateToServer();
+  }
+  if (created) setTimeout(() => uiAlert(t('clockAlarmAllDone', created)), 600);
+}
 function backgroundHintFor(manufacturer) {
   const m = String(manufacturer || '').toLowerCase();
   if (/honor|huawei/.test(m)) return t('bgHintHonor');
@@ -5208,6 +5418,15 @@ function refreshNativeRemindersUI(textEl, btnEl) {
     testLink.innerHTML = `<span class="logout-link">${t('notifTestLink')}</span>`;
     testLink.onclick = () => runNotificationTest();
     (document.getElementById('bg-settings-link') || btnEl).insertAdjacentElement('afterend', testLink);
+  }
+  // Alarma del reloj: suena fuerte aunque el teléfono esté en silencio.
+  if (canSetClockAlarm() && (state.profile.habitos || []).length && !document.getElementById('clock-alarm-all-link')) {
+    const alarmLink = document.createElement('div');
+    alarmLink.id = 'clock-alarm-all-link';
+    alarmLink.style.cssText = 'text-align:center;margin-top:12px;';
+    alarmLink.innerHTML = `<button type="button" class="premium-btn" style="width:100%;background:linear-gradient(135deg, var(--panel-3), var(--panel-2)); color:var(--text);">${t('clockAlarmAllBtn')}</button><div style="font-size:12px;color:var(--text-dim);margin-top:6px;">${t('clockAlarmAllHint')}</div>`;
+    alarmLink.querySelector('button').onclick = () => setClockAlarmsForHabits();
+    (document.getElementById('notif-test-link') || btnEl).insertAdjacentElement('afterend', alarmLink);
   }
   btnEl.style.display = '';
   btnEl.textContent = on ? t('pushDisableBtn') : t('pushEnableBtn');
@@ -6487,9 +6706,10 @@ async function handleUserMessageInner(text) {
   // de palabras). Si dice que es solo conversación, las reglas de palabras que
   // disparan acciones se saltan (así "mi diario de hoy" no crea un hábito).
   // Si la IA no está o no contesta, todo sigue como antes, con las reglas.
-  const route = await routeIntent(text);
-  if (route && route.action !== 'none' && await executeRoute(route)) return;
-  const routerSaysChat = !!(route && route.action === 'none');
+  const routes = await routeIntent(text);
+  const actionable = (routes || []).filter(r => r.action !== 'none');
+  if (actionable.length && await executeRoutes(actionable)) return;
+  const routerSaysChat = !!(routes && !actionable.length);
 
   // "Escribe en mi diario…" → entrada de hoy del Diario.
   {
@@ -8739,6 +8959,9 @@ function saveHabitEditor() {
     const byTime = {};
     entry.repeatDays.forEach(d => { const tm = habitTimeForDay(entry, d); (byTime[tm] = byTime[tm] || []).push(d); });
     createClockAlarms(Object.keys(byTime).map(tm => ({ time: tm, days: byTime[tm] })), `${entry.icon} ${habitDisplayLabel(entry)}`);
+    entry.clockAlarm = true;
+  } else if (existing && existing.clockAlarm) {
+    entry.clockAlarm = true;
   }
   markAppActed();
   syncTodayAgendaForHabit(entry);
