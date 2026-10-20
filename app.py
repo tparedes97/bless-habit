@@ -1181,9 +1181,18 @@ def gplay_fetch_subscription(purchase_token):
     if resp.status_code == 404 or resp.status_code == 410:
         return {"subscriptionState": "SUBSCRIPTION_STATE_EXPIRED", "lineItems": []}
     if resp.status_code in (401, 403):
-        # Lo más común: la cuenta de servicio no tiene permiso en Play Console
-        # (Usuarios y permisos → "Ver datos financieros" y "Gestionar pedidos y suscripciones").
-        return _gplay_fail("permission_denied", f"Google respondió {resp.status_code}: {resp.text[:200]}")
+        # Google explica el motivo en el cuerpo. Los dos más comunes:
+        # - la API "Google Play Android Developer" no está activada en el proyecto de Cloud
+        # - la cuenta de servicio no tiene permiso en Play Console (o aún no se aplica)
+        try:
+            err = (resp.json() or {}).get("error") or {}
+        except Exception:
+            err = {}
+        msg = str(err.get("message") or resp.text)[:250]
+        reasons = json.dumps(err.get("details") or err.get("errors") or "")
+        if "SERVICE_DISABLED" in reasons or "has not been used in project" in msg or "is disabled" in msg:
+            return _gplay_fail("api_disabled", msg)
+        return _gplay_fail("permission_denied", f"{resp.status_code}: {msg}")
     if resp.status_code >= 300:
         return _gplay_fail("google_error", f"Google respondió {resp.status_code}: {resp.text[:200]}")
     _gplay_last_error["code"] = None

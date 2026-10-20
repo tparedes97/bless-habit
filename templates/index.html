@@ -4867,6 +4867,7 @@ function gplayPlanProduct(plan) {
   return gplayProducts.find(p => p.identifier === plan && !p.offerId) || gplayProducts.find(p => p.identifier === plan) || null;
 }
 let lastGplayError = null; // motivo de la última verificación fallida (se muestra al restaurar)
+let lastGplayDetail = ''; // el mensaje de Google, para saber exactamente qué falta configurar
 async function verifyGplayPurchase(purchaseToken) {
   if (!purchaseToken) { lastGplayError = 'no_token_from_play'; return false; }
   try {
@@ -4878,9 +4879,13 @@ async function verifyGplayPurchase(purchaseToken) {
       applyPremiumChange(true);
       return true;
     }
+    lastGplayDetail = (data && data.detail) ? String(data.detail).slice(0, 220) : '';
     lastGplayError = data.ok ? ('not_active' + (data.state ? ':' + String(data.state).replace('SUBSCRIPTION_STATE_', '') : '')) : (data.error || ('http_' + res.status));
   } catch (e) { lastGplayError = 'network'; /* se reintenta al abrir la app (restoreGplayPurchases) */ }
   return false;
+}
+function gplayFailText() {
+  return t('gplayVerifyFail', lastGplayError) + (lastGplayDetail ? `\n\nGoogle: ${lastGplayDetail}` : '');
 }
 // Premium cambió (compra, renovación o vencimiento): se vuelven a dibujar TODAS
 // las pantallas que muestran botones o límites de Premium, y se quitan/ponen los anuncios.
@@ -4929,7 +4934,7 @@ async function restoreGplayPurchases(silent) {
       }
     }
     // Hay una compra en Google pero el servidor no la pudo confirmar: se muestra el motivo.
-    if (!silent) uiAlert(purchases.length && lastGplayError ? t('gplayVerifyFail', lastGplayError) : t('gplayNothingToRestore'));
+    if (!silent) uiAlert(purchases.length && lastGplayError ? gplayFailText() : t('gplayNothingToRestore'));
   } catch (e) {
     if (!silent) uiAlert(t('gplayUnavailable'));
   }
@@ -4997,7 +5002,7 @@ async function buyGplay(plan) {
   uiAlert(t('gplayConfirming'));
   setTimeout(async () => {
     if (await restoreGplayPurchases(true)) { uiAlert(t('gplayThanks')); return; }
-    if (lastGplayError) uiAlert(t('gplayVerifyFail', lastGplayError));
+    if (lastGplayError) uiAlert(gplayFailText());
   }, 5000);
 }
 
