@@ -4879,7 +4879,7 @@ async function verifyGplayPurchase(purchaseToken) {
       applyPremiumChange(true);
       return true;
     }
-    lastGplayDetail = (data && data.detail) ? String(data.detail).slice(0, 220) : '';
+    lastGplayDetail = (data && data.detail) ? String(data.detail).slice(0, 400) : '';
     lastGplayError = data.ok ? ('not_active' + (data.state ? ':' + String(data.state).replace('SUBSCRIPTION_STATE_', '') : '')) : (data.error || ('http_' + res.status));
   } catch (e) { lastGplayError = 'network'; /* se reintenta al abrir la app (restoreGplayPurchases) */ }
   return false;

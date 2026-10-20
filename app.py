@@ -1162,7 +1162,7 @@ _gplay_last_error = {"code": None, "detail": ""}
 def _gplay_fail(code, detail=""):
     """Guarda por qué falló la última consulta a Google (la app lo muestra)."""
     _gplay_last_error["code"] = code
-    _gplay_last_error["detail"] = str(detail)[:300]
+    _gplay_last_error["detail"] = str(detail)[:400]
     print(f"[gplay] {code}: {detail}")
     return None
 
@@ -1192,7 +1192,10 @@ def gplay_fetch_subscription(purchase_token):
         reasons = json.dumps(err.get("details") or err.get("errors") or "")
         if "SERVICE_DISABLED" in reasons or "has not been used in project" in msg or "is disabled" in msg:
             return _gplay_fail("api_disabled", msg)
-        return _gplay_fail("permission_denied", f"{resp.status_code}: {msg}")
+        # Se incluye qué cuenta de servicio usa el servidor: así se ve si es la
+        # misma que tiene permisos en Play Console (el correo no es secreto).
+        sa_email = (gplay_service_account() or {}).get("client_email", "?")
+        return _gplay_fail("permission_denied", f"{resp.status_code}: {msg} [cuenta: {sa_email}]")
     if resp.status_code >= 300:
         return _gplay_fail("google_error", f"Google respondió {resp.status_code}: {resp.text[:200]}")
     _gplay_last_error["code"] = None
