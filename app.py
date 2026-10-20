@@ -1605,6 +1605,9 @@ def index():
         },
         paddle_price_label=PADDLE_PRICE_LABEL,
         native_app_url_scheme=NATIVE_APP_URL_SCHEME,
+        # Con sesión abierta, la página llega en modo "cargando" (sin el botón de
+        # Google), así no se ve la pantalla de login un segundo al abrir la app.
+        has_session=bool(session.get("user_id")),
     )
 
 

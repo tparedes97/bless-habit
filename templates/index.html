@@ -587,6 +587,20 @@
   .task-sheet .tk-hint { font-size: 11.5px; color: var(--text-dim); margin-top: 6px; }
   .alarm-toggle { display: none; align-items: center; gap: 8px; margin-top: 12px; font-size: 13px; color: var(--text); cursor: pointer; }
   .alarm-toggle input { width: 18px; height: 18px; accent-color: var(--accent, #7C6CF0); }
+  /* Interruptor (on/off) */
+  .switch-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 14px; padding: 12px 14px; border-radius: 14px; background: var(--panel-2); border: 1px solid var(--border); text-align: left; cursor: pointer; }
+  .switch-row .switch-text { font-size: 14px; font-weight: 600; color: var(--text); }
+  .switch-row .switch-hint { font-size: 12px; font-weight: 400; color: var(--text-dim); margin-top: 3px; }
+  .bless-switch { position: relative; flex: 0 0 auto; width: 46px; height: 28px; }
+  .bless-switch input { position: absolute; inset: 0; opacity: 0; margin: 0; cursor: pointer; }
+  .bless-switch .knob { position: absolute; inset: 0; border-radius: 999px; background: var(--border); transition: background .2s; pointer-events: none; }
+  .bless-switch .knob::after { content: ''; position: absolute; top: 3px; left: 3px; width: 22px; height: 22px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.25); transition: transform .2s; }
+  .bless-switch input:checked + .knob { background: var(--accent); }
+  .bless-switch input:checked + .knob::after { transform: translateX(18px); }
+  .bless-switch input:focus-visible + .knob { outline: 2px solid var(--accent); outline-offset: 2px; }
+  /* Sesión ya abierta: mientras carga, solo el logo y "Cargando…" (sin botón de Google). */
+  #view-login.resuming > p, #view-login.resuming .google-btn, #view-login.resuming .login-legal { display: none !important; }
+  #view-login.resuming .login-loading { display: block !important; }
   .day-add-choices { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
   .day-add-choices .qr-btn { width: 100%; text-align: left; padding: 12px 14px; font-size: 15px; }
   .day-nav .day-pct { font-size: 11px; color: var(--accent-2); text-align: center; }
@@ -1041,7 +1055,7 @@
     <div id="header-right"></div>
   </header>
 
-  <div id="view-login" class="active">
+  <div id="view-login" class="active{% if has_session %} resuming{% endif %}">
     <div class="login-avatar"><svg class="bless-logo-svg" viewBox="0 0 64 64" aria-hidden="true"><defs><linearGradient id="blessLogoBg" x1="8" y1="4" x2="56" y2="60" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#6F7BFF"/><stop offset=".48" stop-color="#6CCEF1"/><stop offset="1" stop-color="#42D6A1"/></linearGradient><linearGradient id="blessLogoLeaf" x1="20" y1="20" x2="45" y2="43" gradientUnits="userSpaceOnUse"><stop stop-color="#DFFF65"/><stop offset="1" stop-color="#62E6A9"/></linearGradient></defs><circle cx="32" cy="32" r="30" fill="url(#blessLogoBg)"/><circle cx="32" cy="32" r="27.5" fill="none" stroke="#fff" stroke-opacity=".7" stroke-width="1.5"/><path d="M31.8 43.8c.2-8.7.4-15.1 2.4-21.5" fill="none" stroke="#6B4B43" stroke-width="4" stroke-linecap="round"/><path d="M32 34c-8.6.4-13.6-3.4-15.2-10.5 7.7-.6 13.2 2.4 15.2 10.5Z" fill="url(#blessLogoLeaf)"/><path d="M34 28.5c1.5-8.1 6.3-12.6 14.1-13.5.3 7.9-4.3 12.7-14.1 13.5Z" fill="#B9F36B"/><path d="M22.5 46.5h19" stroke="#F08A9D" stroke-width="4" stroke-linecap="round"/></svg></div>
     <h2>Bless Habit</h2>
     <p data-i18n="loginDesc">Tu app de hábitos y agenda que te escucha. Inicia sesión para que Bless recuerde tu perfil y tu progreso entre visitas.</p>
@@ -1517,7 +1531,8 @@ async function executeRoutes(routes) {
     if (blocked.length) parts.push(t('batchHabitsBlocked', blocked.join(', '), habitLimit()));
     if (added.length) parts.push(t('batchHabitsEditHint'));
     await agentSay(chatScroll, parts.join('\n\n'), 300, added.length ? '🌱' : null);
-    if (added.length && canSetClockAlarm()) addNote(chatScroll, t('clockAlarmAllNote'), 'agenda-note', () => setClockAlarmsForHabits(added));
+    if (added.length && clockAlarmsOn()) autoClockAlarmFor(added);
+    else if (added.length && canSetClockAlarm()) addNote(chatScroll, t('clockAlarmAllNote'), 'agenda-note', () => setClockAlarmsForHabits(added));
     if (blocked.length) {
       if (canWatchAdForHabit()) addNote(chatScroll, t('habitLimitOk'), 'agenda-note', () => promptHabitLimit());
       else addNote(chatScroll, t('seePremiumNote'), 'agenda-note', () => openPremiumSheet());
@@ -2224,9 +2239,17 @@ const I18N = {
     batchHabitsBlocked: (x, n) => `No pude agregar ${x}: en el plan gratis puedes tener ${n} hábitos en total.`,
     batchHabitsEditHint: 'Puedes cambiarles los días y la hora en Calendario o en Perfil ✏️',
     clockAlarmAllNote: '⏰ Poner también una alarma en el reloj',
-    clockAlarmAllBtn: '⏰ Poner mis hábitos en la alarma del reloj',
-    clockAlarmAllHint: 'La alarma del reloj suena fuerte aunque el teléfono esté en silencio. Se crea una por cada hábito.',
-    clockAlarmAllDone: (n) => `Listo ⏰ Se crearon ${n} alarmas en la app Reloj de tu teléfono. Si borras un hábito, borra también su alarma desde el Reloj.`,
+    clockAlarmSwitch: '⏰ Alarma del reloj para mis hábitos',
+    clockAlarmDeleteMsg: (name, times) => `Borré el hábito ${name} y sus notificaciones. Su alarma de las ${times} sigue en la app Reloj: quítala desde ahí ⏰ (Android no deja que otra app borre alarmas).`,
+    clockAlarmOldMsg: (times) => `Ojo: la alarma anterior de las ${times} sigue en la app Reloj. Quítala desde ahí para que no suene dos veces ⏰`,
+    exactAlarmPrompt: 'Para que tus recordatorios suenen a la hora exacta (aunque el teléfono esté bloqueado), Bless necesita el permiso "Alarmas y recordatorios". Sin él, Android puede atrasarlos varios minutos o hasta una hora.',
+    exactAlarmPromptOk: 'Dar permiso',
+    notifTestNext: 'Próximo recordatorio de hábito',
+    notifTestNone: 'ninguno programado',
+    notifTestChannelSilenced: 'El canal de recordatorios está silenciado en los ajustes del teléfono',
+    clockAlarmOffMsg: 'Listo, ya no se crearán alarmas nuevas. Las que ya están en la app Reloj de tu teléfono siguen ahí: Android no deja que otra app las borre, así que puedes quitarlas desde el Reloj ⏰',
+    clockAlarmAllHint: 'Suena fuerte aunque el teléfono esté en silencio. Se crea una alarma por cada hábito, también para los nuevos.',
+    clockAlarmAllDone: (n) => `Listo ⏰ ${n === 1 ? 'Se creó 1 alarma' : `Se crearon ${n} alarmas`} en la app Reloj de tu teléfono. Si borras un hábito, borra también su alarma desde el Reloj.`,
     clockAlarmAllNone: 'Todos tus hábitos ya tienen su alarma en el reloj ⏰',
     notifTestChannel: 'Canal de recordatorios con sonido',
     gplayVerifyFail: (code) => `Google recibió tu compra, pero no pudimos confirmarla todavía (código: ${code}). Vuelve a intentarlo con "Restaurar compra" en unos minutos. Si sigue, escríbenos a soporte con este código.`,
@@ -2755,9 +2778,17 @@ const I18N = {
     batchHabitsBlocked: (x, n) => `I couldn't add ${x}: on the free plan you can have ${n} habits in total.`,
     batchHabitsEditHint: 'You can change their days and time in Calendar or Profile ✏️',
     clockAlarmAllNote: '⏰ Also set an alarm on the clock',
-    clockAlarmAllBtn: '⏰ Put my habits on the clock alarm',
-    clockAlarmAllHint: 'The clock alarm rings loud even if the phone is on silent. One is created for each habit.',
-    clockAlarmAllDone: (n) => `Done ⏰ ${n} alarms were created in your phone's Clock app. If you delete a habit, delete its alarm from the Clock too.`,
+    clockAlarmSwitch: '⏰ Clock alarm for my habits',
+    clockAlarmDeleteMsg: (name, times) => `I deleted the habit ${name} and its notifications. Its ${times} alarm is still in the Clock app: remove it there ⏰ (Android doesn't let another app delete alarms).`,
+    clockAlarmOldMsg: (times) => `Heads up: the previous ${times} alarm is still in the Clock app. Remove it there so it doesn't ring twice ⏰`,
+    exactAlarmPrompt: 'For your reminders to ring at the exact time (even with the phone locked), Bless needs the "Alarms & reminders" permission. Without it, Android may delay them by several minutes or up to an hour.',
+    exactAlarmPromptOk: 'Allow',
+    notifTestNext: 'Next habit reminder',
+    notifTestNone: 'none scheduled',
+    notifTestChannelSilenced: 'The reminder channel is silenced in the phone settings',
+    clockAlarmOffMsg: "Done, no new alarms will be created. The ones already in your phone's Clock app stay there: Android doesn't let another app delete them, so you can remove them from the Clock ⏰",
+    clockAlarmAllHint: 'Rings loud even if the phone is on silent. One alarm is created for each habit, new ones too.',
+    clockAlarmAllDone: (n) => `Done ⏰ ${n === 1 ? '1 alarm was' : `${n} alarms were`} created in your phone's Clock app. If you delete a habit, delete its alarm from the Clock too.`,
     clockAlarmAllNone: 'All your habits already have their clock alarm ⏰',
     notifTestChannel: 'Reminder channel with sound',
     gplayVerifyFail: (code) => `Google received your purchase, but we couldn't confirm it yet (code: ${code}). Try "Restore purchase" again in a few minutes. If it keeps happening, contact support with this code.`,
@@ -4250,7 +4281,7 @@ async function bootstrapApp() {
   try {
     const meRes = await fetch('/api/me');
     const me = await meRes.json();
-    if (!me.loggedIn) return; // se queda en la pantalla de login, esperando el clic
+    if (!me.loggedIn) { showLoginChoices(); return; } // se queda en la pantalla de login, esperando el clic
 
     isPremium = !!me.premium;
     premiumSource = me.premiumSource || null;
@@ -4290,7 +4321,7 @@ async function bootstrapApp() {
       migrateOneOffAgendaToTasks();
       scheduleNativeRemindersSoon(); // reprograma el "te extrañé" a 3 días desde hoy
       if (IS_NATIVE_APP && !isPremium) setTimeout(() => restoreGplayPurchases(true), 3000); // compras sin confirmar
-      if (IS_NATIVE_APP && state.settings.nativeReminders) setTimeout(() => maybePromptBackground(false), 5000);
+      if (IS_NATIVE_APP && state.settings.nativeReminders) setTimeout(async () => { await maybePromptExactAlarm(); maybePromptBackground(false); }, 5000);
       migrateDiaryPhotos();
       applyTheme(state.settings.theme);
       refreshLocaleArrays();
@@ -4319,9 +4350,15 @@ async function bootstrapApp() {
       beginLanguageSelection();
     }
   } catch (e) {
+    showLoginChoices();
     loginLoading.style.display = 'none';
     loginBtn.style.display = 'inline-flex';
   }
+}
+// Vuelve a mostrar el botón de Google (la sesión venció o no se pudo cargar).
+function showLoginChoices() {
+  const v = document.getElementById('view-login');
+  if (v) v.classList.remove('resuming');
 }
 if (IS_NATIVE_APP) {
   const loginBtnEl = document.getElementById('google-login-btn');
@@ -5269,6 +5306,15 @@ async function runNotificationTest() {
     const ids = (pending.notifications || []).map(n => n.id);
     lines.push(`${ok(ids.includes(990002))} ${t('notifTestScheduled')}: ${ids.length}`);
     await scheduleNativeReminders();
+    // ¿El teléfono silenció el canal? (importancia 0-2 = sin sonido)
+    try {
+      if (LN.listChannels) {
+        const ch = ((await LN.listChannels()).channels || []).find(c => c.id === REMINDER_CHANNEL_ID);
+        if (ch && typeof ch.importance === 'number' && ch.importance < 3) lines.push(`❌ ${t('notifTestChannelSilenced')} (${ch.importance})`);
+      }
+    } catch (e) {}
+    const next = nextHabitReminder();
+    lines.push(`ℹ️ ${t('notifTestNext')}: ${next || t('notifTestNone')}`);
     const after = await LN.getPending();
     const taskCount = (after.notifications || []).filter(n => n.id >= 500000 && n.id < 900000).length;
     lines.push(`ℹ️ ${t('notifTestTasks')}: ${taskCount}`);
@@ -5278,6 +5324,43 @@ async function runNotificationTest() {
   }
   lines.push('', t('notifTestHowTo'));
   uiAlert(lines.join('\n'));
+}
+// Próximo aviso de hábito según los hábitos guardados: "mar 15:05 · 🌱 Correr".
+function nextHabitReminder() {
+  const now = new Date();
+  let best = null;
+  (state.profile.habitos || []).forEach(h => {
+    habitRepeatDays(h).forEach(dow => {
+      const [hh, mm] = String(habitTimeForDay(h, dow) || '').split(':').map(Number);
+      if (!Number.isFinite(hh)) return;
+      for (let add = 0; add <= 7; add++) {
+        const d = addDays(new Date(now), add);
+        if (d.getDay() !== dow) continue;
+        d.setHours(hh, Number.isFinite(mm) ? mm : 0, 0, 0);
+        if (d <= now) continue;
+        if (!best || d < best.at) best = { at: d, h };
+        break;
+      }
+    });
+  });
+  if (!best) return null;
+  const day = DAY_NAMES_SHORT[best.at.getDay()];
+  const hm = `${String(best.at.getHours()).padStart(2, '0')}:${String(best.at.getMinutes()).padStart(2, '0')}`;
+  return `${day} ${hm} · ${best.h.icon || '🌱'} ${habitDisplayLabel(best.h)}`;
+}
+// Sin el permiso "Alarmas y recordatorios" (Android 12+), los avisos llegan
+// tarde con el teléfono bloqueado. Se pide al abrir la app (máx. 1 vez al día).
+async function maybePromptExactAlarm() {
+  const LN = nativeNotifications();
+  if (!LN || !LN.checkExactNotificationSetting || !(state.settings && state.settings.nativeReminders)) return;
+  try {
+    const ex = await LN.checkExactNotificationSetting();
+    if (!ex || !ex.exact_alarm || ex.exact_alarm === 'granted') return;
+    if (Date.now() - (state.settings.exactPromptedAt || 0) < 86400000) return;
+    state.settings.exactPromptedAt = Date.now();
+    saveStateToServer();
+    if (await uiConfirm(t('exactAlarmPrompt'), { okText: t('exactAlarmPromptOk') })) await LN.changeExactNotificationSetting();
+  } catch (e) {}
 }
 let scheduleNativeRemindersTimer = null;
 function scheduleNativeRemindersSoon() {
@@ -5324,7 +5407,7 @@ function canSetClockAlarm() {
   const h = headers.find(x => x.name === 'BlessDevice');
   return !!(h && (h.methods || []).some(m => m.name === 'setAlarm'));
 }
-async function createClockAlarms(groups, message) {
+async function createClockAlarms(groups, message, extraNote) {
   const BD = blessDevice();
   if (!BD) return;
   try {
@@ -5333,7 +5416,7 @@ async function createClockAlarms(groups, message) {
       const res = await BD.setAlarm({ hour: hh, minutes: mm, message: String(message || 'Bless Habit').slice(0, 60), days: g.days || [], skipUi: true });
       if (res && res.ok === false) { await uiAlert(t('alarmNoClock')); return; }
     }
-    setTimeout(() => uiAlert(t('alarmCreated')), 600);
+    setTimeout(() => uiAlert(t('alarmCreated') + (extraNote ? '\n\n' + extraNote : '')), 600);
   } catch (e) {
     // La app instalada es anterior a la 1.1 y no tiene setAlarm.
     await uiAlert(t('alarmNeedsUpdate'));
@@ -5341,11 +5424,33 @@ async function createClockAlarms(groups, message) {
 }
 // Crea en la app Reloj una alarma por cada hábito que todavía no la tenga
 // (h.clockAlarm marca los que ya tienen, para no duplicarlas).
-async function setClockAlarmsForHabits(habits) {
+// Interruptor de Perfil: con él encendido, cada hábito tiene su alarma en el
+// Reloj (las que faltan se crean al encenderlo y al agregar hábitos nuevos).
+function clockAlarmsOn() { return !!(state.settings && state.settings.clockAlarms) && canSetClockAlarm(); }
+async function toggleClockAlarms(on) {
+  state.settings.clockAlarms = !!on;
+  saveStateToServer();
+  if (on) {
+    await setClockAlarmsForHabits(null, { quietIfNone: true });
+  } else {
+    // Android no deja que otra app borre alarmas del Reloj: se avisa cómo hacerlo.
+    const had = (state.profile.habitos || []).some(h => h && h.clockAlarm);
+    (state.profile.habitos || []).forEach(h => { if (h) delete h.clockAlarm; });
+    saveStateToServer();
+    if (had) await uiAlert(t('clockAlarmOffMsg'));
+  }
+}
+// Al agregar un hábito con el interruptor encendido, se crea su alarma sola.
+function autoClockAlarmFor(habits) {
+  if (!clockAlarmsOn()) return;
+  setTimeout(() => setClockAlarmsForHabits(habits, { quietIfNone: true }), 400);
+}
+async function setClockAlarmsForHabits(habits, opts) {
+  opts = opts || {};
   const BD = blessDevice();
   if (!BD || !canSetClockAlarm()) { await uiAlert(t('alarmNeedsUpdate')); return; }
   const list = (habits || state.profile.habitos || []).filter(h => h && !h.clockAlarm);
-  if (!list.length) { await uiAlert(t('clockAlarmAllNone')); return; }
+  if (!list.length) { if (!opts.quietIfNone) await uiAlert(t('clockAlarmAllNone')); return; }
   let created = 0;
   try {
     for (const h of list) {
@@ -5419,14 +5524,19 @@ function refreshNativeRemindersUI(textEl, btnEl) {
     testLink.onclick = () => runNotificationTest();
     (document.getElementById('bg-settings-link') || btnEl).insertAdjacentElement('afterend', testLink);
   }
-  // Alarma del reloj: suena fuerte aunque el teléfono esté en silencio.
-  if (canSetClockAlarm() && (state.profile.habitos || []).length && !document.getElementById('clock-alarm-all-link')) {
-    const alarmLink = document.createElement('div');
-    alarmLink.id = 'clock-alarm-all-link';
-    alarmLink.style.cssText = 'text-align:center;margin-top:12px;';
-    alarmLink.innerHTML = `<button type="button" class="premium-btn" style="width:100%;background:linear-gradient(135deg, var(--panel-3), var(--panel-2)); color:var(--text);">${t('clockAlarmAllBtn')}</button><div style="font-size:12px;color:var(--text-dim);margin-top:6px;">${t('clockAlarmAllHint')}</div>`;
-    alarmLink.querySelector('button').onclick = () => setClockAlarmsForHabits();
-    (document.getElementById('notif-test-link') || btnEl).insertAdjacentElement('afterend', alarmLink);
+  // Interruptor "Alarma del reloj": suena fuerte aunque el teléfono esté en silencio.
+  if (canSetClockAlarm()) {
+    let row = document.getElementById('clock-alarm-switch-row');
+    if (!row) {
+      row = document.createElement('label');
+      row.id = 'clock-alarm-switch-row';
+      row.className = 'switch-row';
+      row.innerHTML = `<div><div class="switch-text">${t('clockAlarmSwitch')}</div><div class="switch-hint">${t('clockAlarmAllHint')}</div></div>
+        <span class="bless-switch"><input type="checkbox" role="switch" id="clock-alarm-switch" aria-label="${escapeHtml(t('clockAlarmSwitch'))}"><span class="knob"></span></span>`;
+      row.querySelector('input').onchange = (e) => toggleClockAlarms(e.target.checked);
+      (document.getElementById('notif-test-link') || btnEl).insertAdjacentElement('afterend', row);
+    }
+    row.querySelector('input').checked = clockAlarmsOn();
   }
   btnEl.style.display = '';
   btnEl.textContent = on ? t('pushDisableBtn') : t('pushEnableBtn');
@@ -8694,6 +8804,7 @@ function addManualHabit({ key, icon, label, repeatDays, sameTimeEveryday, time, 
   pendingAddHabitStatus = t('addedHabitMsg', icon, habitDisplayLabel(entry), habitDaysLabel(entry));
   scheduleNativeRemindersSoon();
   refreshHabitViews();
+  autoClockAlarmFor([entry]);
 }
 
 /* ---- Picker de "agregar hábito" desde el botón flotante "+" de Calendario Día:
@@ -8841,7 +8952,8 @@ function openHabitEditor(index, prefill) {
   document.getElementById('he-duration-weeks').onchange = () => { weeksInput.disabled = false; };
 
   document.getElementById('he-alarm-row').style.display = canSetClockAlarm() ? 'flex' : 'none';
-  document.getElementById('he-alarm').checked = false;
+  // Con el interruptor "Alarma del reloj" encendido, viene marcado si este hábito aún no tiene alarma.
+  document.getElementById('he-alarm').checked = clockAlarmsOn() && !(h && h.clockAlarm);
   document.getElementById('he-delete-btn').style.display = h ? 'block' : 'none';
   document.getElementById('he-save-btn').onclick = saveHabitEditor;
   document.getElementById('he-delete-btn').onclick = deleteHabitFromEditor;
@@ -8955,13 +9067,22 @@ function saveHabitEditor() {
     state.profile.habitos[editingHabitIndex] = entry;
     pendingAddHabitStatus = t('updatedHabitMsg', icon, label, habitDaysLabel(entry));
   }
-  if (document.getElementById('he-alarm').checked && canSetClockAlarm()) {
+  // Alarma del Reloj. Si se cambió el horario de un hábito que ya tenía alarma,
+  // la vieja queda sonando a la hora anterior (Android no deja borrarla desde
+  // otra app): se crea la nueva (con el interruptor encendido) y se avisa cuál quitar.
+  const hadAlarm = !!(existing && existing.clockAlarm);
+  const scheduleChanged = hadAlarm && habitScheduleSignature(existing) !== habitScheduleSignature(entry);
+  const oldAlarmNote = scheduleChanged ? t('clockAlarmOldMsg', habitAlarmTimesLabel(existing)) : '';
+  const wantAlarm = canSetClockAlarm() && (document.getElementById('he-alarm').checked || (scheduleChanged && clockAlarmsOn()));
+  if (wantAlarm) {
     const byTime = {};
     entry.repeatDays.forEach(d => { const tm = habitTimeForDay(entry, d); (byTime[tm] = byTime[tm] || []).push(d); });
-    createClockAlarms(Object.keys(byTime).map(tm => ({ time: tm, days: byTime[tm] })), `${entry.icon} ${habitDisplayLabel(entry)}`);
+    createClockAlarms(Object.keys(byTime).map(tm => ({ time: tm, days: byTime[tm] })), `${entry.icon} ${habitDisplayLabel(entry)}`, oldAlarmNote);
     entry.clockAlarm = true;
-  } else if (existing && existing.clockAlarm) {
+  } else if (hadAlarm && !scheduleChanged) {
     entry.clockAlarm = true;
+  } else if (scheduleChanged) {
+    setTimeout(() => uiAlert(oldAlarmNote), 400);
   }
   markAppActed();
   syncTodayAgendaForHabit(entry);
@@ -8988,6 +9109,20 @@ function deleteHabitFromEditor() {
   scheduleNativeRemindersSoon();
   closeHabitEditor();
   refreshHabitViews();
+  // La notificación se cancela sola (se reprograman todas), pero la alarma del
+  // Reloj no: Android no deja que otra app la borre. Se avisa cuál quitar.
+  if (h.clockAlarm) setTimeout(() => uiAlert(t('clockAlarmDeleteMsg', `${h.icon || '🌱'} ${habitDisplayLabel(h)}`, habitAlarmTimesLabel(h))), 400);
+}
+// "07:00" o "07:00, 18:30" — las horas de alarma de un hábito.
+function habitAlarmTimesLabel(h) {
+  const times = new Set();
+  habitRepeatDays(h).forEach(d => { const tm = habitTimeForDay(h, d); if (tm) times.add(tm); });
+  return [...times].sort().join(', ');
+}
+// Firma del horario (días + horas): si cambia al editar, la alarma vieja ya no sirve.
+function habitScheduleSignature(h) {
+  if (!h) return '';
+  return habitRepeatDays(h).slice().sort().map(d => `${d}@${habitTimeForDay(h, d)}`).join('|');
 }
 
 /* ============================================================
