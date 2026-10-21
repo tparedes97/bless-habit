@@ -89,6 +89,9 @@
     <!-- Permissions -->
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- ID de publicidad para AdMob (plan gratis). Play Console lo exige porque la
+         declaración de la app dice que usa un ID de publicidad. -->
+    <uses-permission android:name="com.google.android.gms.permission.AD_ID" />
     <!-- Desbloqueo con huella o rostro (plugin @capgo/capacitor-native-biometric). -->
     <uses-permission android:name="android.permission.USE_BIOMETRIC" />
     <!-- Crear una alarma en la app Reloj del teléfono para un hábito o tarea

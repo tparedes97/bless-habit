@@ -7,7 +7,7 @@ android {
         applicationId "app.blesshabit.android"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 3
+        versionCode 4
         versionName "1.2"
         // AdMob: el ID de la app sale de gradle.properties (ADMOB_APP_ID).
         manifestPlaceholders = [admobAppId: (project.findProperty('ADMOB_APP_ID') ?: 'ca-app-pub-3940256099942544~3347511713')]
