@@ -5,4 +5,12 @@
     <string name="package_name">app.blesshabit.android</string>
     <string name="custom_url_scheme">app.blesshabit.android</string>
     <string name="loading_slow">Despertando a Bless… puede tardar unos segundos 🌱</string>
+    <!-- Widget de la pantalla de inicio -->
+    <string name="widget_title">🌱 Mis hábitos de hoy</string>
+    <string name="widget_description">Tu progreso de hoy y tu próximo hábito</string>
+    <string name="widget_open_app">Abre Bless Habit para ver tu día aquí</string>
+    <string name="widget_no_habits_today">Hoy no tienes hábitos programados 🌿</string>
+    <string name="widget_day_done">¡Día completo! 🎉</string>
+    <string name="widget_next">Próximo: %1$s · %2$s</string>
+    <string name="widget_pending">Te faltan %1$d por marcar hoy</string>
 </resources>

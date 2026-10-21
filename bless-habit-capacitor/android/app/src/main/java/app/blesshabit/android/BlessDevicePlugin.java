@@ -97,6 +97,50 @@ public class BlessDevicePlugin extends Plugin {
         call.resolve(ret);
     }
 
+    /**
+     * Guarda los datos del widget de la pantalla de inicio y lo redibuja.
+     * Recibe data: un JSON (texto) con la fecha, los hábitos y cuáles se hicieron
+     * hoy (formato en BlessWidgetProvider.summarize).
+     */
+    @PluginMethod
+    public void updateWidget(PluginCall call) {
+        String data = call.getString("data");
+        if (data == null) { call.reject("data es obligatorio"); return; }
+        Context ctx = getContext();
+        ctx.getSharedPreferences(BlessWidgetProvider.PREFS, Context.MODE_PRIVATE)
+            .edit().putString(BlessWidgetProvider.KEY_DATA, data).apply();
+        BlessWidgetProvider.refreshAll(ctx);
+        call.resolve();
+    }
+
+    /**
+     * Programa los recordatorios con alarmas propias (ver BlessReminders).
+     * data: JSON (texto) con [{id, at (ms), title, body, alarm}]. Reemplaza los anteriores.
+     */
+    @PluginMethod
+    public void scheduleReminders(PluginCall call) {
+        String data = call.getString("data");
+        if (data == null) { call.reject("data es obligatorio"); return; }
+        try {
+            BlessReminders.ensureChannels(getContext());
+            int n = BlessReminders.scheduleAll(getContext(), data);
+            JSObject ret = new JSObject();
+            ret.put("scheduled", n);
+            ret.put("exact", BlessReminders.canExact(getContext()));
+            call.resolve(ret);
+        } catch (Exception e) {
+            call.reject("No se pudieron programar: " + e.getMessage());
+        }
+    }
+
+    /** Muestra un aviso ahora mismo (para la prueba de Perfil → Notificaciones). */
+    @PluginMethod
+    public void testReminder(PluginCall call) {
+        BlessReminders.show(getContext(), 990100 + (call.getBoolean("alarm", false) ? 1 : 0),
+                call.getString("title", "Bless Habit"), call.getString("body", ""), call.getBoolean("alarm", false));
+        call.resolve();
+    }
+
     private Intent findAutostartIntent() {
         String[][] candidates = {
             // Honor (Magic UI) y Huawei (EMUI)

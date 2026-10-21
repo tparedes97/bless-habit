@@ -1,4 +1,11 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
     <string name="loading_slow">Waking Bless up… this can take a few seconds 🌱</string>
+    <string name="widget_title">🌱 Today\'s habits</string>
+    <string name="widget_description">Today\'s progress and your next habit</string>
+    <string name="widget_open_app">Open Bless Habit to see your day here</string>
+    <string name="widget_no_habits_today">No habits scheduled for today 🌿</string>
+    <string name="widget_day_done">Day complete! 🎉</string>
+    <string name="widget_next">Next: %1$s · %2$s</string>
+    <string name="widget_pending">%1$d left to check off today</string>
 </resources>

@@ -48,6 +48,33 @@
 
         </activity>
 
+        <!-- Recordatorios propios (alarmas exactas que despiertan al teléfono). -->
+        <receiver android:name=".BlessReminderReceiver" android:exported="false" />
+        <!-- Vuelve a programar los recordatorios al reiniciar, actualizar la app o cambiar la hora. -->
+        <receiver android:name=".BlessBootReceiver" android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+                <action android:name="android.intent.action.TIME_SET" />
+                <action android:name="android.intent.action.TIMEZONE_CHANGED" />
+                <action android:name="android.intent.action.QUICKBOOT_POWERON" />
+                <action android:name="android.app.action.SCHEDULE_EXACT_ALARM_PERMISSION_STATE_CHANGED" />
+            </intent-filter>
+        </receiver>
+
+        <!-- Widget de la pantalla de inicio (progreso de hoy y próximo hábito). -->
+        <receiver
+            android:name=".BlessWidgetProvider"
+            android:label="@string/app_name"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/bless_widget_info" />
+        </receiver>
+
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.fileprovider"
@@ -67,6 +94,12 @@
     <!-- Crear una alarma en la app Reloj del teléfono para un hábito o tarea
          (BlessDevicePlugin.setAlarm). Es un permiso normal: no pide nada al usuario. -->
     <uses-permission android:name="com.android.alarm.permission.SET_ALARM" />
+    <!-- Recordatorios propios (BlessReminders): avisar a la hora exacta, mostrar
+         la notificación y volver a programarlos al reiniciar el teléfono. -->
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <uses-permission android:name="android.permission.VIBRATE" />
     <!-- Android 11+: para poder abrir la pantalla de "segundo plano / inicio
          automático" de cada marca (ver BlessDevicePlugin). -->
     <queries>

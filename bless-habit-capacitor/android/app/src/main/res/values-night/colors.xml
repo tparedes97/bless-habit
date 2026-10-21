@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Widget con el teléfono en modo oscuro -->
+    <color name="widget_bg">#1E222B</color>
+    <color name="widget_text">#EEF0F3</color>
+    <color name="widget_text_dim">#9AA1AD</color>
+    <color name="widget_track">#2F3542</color>
+</resources>

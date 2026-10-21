@@ -3,4 +3,9 @@
     <color name="bless_bg">#F7F6FD</color>
     <color name="bless_accent">#7C6CF0</color>
     <color name="bless_text_dim">#6B6585</color>
+    <!-- Widget (tema claro; el oscuro está en values-night) -->
+    <color name="widget_bg">#FFFFFF</color>
+    <color name="widget_text">#172033</color>
+    <color name="widget_text_dim">#6B6585</color>
+    <color name="widget_track">#ECEAF6</color>
 </resources>
