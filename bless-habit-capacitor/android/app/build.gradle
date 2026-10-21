@@ -18,8 +18,29 @@ android {
             ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
+    // Firma de la versión para Play Store. Los datos salen de android/keystore.properties
+    // (solo existe en la computadora de quien publica; está en .gitignore, igual que el .jks):
+    //   storeFile=bless-habit-upload.jks
+    //   password=...   (en llaves PKCS12 la del almacén y la de la clave son la misma)
+    //   keyAlias=...
+    // Si no está, se puede firmar a mano en Android Studio (Build → Generate Signed App Bundle).
+    def keystorePropsFile = rootProject.file('keystore.properties')
+    def keystoreProps = new Properties()
+    if (keystorePropsFile.exists()) keystorePropsFile.withInputStream { keystoreProps.load(it) }
+    def canSign = keystoreProps['password'] && keystoreProps['keyAlias'] && keystoreProps['storeFile']
+    signingConfigs {
+        if (canSign) {
+            release {
+                storeFile rootProject.file(keystoreProps['storeFile'])
+                storePassword keystoreProps['password']
+                keyAlias keystoreProps['keyAlias']
+                keyPassword keystoreProps['keyPassword'] ?: keystoreProps['password']
+            }
+        }
+    }
     buildTypes {
         release {
+            if (canSign) signingConfig signingConfigs.release
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
