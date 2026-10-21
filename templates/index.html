@@ -1598,11 +1598,11 @@ async function executeRoutes(routes) {
   let handled = false;
   if (habits.length) {
     state.pending = null; state.pendingHabitSuggestion = null;
-    const added = [], already = [], blocked = [];
+    const added = [], already = [], blocked = [], noTime = [];
     for (const r of habits) {
       const label = r.text.trim().charAt(0).toUpperCase() + r.text.trim().slice(1);
       const res = addHabitQuietly({ label, time: r.time || null, days: r.days && r.days.length ? r.days : null });
-      if (res.status === 'added') added.push(res.habit);
+      if (res.status === 'added') { added.push(res.habit); if (!r.time) noTime.push(res.habit); }
       else if (res.status === 'exists') already.push(res.habit);
       else blocked.push(label);
     }
@@ -1620,6 +1620,10 @@ async function executeRoutes(routes) {
     if (blocked.length) parts.push(t('batchHabitsBlocked', blocked.join(', '), habitLimit()));
     if (added.length) parts.push(t('batchHabitsEditHint'));
     await agentSay(chatScroll, parts.join('\n\n'), 300, added.length ? '🌱' : null);
+    // Los que no tenían hora quedaron con una sugerida: se pregunta si sirve.
+    let askNow = false;
+    noTime.forEach(h => { if (enqueueTimeQuestion({ kind: 'habit', id: h.id })) askNow = true; });
+    if (askNow) await askNextTime();
     if (added.length && clockAlarmsOn()) autoClockAlarmFor(added);
     else if (added.length && canSetClockAlarm()) addNote(chatScroll, t('clockAlarmAllNote'), 'agenda-note', () => setClockAlarmsForHabits(added));
     if (blocked.length) {
@@ -1680,7 +1684,7 @@ async function executeRoute(route) {
       return true;
     }
     case 'add_task': {
-      state.pending = null;
+      if (!(state.pending && state.pending.type === 'needTime')) state.pending = null; // no borra las horas por preguntar
       if (!text) { await handleTaskOrNoteRequest({ kind: 'askTask', date: route.date || ymd(new Date()), time: route.time || null }); return true; }
       let date = route.date || ymd(new Date());
       if (!route.date && route.time && route.time <= nowHM) date = ymd(addDays(new Date(), 1)); // esa hora ya pasó hoy
@@ -1690,7 +1694,7 @@ async function executeRoute(route) {
     }
     case 'add_note': {
       if (!text) return false;
-      state.pending = null;
+      if (!(state.pending && state.pending.type === 'needTime')) state.pending = null; // no borra las horas por preguntar
       await handleTaskOrNoteRequest({ kind: 'note', text: text.charAt(0).toUpperCase() + text.slice(1), date: route.date && route.date >= ymd(new Date()) ? route.date : ymd(new Date()) });
       return true;
     }
@@ -2313,6 +2317,16 @@ const I18N = {
     noteLimitChat: (n) => `Ese día ya tiene ${n} notas, el máximo del plan gratis 📝 Si borras alguna, guardo esta. Con Premium son ilimitadas ✨`,
     taskSavedChat: (text, date, time) => `¡Listo! ✅ Te recordaré «${text}» ${date} a las ${time} ⏰`,
     taskSavedNoTimeChat: (text, date) => `¡Anotado! ✅ «${text}» quedó en tus tareas de ${date}. Si quieres que te avise, dime a qué hora 🤍`,
+    taskSavedNoTimeOkChat: (text, date) => `Listo ✅ «${text}» quedó en tus tareas de ${date}, sin hora. Si luego quieres que te avise, dime a qué hora 🤍`,
+    askTaskTimeChat: (text, date) => `¿A qué hora quieres que te recuerde «${text}» (${date})? ⏰\nPor ejemplo: «a las 5 pm» o «17:30». Si no tiene hora, dime «sin hora».`,
+    askTimeMore: (n) => `\n\n(Después te pregunto por ${n === 1 ? 'la otra tarea' : `las otras ${n}`} 🙂)`,
+    askHabitTimeChat: (label, time) => `Le puse a ${label} las ${time} como hora sugerida. ¿Te sirve, o a qué hora prefieres? ⏰`,
+    habitTimeSetChat: (label, time) => `Listo ⏰ ${label} quedó a las ${time}.`,
+    habitTimeKeptChat: (label, time) => `Perfecto, ${label} se queda a las ${time} 👍`,
+    taskDroppedChat: (text) => `Ok, no guardé «${text}».`,
+    taskTimeNotUnderstood2: 'No entendí la hora 😅 ¿Me la dices así: «a las 5 pm» o «17:30»? Si no tiene hora, dime «sin hora».',
+    habitTimeNotUnderstood: 'No entendí la hora 😅 ¿Me la dices así: «a las 7 am» o «19:00»? Si te sirve la sugerida, dime «sí».',
+    tasksSavedNoTimeNote: (list) => `📌 Guardé ${list} sin hora. Toca aquí para ponerles hora en Calendario.`,
     noteSavedChat: (date) => `Guardé tu nota en el día de ${date} 📝`,
     diarySavedChat: 'Listo, lo escribí en tu diario de hoy 📔 Puedes verlo o agregarle foto y stickers en la pestaña Diario.',
     diaryAskChat: '¡Claro! ¿Qué quieres escribir en tu diario de hoy? Escríbemelo y lo guardo 📔',
@@ -2891,6 +2905,16 @@ const I18N = {
     noteLimitChat: (n) => `That day already has ${n} notes, the free plan maximum 📝 Delete one and I'll save this. With Premium they're unlimited ✨`,
     taskSavedChat: (text, date, time) => `Done! ✅ I'll remind you to "${text}" ${date} at ${time} ⏰`,
     taskSavedNoTimeChat: (text, date) => `Got it! ✅ "${text}" is in your tasks for ${date}. If you want a reminder, tell me what time 🤍`,
+    taskSavedNoTimeOkChat: (text, date) => `Done ✅ "${text}" is in your tasks for ${date}, with no time. If you want a reminder later, tell me what time 🤍`,
+    askTaskTimeChat: (text, date) => `What time should I remind you about "${text}" (${date})? ⏰\nFor example: "at 5 pm" or "17:30". If it has no time, say "no time".`,
+    askTimeMore: (n) => `\n\n(Then I'll ask about ${n === 1 ? 'the other task' : `the other ${n}`} 🙂)`,
+    askHabitTimeChat: (label, time) => `I set ${label} at ${time} as a suggested time. Does that work, or what time do you prefer? ⏰`,
+    habitTimeSetChat: (label, time) => `Done ⏰ ${label} is set for ${time}.`,
+    habitTimeKeptChat: (label, time) => `Great, ${label} stays at ${time} 👍`,
+    taskDroppedChat: (text) => `Ok, I didn't save "${text}".`,
+    taskTimeNotUnderstood2: `I didn't get the time 😅 Can you say it like "at 5 pm" or "17:30"? If it has no time, say "no time".`,
+    habitTimeNotUnderstood: `I didn't get the time 😅 Can you say it like "at 7 am" or "19:00"? If the suggested one works, say "yes".`,
+    tasksSavedNoTimeNote: (list) => `📌 I saved ${list} with no time. Tap here to set a time in Calendar.`,
     noteSavedChat: (date) => `I saved your note on ${date} 📝`,
     diarySavedChat: "Done, I wrote it in today's journal 📔 You can see it or add a photo and stickers in the Journal tab.",
     diaryAskChat: "Sure! What would you like to write in today's journal? Type it and I'll save it 📔",
@@ -7059,6 +7083,25 @@ function parseWhenFromText(raw) {
       const n = { un: 1, una: 1, uno: 1, one: 1, a: 1, an: 1, 'un par de': 2, 'a couple of': 2, dos: 2, two: 2, tres: 3, three: 3, cuatro: 4, four: 4, cinco: 5, five: 5, seis: 6, six: 6, diez: 10, ten: 10, quince: 15, fifteen: 15, veinte: 20, twenty: 20, treinta: 30, thirty: 30, cuarenta: 40, forty: 40, cincuenta: 50, fifty: 50 }[w.toLowerCase()];
       return ` ${pre} ${n} ${unit} `;
     });
+  // Horas en palabras → cifras: "a las cinco y media de la tarde" → "a las 17:30",
+  // "a las siete" → "a las 7:00", "a las 5 y cuarto" → "a las 5:15".
+  const HOUR_WORDS = { una: 1, uno: 1, dos: 2, tres: 3, cuatro: 4, cinco: 5, seis: 6, siete: 7, ocho: 8, nueve: 9, diez: 10, once: 11, doce: 12,
+    one: 1, two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7, eight: 8, nine: 9, ten: 10, eleven: 11, twelve: 12 };
+  text = text.replace(/\b(a las|a la|at)\s+(una|uno|dos|tres|cuatro|cinco|seis|siete|ocho|nueve|diez|once|doce|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|\d{1,2})(?:\s+(y media|y cuarto|menos cuarto|en punto|thirty|fifteen|forty[- ]five|o'?clock))?(?:\s+(de la ma[ñn]ana|de la tarde|de la noche|del mediod[ií]a|in the morning|in the afternoon|in the evening|at night|am|pm))?\b/gi, (all, pre, hw, frac, part) => {
+    let h = HOUR_WORDS[String(hw).toLowerCase()] || parseInt(hw, 10);
+    if (!Number.isFinite(h) || h > 23) return all;
+    let mm = 0;
+    const f = String(frac || '').toLowerCase();
+    if (/media|thirty/.test(f)) mm = 30;
+    else if (/menos cuarto|forty/.test(f)) { mm = 45; h = h === 1 ? 12 : h - 1; }
+    else if (/cuarto|fifteen/.test(f)) mm = 15;
+    const p = String(part || '').toLowerCase();
+    if (/tarde|noche|afternoon|evening|night|pm/.test(p) && h < 12) h += 12;
+    if (/ma[ñn]ana|morning|am/.test(p) && h === 12) h = 0;
+    // "de la mañana" se marca "am" para que más abajo "a las 7" no se pase a la tarde.
+    const am = /ma[ñn]ana|morning|am/.test(p);
+    return ` a las ${h}:${String(mm).padStart(2, '0')}${am ? ' am' : ''} `;
+  });
   // "en 2 horas" / "en 30 minutos" / "in 2 hours"
   if ((m = text.match(/\b(?:en|in|dentro de)\s+(\d{1,3})\s*(horas?|hrs?|h|minutos?|mins?|min|hours?|minutes?)\b/i))) {
     const n = parseInt(m[1], 10), isH = /^h/i.test(m[2]);
@@ -7071,8 +7114,8 @@ function parseWhenFromText(raw) {
   if (!date && (m = text.match(/(?<!(?:de|en|por|la)\s)\b(ma[ñn]ana|tomorrow)\b/i))) { date = ymd(addDays(now, 1)); cut(m[0]); }
   if (!date && (m = text.match(/\b(hoy|today|esta noche|tonight|esta tarde|this evening|this afternoon)\b/i))) {
     date = ymd(now);
-    if (/noche|tonight|evening/i.test(m[1]) && !/\d/.test(text)) time = '20:00';
-    if (/tarde|afternoon/i.test(m[1]) && !/\d/.test(text)) time = '16:00';
+    // "esta tarde" / "esta noche" sin hora: ya no se inventa una hora (16:00 / 20:00);
+    // Bless pregunta a qué hora exactamente.
     cut(m[0]);
   }
   if (!date) {
@@ -7112,7 +7155,7 @@ function parseWhenFromText(raw) {
   if ((m = text.match(/\b(?:en|por)\s+la\s+(ma[ñn]ana|tarde|noche)\b|\bin the (morning|afternoon|evening)\b|\bat night\b/i))) {
     const w = (m[1] || m[2] || 'night').toLowerCase();
     partHint = /ma|morning/.test(w) ? 'am' : 'pm';
-    if (!/\d/.test(text.replace(m[0], ''))) time = /ma|morning/.test(w) ? '09:00' : /tarde|afternoon/.test(w) ? '16:00' : '20:00';
+    // Sin hora exacta ("por la tarde") ya no se inventa una: Bless pregunta.
     cut(m[0]);
   }
   // Hora
@@ -7291,6 +7334,108 @@ async function sayTaskLimit(req) {
   }
   addNote(chatScroll, t('seePremiumNote'), 'agenda-note', () => openPremiumSheet());
 }
+/* ---- La hora siempre se pregunta ----
+   Una tarea pedida por chat sin hora NO se guarda: Bless pregunta "¿a qué
+   hora?" y la guarda con la respuesta. Si se piden varias a la vez, pregunta
+   una por una. Solo se guarda sin hora si la persona lo dice ("sin hora").
+   Los hábitos del chat sin hora se guardan con una hora sugerida y Bless
+   pregunta si esa hora le sirve o cuál prefiere.
+   state.pending = { type: 'needTime', queue: [ {kind:'task', text, date} | {kind:'habit', id} ], tries } */
+const NO_TIME_RE = /^\s*(?:(?:no,?\s*)?sin hora|no (?:tiene|tengo|importa|s[eé])(?: la)? hora|a cualquier hora|cualquier hora|todo el d[ií]a|no importa|no s[eé]|as[ií] est[aá] bien|d[eé]jal[oa] as[ií]|no hace falta|no time|any ?time|all day|doesn'?t matter|no need|that'?s fine|keep it)\W*$/i;
+const DROP_TASK_RE = /^\s*(?:cancela(?:la)?|olv[ií]dal[oa]|b[oó]rral[oa]|ya no|mejor no|no la guardes|cancel(?: it)?|never ?mind|forget it|delete it)\W*$/i;
+function enqueueTimeQuestion(item) {
+  if (state.pending && state.pending.type === 'needTime') { state.pending.queue.push(item); return false; }
+  state.pending = { type: 'needTime', queue: [item], tries: 0 };
+  return true; // es la primera: hay que preguntar
+}
+async function askNextTime(prefix) {
+  const p = state.pending;
+  if (!p || p.type !== 'needTime' || !p.queue.length) { if (p && p.type === 'needTime') state.pending = null; return; }
+  p.tries = 0;
+  const it = p.queue[0];
+  if (it.kind === 'habit') {
+    const h = (state.profile.habitos || []).find(x => x.id === it.id);
+    if (!h) { p.queue.shift(); return askNextTime(prefix); }
+    await agentSay(chatScroll, (prefix ? prefix + '\n\n' : '') + t('askHabitTimeChat', `${h.icon || '🌱'} ${habitDisplayLabel(h)}`, habitTimeForDay(h, new Date().getDay()) || h.time), 300, '⏰');
+  } else {
+    const more = p.queue.length > 1 ? t('askTimeMore', p.queue.length - 1) : '';
+    await agentSay(chatScroll, (prefix ? prefix + '\n\n' : '') + t('askTaskTimeChat', it.text, friendlyDateLabel(it.date)) + more, 300, '⏰');
+  }
+}
+// Responde a "¿a qué hora…?". Devuelve true si el mensaje era la respuesta.
+async function handleNeedTimeAnswer(text) {
+  const p = state.pending;
+  if (!p || p.type !== 'needTime' || !p.queue.length) return false;
+  const it = p.queue[0];
+  const trimmed = text.trim();
+  const when = parseWhenFromText(text);
+  const time = when.time || extractTime(trimmed);
+  if (it.kind === 'habit') {
+    const h = (state.profile.habitos || []).find(x => x.id === it.id);
+    if (h && time) {
+      h.time = time; h.sameTimeEveryday = true; h.timesByDay = {};
+      syncTodayAgendaForHabit(h);
+      markAppActed(); saveStateToServer(); scheduleNativeRemindersSoon(); refreshHabitViews();
+      p.queue.shift();
+      const msg = t('habitTimeSetChat', `${h.icon || '🌱'} ${habitDisplayLabel(h)}`, time);
+      if (p.queue.length) await askNextTime(msg); else { state.pending = null; await agentSay(chatScroll, msg, 300, '⏰'); }
+      return true;
+    }
+    if (h && (NO_TIME_RE.test(trimmed) || /^\s*(s[ií]|ok|vale|dale|perfecto|bien|yes|sure|fine)\W*$/i.test(trimmed))) {
+      p.queue.shift();
+      const msg = t('habitTimeKeptChat', `${h.icon || '🌱'} ${habitDisplayLabel(h)}`, h.time);
+      if (p.queue.length) await askNextTime(msg); else { state.pending = null; await agentSay(chatScroll, msg, 300, '👍'); }
+      return true;
+    }
+  } else {
+    if (time) {
+      let date = when.explicitDate ? when.date : it.date;
+      const now = new Date(), nowHM = String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
+      if (!when.explicitDate && date === ymd(now) && time <= nowHM) date = ymd(addDays(now, 1)); // esa hora ya pasó hoy
+      p.queue.shift();
+      const rest = p.queue.slice();
+      state.pending = null;
+      await handleTaskOrNoteRequest({ kind: 'task', text: it.text, date, time, confirmedTime: true });
+      if (rest.length) { state.pending = { type: 'needTime', queue: rest, tries: 0 }; await askNextTime(); }
+      return true;
+    }
+    if (NO_TIME_RE.test(trimmed)) {
+      p.queue.shift();
+      const rest = p.queue.slice();
+      state.pending = null;
+      await handleTaskOrNoteRequest({ kind: 'task', text: it.text, date: it.date, time: null, confirmedTime: true });
+      if (rest.length) { state.pending = { type: 'needTime', queue: rest, tries: 0 }; await askNextTime(); }
+      return true;
+    }
+    if (DROP_TASK_RE.test(trimmed)) {
+      p.queue.shift();
+      const msg = t('taskDroppedChat', it.text);
+      if (p.queue.length) await askNextTime(msg); else { state.pending = null; await agentSay(chatScroll, msg, 300); }
+      return true;
+    }
+  }
+  // No se entendió la hora: se vuelve a preguntar (máx. 2 veces).
+  const looksLikeTime = text.split(/\s+/).length <= 9 && /\d|a las?\b|y media|y cuarto|en punto|\b(?:una|dos|tres|cuatro|cinco|seis|siete|ocho|nueve|diez|once|doce)\b|minuto|hora|tarde|noche|ma[ñn]ana|mediod|rat(?:o|ito)|luego|despu[eé]s|pronto|am\b|pm\b|minute|hour|evening|night|noon|later|soon|o'?clock/i.test(text);
+  // Solo si parecía una hora mal escrita; si habla de otra cosa (cómo se siente,
+  // otra pregunta), no se le responde "no entendí la hora": se sigue la charla.
+  if (p.tries < 2 && looksLikeTime) {
+    p.tries++;
+    await agentSay(chatScroll, it.kind === 'habit' ? t('habitTimeNotUnderstood') : t('taskTimeNotUnderstood2'), 300);
+    return true;
+  }
+  // Habló de otra cosa: las tareas pendientes se guardan sin hora (no se pierden)
+  // y se le avisa; los hábitos se quedan con la hora sugerida.
+  const left = p.queue.filter(x => x.kind === 'task');
+  state.pending = null;
+  for (const x of left) {
+    if (canAddTask(x.date) && !dateBeyondFree(x.date)) addTask({ text: x.text, date: x.date, time: null });
+  }
+  if (left.length) {
+    afterTasksOrNotesChanged();
+    addNote(chatScroll, t('tasksSavedNoTimeNote', left.map(x => `«${x.text}»`).join(', ')), 'agenda-note', () => openCalendarDay(left[0].date));
+  }
+  return false; // el mensaje sigue su camino normal
+}
 async function handleTaskOrNoteRequest(req) {
   if (req.kind === 'askTask') {
     // Solo dio la hora ("programa tarea para las 3:25"): si hay una tarea
@@ -7303,13 +7448,18 @@ async function handleTaskOrNoteRequest(req) {
   }
   if (req.kind === 'task') {
     if (dateBeyondFree(req.date) || !canAddTask(req.date)) { await sayTaskLimit({ text: req.text, date: req.date, time: req.time }); return; }
+    // Sin hora: primero se pregunta (no se guarda una tarea sin hora por sorpresa).
+    if (!req.time && !req.confirmedTime) {
+      markAppActed();
+      if (enqueueTimeQuestion({ kind: 'task', text: req.text, date: req.date })) await askNextTime();
+      return;
+    }
     const tk = addTask({ text: req.text, date: req.date, time: req.time });
     setAvatarMood('happy', 1500);
     await agentSay(chatScroll, req.time
       ? t('taskSavedChat', tk.text, friendlyDateLabel(tk.date), tk.time)
-      : t('taskSavedNoTimeChat', tk.text, friendlyDateLabel(tk.date)), 300, '✅');
+      : t('taskSavedNoTimeOkChat', tk.text, friendlyDateLabel(tk.date)), 300, '✅');
     if (req.time) maybeEnableRemindersForTask();
-    else state.pending = { type: 'taskTime', taskId: tk.id };
     addNote(chatScroll, t('seeInCalendarNote'), 'agenda-note', () => openCalendarDay(tk.date));
   } else {
     if (!canAddNote(req.date)) {
@@ -7336,6 +7486,10 @@ async function handleUserMessage(text) {
 async function handleUserMessageInner(text) {
   addBubble(chatScroll, text, 'user');
   pushChatMemory('user', text);
+
+  // 0) ¿Responde a "¿a qué hora…?" de una tarea o hábito? Va antes que la IA,
+  // para que la hora quede guardada sí o sí.
+  if (state.pending && state.pending.type === 'needTime' && await handleNeedTimeAnswer(text)) return;
 
   // 1) La IA decide si es una acción de la app (más inteligente que las reglas
   // de palabras). Si dice que es solo conversación, las reglas de palabras que
