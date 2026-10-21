@@ -1,16 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Barra de progreso del widget (en Android 12+ se tiñe con el color elegido). -->
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
     <item android:id="@android:id/background">
         <shape android:shape="rectangle">
             <corners android:radius="8dp" />
-            <solid android:color="@color/widget_track" />
+            <solid android:color="#33808080" />
         </shape>
     </item>
     <item android:id="@android:id/progress">
         <clip>
             <shape android:shape="rectangle">
                 <corners android:radius="8dp" />
-                <gradient android:startColor="#7860F4" android:endColor="#43D6A1" android:angle="0" />
+                <solid android:color="#8B6CF6" />
             </shape>
         </clip>
     </item>

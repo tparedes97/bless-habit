@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Widget de Bless Habit (Un hábito). Colores, esquinas y tamaños los aplica
+     BlessWidgetProvider según Perfil → Widget. Tocarlo abre la app. -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <ImageView
+        android:id="@+id/w_bg"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:scaleType="fitXY"
+        android:src="@drawable/widget_bg_round"
+        android:importantForAccessibility="no" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:gravity="center_vertical"
+        android:paddingStart="18dp"
+        android:paddingEnd="18dp"
+        android:paddingTop="14dp"
+        android:paddingBottom="14dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+            <TextView
+                android:id="@+id/w_title"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/widget_title"
+                android:textColor="#1F1C4B"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:maxLines="1"
+                android:ellipsize="end" />
+            <TextView
+                android:id="@+id/w_today"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:text="@string/widget_today"
+                android:textColor="#991F1C4B"
+                android:textSize="13sp" />
+        </LinearLayout>
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+            <FrameLayout
+                android:layout_width="48dp"
+                android:layout_height="48dp">
+                <ImageView android:id="@+id/w_single_circle" android:layout_width="48dp" android:layout_height="48dp"
+                    android:src="@drawable/widget_dot" android:importantForAccessibility="no" />
+                <TextView android:id="@+id/w_single_emoji" android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:layout_gravity="center" android:textSize="24sp" />
+                <ImageView android:id="@+id/w_single_icon" android:layout_width="26dp" android:layout_height="26dp"
+                    android:layout_gravity="center" android:visibility="gone" android:importantForAccessibility="no" />
+            </FrameLayout>
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginStart="14dp"
+                android:orientation="vertical">
+                <TextView android:id="@+id/w_single_label" android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:textColor="#1F1C4B" android:textSize="18sp" android:textStyle="bold"
+                    android:maxLines="1" android:ellipsize="end" />
+                <TextView android:id="@+id/w_single_status" android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp" android:textColor="#991F1C4B" android:textSize="13sp"
+                    android:maxLines="1" android:ellipsize="end" />
+            </LinearLayout>
+            <FrameLayout
+                android:layout_width="26dp"
+                android:layout_height="26dp">
+                <ImageView android:id="@+id/w_single_ring" android:layout_width="26dp" android:layout_height="26dp"
+                    android:src="@drawable/widget_ring" android:importantForAccessibility="no" />
+                <ImageView android:id="@+id/w_single_dot" android:layout_width="26dp" android:layout_height="26dp"
+                    android:src="@drawable/widget_dot" android:visibility="gone" android:importantForAccessibility="no" />
+                <ImageView android:id="@+id/w_single_tick" android:layout_width="18dp" android:layout_height="18dp"
+                    android:layout_gravity="center" android:src="@drawable/wi_check" android:visibility="gone"
+                    android:importantForAccessibility="no" />
+            </FrameLayout>
+        </LinearLayout>
+    </LinearLayout>
+</FrameLayout>

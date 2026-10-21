@@ -1,16 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Tamaño 4x2 por defecto; se puede achicar o agrandar. Se refresca solo cada
-     30 min (lo mínimo que permite Android) y cada vez que la app guarda cambios. -->
+<!-- Tamaño 4x2 por defecto; se puede agrandar (la Lista muestra hasta 5 hábitos).
+     Se refresca cada 30 min (lo mínimo de Android) y cada vez que la app guarda cambios. -->
 <appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
     android:minWidth="250dp"
-    android:minHeight="80dp"
+    android:minHeight="110dp"
     android:minResizeWidth="180dp"
-    android:minResizeHeight="70dp"
+    android:minResizeHeight="90dp"
     android:targetCellWidth="4"
     android:targetCellHeight="2"
     android:resizeMode="horizontal|vertical"
     android:updatePeriodMillis="1800000"
-    android:initialLayout="@layout/bless_widget"
-    android:previewLayout="@layout/bless_widget"
+    android:initialLayout="@layout/widget_list"
+    android:previewLayout="@layout/widget_list"
     android:description="@string/widget_description"
     android:widgetCategory="home_screen" />

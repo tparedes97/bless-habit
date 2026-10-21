@@ -1,0 +1,235 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Widget de Bless Habit (Lista). Colores, esquinas y tamaños los aplica
+     BlessWidgetProvider según Perfil → Widget. Tocarlo abre la app. -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <ImageView
+        android:id="@+id/w_bg"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:scaleType="fitXY"
+        android:src="@drawable/widget_bg_round"
+        android:importantForAccessibility="no" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:gravity="center_vertical"
+        android:paddingStart="18dp"
+        android:paddingEnd="18dp"
+        android:paddingTop="14dp"
+        android:paddingBottom="14dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+            <TextView
+                android:id="@+id/w_title"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/widget_title"
+                android:textColor="#1F1C4B"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:maxLines="1"
+                android:ellipsize="end" />
+            <TextView
+                android:id="@+id/w_today"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:text="@string/widget_today"
+                android:textColor="#991F1C4B"
+                android:textSize="13sp" />
+        </LinearLayout>
+        <LinearLayout
+            android:id="@+id/w_row1"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:visibility="gone">
+            <FrameLayout
+                android:layout_width="22dp"
+                android:layout_height="22dp">
+                <ImageView android:id="@+id/w1_ring" android:layout_width="22dp" android:layout_height="22dp"
+                    android:src="@drawable/widget_ring" android:importantForAccessibility="no" />
+                <ImageView android:id="@+id/w1_dot" android:layout_width="22dp" android:layout_height="22dp"
+                    android:src="@drawable/widget_dot" android:visibility="gone" android:importantForAccessibility="no" />
+                <ImageView android:id="@+id/w1_tick" android:layout_width="15dp" android:layout_height="15dp"
+                    android:layout_gravity="center" android:src="@drawable/wi_check" android:visibility="gone"
+                    android:importantForAccessibility="no" />
+            </FrameLayout>
+            <TextView android:id="@+id/w_emoji1" android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:layout_marginStart="12dp" android:textSize="17sp" />
+            <ImageView android:id="@+id/w_icon1" android:layout_width="20dp" android:layout_height="20dp"
+                android:layout_marginStart="12dp" android:visibility="gone" android:importantForAccessibility="no" />
+            <TextView android:id="@+id/w_label1" android:layout_width="0dp" android:layout_height="wrap_content"
+                android:layout_weight="1" android:layout_marginStart="10dp" android:textColor="#1F1C4B"
+                android:textSize="15sp" android:maxLines="1" android:ellipsize="end" />
+            <TextView android:id="@+id/w_time1" android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:layout_marginStart="8dp" android:textColor="#991F1C4B" android:textSize="12sp"
+                android:visibility="gone" />
+        </LinearLayout>
+        <LinearLayout
+            android:id="@+id/w_row2"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:visibility="gone">
+            <FrameLayout
+                android:layout_width="22dp"
+                android:layout_height="22dp">
+                <ImageView android:id="@+id/w2_ring" android:layout_width="22dp" android:layout_height="22dp"
+                    android:src="@drawable/widget_ring" android:importantForAccessibility="no" />
+                <ImageView android:id="@+id/w2_dot" android:layout_width="22dp" android:layout_height="22dp"
+                    android:src="@drawable/widget_dot" android:visibility="gone" android:importantForAccessibility="no" />
+                <ImageView android:id="@+id/w2_tick" android:layout_width="15dp" android:layout_height="15dp"
+                    android:layout_gravity="center" android:src="@drawable/wi_check" android:visibility="gone"
+                    android:importantForAccessibility="no" />
+            </FrameLayout>
+            <TextView android:id="@+id/w_emoji2" android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:layout_marginStart="12dp" android:textSize="17sp" />
+            <ImageView android:id="@+id/w_icon2" android:layout_width="20dp" android:layout_height="20dp"
+                android:layout_marginStart="12dp" android:visibility="gone" android:importantForAccessibility="no" />
+            <TextView android:id="@+id/w_label2" android:layout_width="0dp" android:layout_height="wrap_content"
+                android:layout_weight="1" android:layout_marginStart="10dp" android:textColor="#1F1C4B"
+                android:textSize="15sp" android:maxLines="1" android:ellipsize="end" />
+            <TextView android:id="@+id/w_time2" android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:layout_marginStart="8dp" android:textColor="#991F1C4B" android:textSize="12sp"
+                android:visibility="gone" />
+        </LinearLayout>
+        <LinearLayout
+            android:id="@+id/w_row3"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:visibility="gone">
+            <FrameLayout
+                android:layout_width="22dp"
+                android:layout_height="22dp">
+                <ImageView android:id="@+id/w3_ring" android:layout_width="22dp" android:layout_height="22dp"
+                    android:src="@drawable/widget_ring" android:importantForAccessibility="no" />
+                <ImageView android:id="@+id/w3_dot" android:layout_width="22dp" android:layout_height="22dp"
+                    android:src="@drawable/widget_dot" android:visibility="gone" android:importantForAccessibility="no" />
+                <ImageView android:id="@+id/w3_tick" android:layout_width="15dp" android:layout_height="15dp"
+                    android:layout_gravity="center" android:src="@drawable/wi_check" android:visibility="gone"
+                    android:importantForAccessibility="no" />
+            </FrameLayout>
+            <TextView android:id="@+id/w_emoji3" android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:layout_marginStart="12dp" android:textSize="17sp" />
+            <ImageView android:id="@+id/w_icon3" android:layout_width="20dp" android:layout_height="20dp"
+                android:layout_marginStart="12dp" android:visibility="gone" android:importantForAccessibility="no" />
+            <TextView android:id="@+id/w_label3" android:layout_width="0dp" android:layout_height="wrap_content"
+                android:layout_weight="1" android:layout_marginStart="10dp" android:textColor="#1F1C4B"
+                android:textSize="15sp" android:maxLines="1" android:ellipsize="end" />
+            <TextView android:id="@+id/w_time3" android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:layout_marginStart="8dp" android:textColor="#991F1C4B" android:textSize="12sp"
+                android:visibility="gone" />
+        </LinearLayout>
+        <LinearLayout
+            android:id="@+id/w_row4"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:visibility="gone">
+            <FrameLayout
+                android:layout_width="22dp"
+                android:layout_height="22dp">
+                <ImageView android:id="@+id/w4_ring" android:layout_width="22dp" android:layout_height="22dp"
+                    android:src="@drawable/widget_ring" android:importantForAccessibility="no" />
+                <ImageView android:id="@+id/w4_dot" android:layout_width="22dp" android:layout_height="22dp"
+                    android:src="@drawable/widget_dot" android:visibility="gone" android:importantForAccessibility="no" />
+                <ImageView android:id="@+id/w4_tick" android:layout_width="15dp" android:layout_height="15dp"
+                    android:layout_gravity="center" android:src="@drawable/wi_check" android:visibility="gone"
+                    android:importantForAccessibility="no" />
+            </FrameLayout>
+            <TextView android:id="@+id/w_emoji4" android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:layout_marginStart="12dp" android:textSize="17sp" />
+            <ImageView android:id="@+id/w_icon4" android:layout_width="20dp" android:layout_height="20dp"
+                android:layout_marginStart="12dp" android:visibility="gone" android:importantForAccessibility="no" />
+            <TextView android:id="@+id/w_label4" android:layout_width="0dp" android:layout_height="wrap_content"
+                android:layout_weight="1" android:layout_marginStart="10dp" android:textColor="#1F1C4B"
+                android:textSize="15sp" android:maxLines="1" android:ellipsize="end" />
+            <TextView android:id="@+id/w_time4" android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:layout_marginStart="8dp" android:textColor="#991F1C4B" android:textSize="12sp"
+                android:visibility="gone" />
+        </LinearLayout>
+        <LinearLayout
+            android:id="@+id/w_row5"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:visibility="gone">
+            <FrameLayout
+                android:layout_width="22dp"
+                android:layout_height="22dp">
+                <ImageView android:id="@+id/w5_ring" android:layout_width="22dp" android:layout_height="22dp"
+                    android:src="@drawable/widget_ring" android:importantForAccessibility="no" />
+                <ImageView android:id="@+id/w5_dot" android:layout_width="22dp" android:layout_height="22dp"
+                    android:src="@drawable/widget_dot" android:visibility="gone" android:importantForAccessibility="no" />
+                <ImageView android:id="@+id/w5_tick" android:layout_width="15dp" android:layout_height="15dp"
+                    android:layout_gravity="center" android:src="@drawable/wi_check" android:visibility="gone"
+                    android:importantForAccessibility="no" />
+            </FrameLayout>
+            <TextView android:id="@+id/w_emoji5" android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:layout_marginStart="12dp" android:textSize="17sp" />
+            <ImageView android:id="@+id/w_icon5" android:layout_width="20dp" android:layout_height="20dp"
+                android:layout_marginStart="12dp" android:visibility="gone" android:importantForAccessibility="no" />
+            <TextView android:id="@+id/w_label5" android:layout_width="0dp" android:layout_height="wrap_content"
+                android:layout_weight="1" android:layout_marginStart="10dp" android:textColor="#1F1C4B"
+                android:textSize="15sp" android:maxLines="1" android:ellipsize="end" />
+            <TextView android:id="@+id/w_time5" android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:layout_marginStart="8dp" android:textColor="#991F1C4B" android:textSize="12sp"
+                android:visibility="gone" />
+        </LinearLayout>
+        <TextView
+            android:id="@+id/w_empty"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:textColor="#CC1F1C4B"
+            android:textSize="13sp"
+            android:visibility="gone" />
+        <LinearLayout
+            android:id="@+id/w_progress_row"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+            <ProgressBar
+                android:id="@+id/w_progress"
+                style="@android:style/Widget.ProgressBar.Horizontal"
+                android:layout_width="0dp"
+                android:layout_height="7dp"
+                android:layout_weight="1"
+                android:max="100"
+                android:progress="0"
+                android:progressDrawable="@drawable/widget_progress" />
+            <TextView
+                android:id="@+id/w_progress_text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="10dp"
+                android:textColor="#991F1C4B"
+                android:textSize="12sp" />
+        </LinearLayout>
+    </LinearLayout>
+</FrameLayout>

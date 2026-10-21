@@ -647,6 +647,80 @@
   .bar-row .bar-sub { font-size: 10.5px; color: var(--text-dim); margin-top: 2px; white-space: nowrap; }
   .bar-row.former { flex-wrap: wrap; row-gap: 2px; }
   .bar-row.former .bar-sub-full { flex-basis: 100%; font-size: 10.5px; color: var(--text-dim); }
+  /* ---- Personalizar widget ("Tu widget, a tu estilo") ---- */
+  .wz-overlay { position: fixed; inset: 0; z-index: 1200; background: rgba(23,32,51,.35); display: flex; justify-content: center; align-items: flex-start; overflow-y: auto; padding: 16px 12px 40px; }
+  .wz-sheet { position: relative; width: 100%; max-width: 480px; background: var(--panel); color: var(--text); border-radius: 26px; padding: 22px 18px 18px; box-shadow: 0 20px 60px rgba(46,39,90,.25); }
+  .wz-close { position: absolute; top: 14px; right: 14px; width: 32px; height: 32px; border-radius: 50%; border: none; background: var(--panel-3); color: var(--text-dim); font-size: 14px; cursor: pointer; }
+  .wz-top { display: flex; gap: 12px; align-items: center; margin-bottom: 14px; padding-right: 36px; }
+  .wz-logo { font-size: 30px; color: var(--accent); line-height: 1; }
+  .wz-top h3 { margin: 0; font-size: 21px; font-weight: 800; color: var(--text); }
+  .wz-top p { margin: 2px 0 0; font-size: 14px; color: var(--text-dim); }
+  .wz-wall { border-radius: 20px; padding: 26px 22px; display: flex; justify-content: center;
+    background:
+      radial-gradient(60% 80% at 95% 15%, rgba(90,90,80,.28), transparent 60%),
+      radial-gradient(35% 55% at 88% 70%, rgba(90,90,80,.22), transparent 70%),
+      radial-gradient(40% 50% at 5% 10%, rgba(255,255,255,.55), transparent 70%),
+      linear-gradient(135deg, #ECE6E2 0%, #DCD3CE 55%, #CFC6C2 100%); }
+  .wz-cap { text-align: center; font-size: 12.5px; color: var(--text-dim); margin: 8px 0 12px; }
+  .wv { position: relative; width: 100%; max-width: 330px; box-shadow: 0 10px 28px rgba(40,30,60,.14); }
+  .wv-bg { position: absolute; inset: 0; }
+  .wv-in { position: relative; padding: 16px 18px; }
+  .wv-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 4px; }
+  .wv-head b { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .wv-row { display: flex; align-items: center; gap: 11px; margin-top: 9px; }
+  .wv-ring, .wv-dot { flex: none; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; box-sizing: border-box; }
+  .wv-ring { border: 2px solid; }
+  .wv-prog { display: flex; align-items: center; gap: 10px; margin-top: 12px; }
+  .wv-track { flex: 1; height: 7px; border-radius: 7px; overflow: hidden; }
+  .wv-track > div { height: 100%; border-radius: 7px; }
+  .wv-single { display: flex; align-items: center; gap: 14px; margin-top: 10px; }
+  .wv-bubble { flex: none; width: 48px; height: 48px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; }
+  .wz-layouts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .wz-layout { background: none; border: none; color: var(--text-dim); font-size: 13.5px; cursor: pointer; padding: 0; }
+  .wz-layout.on { color: var(--accent); font-weight: 600; }
+  .wz-mini { height: 74px; border-radius: 14px; border: 1.5px solid var(--border); background: var(--panel-2); margin-bottom: 6px; display: flex; align-items: center; justify-content: center; padding: 8px; }
+  .wz-layout.on .wz-mini { border: 2px solid var(--accent); background: rgba(124,98,245,.06); }
+  .mini-sum, .mini-list, .mini-single { width: 100%; height: 100%; border-radius: 9px; background: var(--panel); box-shadow: 0 2px 8px rgba(46,39,90,.08); position: relative; padding: 7px 9px; box-sizing: border-box; }
+  .mini-sum span { font-size: 13px; } .mini-sum i { position: absolute; right: 9px; top: 8px; font-size: 10px; font-style: normal; color: var(--text-dim); }
+  .mini-sum b { position: absolute; left: 9px; right: 9px; bottom: 10px; height: 5px; border-radius: 5px; background: linear-gradient(90deg, #8B6CF6 45%, var(--panel-3) 45%); }
+  .mini-list p { margin: 0 0 5px; display: flex; align-items: center; gap: 6px; }
+  .mini-list u { width: 8px; height: 8px; border-radius: 50%; border: 1.5px solid var(--text-dim); text-decoration: none; }
+  .mini-list u.on { background: #8B6CF6; border-color: #8B6CF6; }
+  .mini-list s, .mini-single s { flex: 1; height: 4px; border-radius: 4px; background: var(--panel-3); display: block; text-decoration: none; }
+  .mini-single { display: flex; align-items: center; gap: 8px; }
+  .mini-single span { width: 26px; height: 26px; border-radius: 50%; background: rgba(139,108,246,.15); display: inline-flex; align-items: center; justify-content: center; font-size: 12px; }
+  .mini-single div { flex: 1; display: flex; flex-direction: column; gap: 5px; }
+  .wz-tabs { display: grid; grid-template-columns: repeat(3, 1fr); margin: 16px 0 6px; border: 1px solid var(--border); border-radius: 14px; overflow: hidden; background: var(--panel-2); }
+  .wz-tabs button { border: none; background: none; padding: 11px 4px; font-size: 14px; color: var(--text); cursor: pointer; }
+  .wz-tabs button.on { background: rgba(124,98,245,.14); color: var(--accent); font-weight: 600; }
+  .wz-body { padding: 6px 0 4px; }
+  .wz-line { display: flex; align-items: center; gap: 12px; margin: 14px 0; }
+  .wz-line.top { align-items: flex-start; }
+  .wz-line > b { width: 58px; flex: none; font-size: 15px; }
+  .wz-sws { display: flex; flex-wrap: wrap; gap: 10px; }
+  .wz-sws.small { gap: 7px; }
+  .wz-sw { width: 38px; height: 38px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; padding: 0; position: relative; box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center; }
+  .wz-sws.small .wz-sw { width: 28px; height: 28px; }
+  .wz-sw.on { box-shadow: 0 0 0 2px var(--panel), 0 0 0 4px var(--accent); }
+  .wz-sw.on::after { content: '✓'; color: #fff; font-weight: 700; text-shadow: 0 0 3px rgba(0,0,0,.45); font-size: 14px; }
+  .wz-custom { background: conic-gradient(#ff6b6b, #ffd93d, #6bcb77, #4d96ff, #b06bff, #ff6b6b); color: #fff; font-size: 20px; font-weight: 700; overflow: hidden; }
+  .wz-custom input { position: absolute; inset: 0; opacity: 0; width: 100%; height: 100%; cursor: pointer; }
+  .wz-icons { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .wz-icard { border: 1.5px solid var(--border); background: var(--panel); border-radius: 16px; padding: 14px 8px; display: flex; flex-direction: column; align-items: center; gap: 8px; font-size: 13.5px; color: var(--text); cursor: pointer; }
+  .wz-icard span { font-size: 22px; display: inline-flex; gap: 6px; align-items: center; }
+  .wz-icard.on { border: 2px solid var(--accent); background: rgba(124,98,245,.06); }
+  .wz-crow { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 10px; padding: 9px 12px; border: 1px solid var(--border); border-radius: 14px; font-size: 13px; color: var(--text-dim); flex-wrap: wrap; }
+  .wz-opacity { margin-top: 10px; padding: 12px 14px; border: 1px solid var(--border); border-radius: 14px; }
+  .wz-opacity > div { display: flex; justify-content: space-between; font-size: 14px; margin-bottom: 6px; }
+  .wz-opacity input { width: 100%; accent-color: var(--accent); }
+  .wz-opacity.off { opacity: .45; }
+  .wz-lbl { font-size: 13.5px; font-weight: 600; margin: 14px 0 6px; }
+  .wz-seg { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+  .wz-seg button { border: none; background: var(--panel); padding: 10px 4px; font-size: 13.5px; color: var(--text); cursor: pointer; }
+  .wz-seg button.on { background: var(--accent); color: var(--on-accent); font-weight: 600; }
+  .wz-input { width: 100%; box-sizing: border-box; padding: 11px 12px; border-radius: 12px; border: 1px solid var(--border); background: var(--panel); color: var(--text); font-size: 15px; }
+  .wz-save { margin-top: 16px; }
+  .wz-hint { text-align: center; font-size: 12.5px; color: var(--text-dim); margin-top: 10px; }
   /* Perfil → Widget: vista previa del widget sobre un "fondo de pantalla" */
   .widget-preview-wrap { border-radius: 18px; padding: 14px; background: linear-gradient(135deg, #3b2f7a 0%, #2a8a7a 55%, #e9b872 100%); }
   .widget-preview { position: relative; border-radius: 16px; padding: 12px 14px; font-size: 13px; overflow: hidden; }
@@ -2323,6 +2397,23 @@ const I18N = {
     formerHabitsTitle: (n) => `Hábitos anteriores (${n})`,
     formerHabitsDesc: 'Hábitos que ya no tienes, con cómo te fue mientras los tuviste. No cuentan en el ranking de arriba.',
     formerLastDay: (d) => `último: ${d}`,
+    wEditorTitle: 'Tu widget, a tu estilo', wEditorSub: 'Hazlo tan único como tu rutina.',
+    wPreviewCaption: 'Vista previa · Mediano', wCustomize: '🎨 Personalizar mi widget',
+    wLayoutSummary: 'Resumen', wLayoutList: 'Lista', wLayoutSingle: 'Un hábito',
+    wTabDesign: 'Diseño', wTabContent: 'Contenido', wTabStyle: 'Estilo',
+    wBg: 'Fondo', wText: 'Letra', wIcons: 'Iconos', wIconsOriginal: 'Colores originales', wIconsMono: 'Un solo color',
+    wAccentColor: 'Color de iconos y progreso', wCustomColor: 'Color personalizado',
+    wTransparent: 'Fondo transparente', wOpacity: 'Opacidad',
+    wCorners: 'Esquinas', wCornersRound: 'Redondeadas', wCornersSoft: 'Suaves', wCornersSquare: 'Rectas',
+    wTextSize: 'Tamaño de letra', wSizeS: 'Pequeña', wSizeM: 'Normal', wSizeL: 'Grande',
+    wTitleLabel: 'Título', wSingleHabit: 'Hábito a mostrar',
+    wShowToday: 'Mostrar "Hoy"', wShowProgress: 'Mostrar barra de progreso', wShowTime: 'Mostrar la hora de cada hábito',
+    wSave: 'Guardar mi widget', wHint: 'Pantalla de inicio → Widgets → Bless Habit',
+    wSaved: '¡Listo! Tu widget se actualizó ✨ Si aún no lo agregaste: mantén presionado tu pantalla de inicio → Widgets → Bless Habit.',
+    wDefaultTitle: 'Mi pequeño progreso ✨', wToday: 'Hoy', wXofY: (d, n) => `${d} de ${n} completados`,
+    wNext: (h, tm) => `Próximo: ${h} · ${tm}`, wDayDone: '¡Día completo! 🎉',
+    wSingleDone: 'Hecho hoy ✓', wSinglePending: 'Pendiente para hoy', wSinglePendingAt: (tm) => `Pendiente · ${tm}`,
+    wSampleRead: 'Leer 15 minutos', wSampleWater: 'Tomar agua', wSampleMove: 'Mover mi cuerpo',
     widgetTitle: '🧩 Widget de inicio',
     widgetDesc: 'Elige cómo se ve el widget para que combine con tu pantalla de inicio.',
     widgetStyle_dynamic: '🎨 Colores de tu fondo',
@@ -2884,6 +2975,23 @@ const I18N = {
     formerHabitsTitle: (n) => `Past habits (${n})`,
     formerHabitsDesc: "Habits you no longer have, and how they went while you had them. They don't count in the ranking above.",
     formerLastDay: (d) => `last: ${d}`,
+    wEditorTitle: 'Your widget, your style', wEditorSub: 'Make it as unique as your routine.',
+    wPreviewCaption: 'Preview · Medium', wCustomize: '🎨 Customize my widget',
+    wLayoutSummary: 'Summary', wLayoutList: 'List', wLayoutSingle: 'One habit',
+    wTabDesign: 'Design', wTabContent: 'Content', wTabStyle: 'Style',
+    wBg: 'Background', wText: 'Text', wIcons: 'Icons', wIconsOriginal: 'Original colors', wIconsMono: 'Single color',
+    wAccentColor: 'Icon and progress color', wCustomColor: 'Custom color',
+    wTransparent: 'Transparent background', wOpacity: 'Opacity',
+    wCorners: 'Corners', wCornersRound: 'Rounded', wCornersSoft: 'Soft', wCornersSquare: 'Square',
+    wTextSize: 'Text size', wSizeS: 'Small', wSizeM: 'Normal', wSizeL: 'Large',
+    wTitleLabel: 'Title', wSingleHabit: 'Habit to show',
+    wShowToday: 'Show "Today"', wShowProgress: 'Show progress bar', wShowTime: "Show each habit's time",
+    wSave: 'Save my widget', wHint: 'Home screen → Widgets → Bless Habit',
+    wSaved: "Done! Your widget was updated ✨ If you haven't added it yet: long-press your home screen → Widgets → Bless Habit.",
+    wDefaultTitle: 'My little progress ✨', wToday: 'Today', wXofY: (d, n) => `${d} of ${n} done`,
+    wNext: (h, tm) => `Next: ${h} · ${tm}`, wDayDone: 'Day complete! 🎉',
+    wSingleDone: 'Done today ✓', wSinglePending: 'Pending for today', wSinglePendingAt: (tm) => `Pending · ${tm}`,
+    wSampleRead: 'Read 15 minutes', wSampleWater: 'Drink water', wSampleMove: 'Move my body',
     widgetTitle: '🧩 Home screen widget',
     widgetDesc: 'Choose how the widget looks so it matches your home screen.',
     widgetStyle_dynamic: '🎨 Wallpaper colors',
@@ -3092,20 +3200,23 @@ function uiDialog({ message, fields = [], okText, cancelText, danger = false }) 
     okBtn.textContent = okText || t('dialogOk');
     const cancelBtn = overlay.querySelector('.ui-dialog-cancel');
     if (cancelBtn) cancelBtn.textContent = cancelText;
+    // Cada ventana se cierra con SU propia función (antes usaba la global
+    // uiDialogClose: si se abrían dos seguidas, "Cancelar" de una podía fallar).
+    const cancel = () => finish(fields.length ? null : false);
     const finish = (value) => {
       if (!overlay.isConnected) return;
       overlay.remove();
-      uiDialogClose = null;
+      if (uiDialogClose === cancel) uiDialogClose = null;
       resolve(value);
     };
     const submit = () => finish(fields.length ? fields.map((_, i) => overlay.querySelector('#ui-dialog-f' + i).value) : true);
-    uiDialogClose = () => finish(fields.length ? null : false);
+    uiDialogClose = cancel;
     okBtn.onclick = submit;
-    if (cancelBtn) cancelBtn.onclick = () => uiDialogClose();
-    overlay.addEventListener('click', (e) => { if (e.target === overlay && cancelBtn) uiDialogClose(); });
+    if (cancelBtn) cancelBtn.onclick = cancel;
+    overlay.addEventListener('click', (e) => { if (e.target === overlay && cancelBtn) cancel(); });
     overlay.addEventListener('keydown', (e) => {
       if (e.key === 'Enter' && e.target.tagName === 'INPUT') { e.preventDefault(); submit(); }
-      if (e.key === 'Escape' && cancelBtn) uiDialogClose();
+      if (e.key === 'Escape' && cancelBtn) cancel();
     });
     document.body.appendChild(overlay);
     const first = overlay.querySelector('input') || okBtn;
@@ -4061,66 +4172,176 @@ function canUpdateWidget() {
   const h = headers.find(x => x.name === 'BlessDevice');
   return !!(h && (h.methods || []).some(m => m.name === 'updateWidget'));
 }
-// Estilo del widget (Perfil → Widget): para que combine con la pantalla de inicio.
-const WIDGET_STYLES = ['dynamic', 'auto', 'light', 'dark', 'brand'];
-function widgetStyle() { const s = state.settings && state.settings.widgetStyle; return WIDGET_STYLES.includes(s) ? s : 'dynamic'; }
-function widgetOpacity() { const o = state.settings && state.settings.widgetOpacity; return Number.isFinite(o) ? Math.max(0, Math.min(100, o)) : 100; }
-// Colores aproximados para la vista previa (en el teléfono, "dynamic" usa los del fondo de pantalla).
-function widgetPreviewColors(style) {
-  const dark = document.documentElement.getAttribute('data-theme') === 'dark';
-  const c = {
-    dynamic: { bg: '#E8E2F8', text: '#1C1B22', dim: '#4A4659', accent: '#5B4FC4' },
-    light: { bg: '#FFFFFF', text: '#172033', dim: '#6B6585', accent: '#7C6CF0' },
-    dark: { bg: '#1E222B', text: '#EEF0F3', dim: '#9AA1AD', accent: '#A99BFF' },
-    brand: { bg: '#7C6CF0', text: '#FFFFFF', dim: 'rgba(255,255,255,.9)', accent: '#FFFFFF' },
-  };
-  return style === 'auto' ? (dark ? c.dark : c.light) : c[style];
+/* ---- Personalizar el widget (Perfil → Widget → "Personalizar mi widget") ----
+   Pantalla "Tu widget, a tu estilo": forma (Resumen / Lista / Un hábito) y
+   pestañas Diseño, Contenido y Estilo. Todo se guarda en state.settings.widgetCfg
+   y se le pasa al widget de Android (BlessWidgetProvider) en cada guardado. */
+const WIDGET_ICON_PATHS = {"ejercicio":"M535-70v-209l-108-99-36 159q-3 12-13 18.5t-22 4.5l-208-43q-11-2-18-12t-5-22q2-12 12.5-18t21.5-4l171 34 73-369-100 47v104q0 13-8.5 21.5T273-449q-13 0-21.5-8.5T243-479v-125q0-9 5-16.5t13-11.5l146-61q32-14 45.5-17.5T480-714q20 0 35.5 8.5T542-680l42 67q23 37 60 65.5t86 36.5q13 2 21.5 10.5T760-479q0 12-8.5 21t-20.5 7q-57-6-102.5-36.5T543-573l-39 158 81 75q5 5 7.5 10.5T595-318v248q0 13-8.5 21.5T565-40q-13 0-21.5-8.5T535-70Zm-46.5-705.5Q467-797 467-827t21.5-51.5Q510-900 540-900t51.5 21.5Q613-857 613-827t-21.5 51.5Q570-754 540-754t-51.5-21.5Z","caminar":"M419-378 345-63q-2 11-10.33 17t-19.19 6Q301-40 291.5-51T285-76l109-550-101 43v103q0 12.75-8.68 21.37-8.67 8.63-21.5 8.63-12.82 0-21.82-8.91-9-8.92-9-22.09v-122q0-9.33 4.88-16.72 4.87-7.39 13.12-11.28l174.29-73.22Q438-710 453.5-711.5T484-710q17 3 29.5 10.87Q526-691.25 534-679l42 66q16 24 35.5 43t42.5 33q17 10 34.5 16t36.5 9q12.11 2.25 20.05 10.87 7.95 8.63 7.95 21.38 0 12.75-8.78 21.25T723-452q-59-7-105.5-35.5T533-568l-38 152 82 74q5 4.55 7.5 10.24T587-320v250q0 12.75-8.68 21.37-8.67 8.63-21.5 8.63-12.82 0-21.32-8.63Q527-57.25 527-70v-210l-108-98Zm69.5-397.42q-21.5-21.42-21.5-51.5t21.42-51.58q21.42-21.5 51.5-21.5t51.58 21.42q21.5 21.42 21.5 51.5t-21.42 51.58q-21.42 21.5-51.5 21.5t-51.58-21.42Z","lectura":"M512-250q50-25 98-37.5T712-300q38 0 78.5 6t69.5 16v-429q-34-17-72-25t-76-8q-54 0-104.5 16.5T512-677v427Zm-44.5 77.5Q461-174 456-178q-47-29-100-45t-108-16q-37 0-72 9t-70 22q-23 11-44.5-3T40-251v-463q0-15 7-27.5T68-761q42-20 87.5-29.5T248-800q63 0 122.5 17T482-731q51-35 109.5-52T712-800q47 0 92 9.5t87 29.5q14 7 21.5 19.5T920-714v463q0 28-22.5 42.5t-44.5.5q-34-14-69-22.5t-72-8.5q-54 0-106 16t-98 45q-5 4-11.5 5.5T482-171q-8 0-14.5-1.5ZM560-608q0-6 4-11.5t9-7.5q30-11 61.5-17t65.5-6q22 0 43 2.5t41 7.5q6 2 11 7.5t5 12.5q0 11-7.5 17t-18.5 3q-17-5-35.5-7.5T700-610q-29 0-56 5.5T591-588q-14 5-22.5-.5T560-608Zm0 220q0-6 4-12t9-8q30-11 61.5-16.5T700-430q22 0 43 2.5t41 7.5q6 2 11 7.5t5 12.5q0 11-7.5 17t-18.5 3q-17-5-35.5-7.5T700-390q-29 0-56 5t-53 16q-14 5-22.5 0t-8.5-19Zm0-110q0-6 4-11.5t9-7.5q30-11 61.5-17t65.5-6q22 0 43 2.5t41 7.5q6 2 11 7.5t5 12.5q0 11-7.5 17t-18.5 3q-17-5-35.5-7.5T700-500q-29 0-56 5.5T591-478q-14 5-22.5-.5T560-498Z","agua":"M251.5-174Q160-268 160-408q0-64 29-127t72.5-121q43.5-58 94-108.5T450-854q7-6 14.5-8.5T480-865q8 0 15.5 2.5T510-854q44 39 94.5 89.5t94 108.5Q742-598 771-535t29 127q0 140-91.5 234T480-80q-137 0-228.5-94ZM479-208q16 0 24.5-5.5T512-230q0-11-8.5-17t-25.5-6q-42 0-85.5-26.5T337-373q-2-9-9-14.5t-15-5.5q-11 0-17 8.5t-4 17.5q15 84 71 121.5T479-208Z","meditacion":"M261-160q-26 0-43-17t-17-43q0-18 9-34.5t26-23.5l172-68v-138q-60 73-121.5 114T150-322q-12 2-21-7t-9-22q0-12 8.5-21t20.5-11q58-7 107-37t89-81l58-65q10-12 23.5-20t29.5-8h48q16 0 30 8t24 20l58 65q42 49 90 80t105 38q12 2 20.5 11t8.5 21q0 13-9 22t-21 7q-75-7-136.5-48T552-484v138l172 68q17 7 26 23.5t9 34.5q0 26-17 43t-43 17H396v-11q0-26 16-42t42-16h133q8 0 14-6t6-14q0-8-6-14t-14-6H454q-44 0-70 27t-26 71v11h-97Zm167.5-515.5Q407-697 407-727t21.5-51.5Q450-800 480-800t51.5 21.5Q553-757 553-727t-21.5 51.5Q510-654 480-654t-51.5-21.5Z","sueno":"M484-80q-84 0-157.5-32t-128-86.5Q144-253 112-326.5T80-484q0-132 77.5-238T361-868q17-5 31 5t12 27q-7 88 23.5 169.5T521-522q63 63 145 94t170 24q17-2 26.5 13t4.5 32q-40 125-145.5 202T484-80Z","comida":"M285-600v-250q0-12.75 8.68-21.38 8.67-8.62 21.5-8.62 12.82 0 21.32 8.62 8.5 8.63 8.5 21.38v250h65v-250q0-12.75 8.68-21.38 8.67-8.62 21.5-8.62 12.82 0 21.32 8.62 8.5 8.63 8.5 21.38v249.73q0 58.27-36.5 99.77Q397-459 345-448v338q0 12.75-8.68 21.37-8.67 8.63-21.5 8.63-12.82 0-21.32-8.63Q285-97.25 285-110v-338q-52-11-88.5-52.5T160-600.27V-850q0-12.75 8.68-21.38 8.67-8.62 21.5-8.62 12.82 0 21.32 8.62 8.5 8.63 8.5 21.38v250h65Zm415 200h-85q-12.75 0-21.37-8.63Q585-417.25 585-430v-275q0-69 42.5-122t98.5-53q14 0 24 10.13T760-846v736q0 12.75-8.68 21.37-8.67 8.63-21.5 8.63-12.82 0-21.32-8.63Q700-97.25 700-110v-290Z","escritura":"M190-410q-12.75 0-21.37-8.68-8.63-8.67-8.63-21.5 0-12.82 8.63-21.32 8.62-8.5 21.37-8.5h240q12.75 0 21.38 8.68 8.62 8.67 8.62 21.5 0 12.82-8.62 21.32-8.63 8.5-21.38 8.5H190Zm0-165q-12.75 0-21.37-8.68-8.63-8.67-8.63-21.5 0-12.82 8.63-21.32 8.62-8.5 21.37-8.5h410q12.75 0 21.38 8.68 8.62 8.67 8.62 21.5 0 12.82-8.62 21.32-8.63 8.5-21.38 8.5H190Zm0-165q-12.75 0-21.37-8.68-8.63-8.67-8.63-21.5 0-12.82 8.63-21.32 8.62-8.5 21.37-8.5h410q12.75 0 21.38 8.68 8.62 8.67 8.62 21.5 0 12.82-8.62 21.32-8.63 8.5-21.38 8.5H190Zm330 550v-81q0-5.57 2-10.78 2-5.22 7-10.22l211.61-210.77q9.11-9.12 20.25-13.18Q772-520 783-520q12 0 23 4.5t20 13.5l37 37q9 9 13 20t4 22q0 11-4.5 22.5t-13.58 20.62L652-169q-5 5-10.22 7-5.21 2-10.78 2h-81q-12.75 0-21.37-8.63Q520-177.25 520-190Zm263-194 37-39-37-37-38 38 38 38ZM580-220h38l121-122-18-19-19-18-122 121v38Zm0 0v-38l122-121 37 37-121 122h-38Z","estudio":"M860-313v-252L508-375q-14 8-29 7.5t-29-8.5L88-574q-8-5-11.5-11.5T73-600q0-8 3.5-14.5T88-626l362-198q7-4 14-6t15-2q8 0 15 2t14 6l396 215q8 4 12 11.5t4 15.5v269q0 13-8.5 21.5T890-283q-13 0-21.5-8.5T860-313ZM450-136 220-262q-14-8-22.5-22t-8.5-31v-174l261 143q14 8 29 8t29-8l261-143v174q0 17-8.5 31T738-262L508-136q-7 4-14 6t-15 2q-8 0-15-2t-14-6Z","orden":"M180-40q-24.75 0-42.37-17.63Q120-75.25 120-100v-230q0-78.85 55.57-134.42Q231.15-520 310-520h60v-340q0-24.75 17.63-42.38Q405.25-920 430-920h100q24.75 0 42.38 17.62Q590-884.75 590-860v340h60q78.85 0 134.42 55.58Q840-408.85 840-330v230q0 24.75-17.62 42.37Q804.75-40 780-40H180Zm0-60h105v-130q0-12.75 8.68-21.38 8.67-8.62 21.5-8.62 12.82 0 21.32 8.62 8.5 8.63 8.5 21.38v130h105v-130q0-12.75 8.68-21.38 8.67-8.62 21.5-8.62 12.82 0 21.32 8.62 8.5 8.63 8.5 21.38v130h105v-130q0-12.75 8.68-21.38 8.67-8.62 21.5-8.62 12.82 0 21.32 8.62 8.5 8.63 8.5 21.38v130h105v-230q0-54.17-37.92-92.08Q704.17-460 650-460H310q-54.17 0-92.08 37.92Q180-384.17 180-330v230Z","finanzas":"M230-120q-21 0-39.49-13.96Q172.02-147.93 166-168q-25-86-41.54-148.46-16.54-62.46-26.37-109.68-9.82-47.22-13.95-83.79Q80-546.49 80-580q0-92 64-156t156-64h200q27-36 68.5-58t91.5-22q25 0 42.5 17.5T720-820q0 6-1.5 12t-3.5 11q-4 11-7.5 22t-5.5 24l91 91h57q12.75 0 21.38 8.62Q880-642.75 880-630v227q0 10.24-5.5 18.12Q869-377 859-374l-91.93 30.3L713-163q-6.03 19.61-21.84 31.31Q675.34-120 655-120H540q-24.75 0-42.37-17.63Q480-155.25 480-180v-20h-80v20q0 24.75-17.62 42.37Q364.75-120 340-120H230Zm438.5-411.5Q680-543 680-560t-11.5-28.5Q657-600 640-600t-28.5 11.5Q600-577 600-560t11.5 28.5Q623-520 640-520t28.5-11.5ZM490-620q12.75 0 21.38-8.68 8.62-8.67 8.62-21.5 0-12.82-8.62-21.32-8.63-8.5-21.38-8.5H350q-12.75 0-21.37 8.68-8.63 8.67-8.63 21.5 0 12.82 8.63 21.32 8.62 8.5 21.37 8.5h140Z","pantalla":"M829-49 49-843q-8-9-8.5-21t8.5-21q9-9 21-9t21 9L872-91q9 9 8.5 21T871-49q-9 9-21 9t-21-9ZM500-729q9-9 9-21t-9-21q-9-9-21-9t-21 9q-9 9-9 21t9 21q9 9 21 9t21-9ZM260-40q-25 0-42.5-17.5T200-100v-673l560 568v105q0 25-17.5 42.5T700-40H260Zm500-820v150q18 3 30 17t12 32v74q0 19-12 33t-30 17v168q0 20-18.5 27.5T709-348L211-849q-5-5-7.5-11t-2.5-12q0-17 16-32.5t43-15.5h440q25 0 42.5 17.5T760-860Z","gratitud":"M549-53q8 2 17 2t17-2l297-91q0-54-30.5-80.5T762-251H587q-45 0-69.5-4.5T477-265l-61-21q-6-2-8.5-7.5T407-305q2-6 7.5-8.5t11.5-.5l59 19q24 8 44 11t46 3h73q8 0 13-5t5-13q0-23-16-45.5T604-378l-245-92q-5-2-10.5-3t-10.5-1h-83v337l294 84ZM40-140q0 25 17.5 42.5T100-80h34q25 0 42.5-17.5T194-140v-274q0-25-17.5-42.5T134-474h-34q-25 0-42.5 17.5T40-414v274Zm584-344.5q-11-4.5-20-12.5L482-616q-30-29-50-64.5T412-758q0-51 35.5-86.5T534-880q34 0 62 17.5t50 43.5q22-26 50-43.5t62-17.5q51 0 86.5 35.5T880-758q0 42-20 77.5T810-616L688-497q-9 8-20 12.5t-22 4.5q-11 0-22-4.5Z","fumar":"M125-337q-20.83 0-35.42-14.62Q75-366.24 75-387.12 75-408 89.58-422.5 104.17-437 125-437h337L90-809q-9-9-9-21.5t9-21.5q9-9 21.5-9t21.5 9l732 732q9 9 9 21t-9 21q-9 9-21.5 9T822-78L562-337H125Zm648-92.92q7 7.09 7 17.92v50q0 11-7.21 18T755-337h-22l-3-3v-72q0-10.83 7.12-17.92 7.11-7.08 18-7.08 10.88 0 17.88 7.08Zm95 .02q7 7.09 7 17.95v50.1q0 10.85-7.12 17.85-7.11 7-18 7-10.88 0-17.88-7.1-7-7.09-7-17.95v-50.1q0-10.85 7.12-17.85 7.11-7 18-7 10.88 0 17.88 7.1ZM633-437h27q10.83 0 17.92 7.08Q685-422.83 685-412v27l-52-52Zm104-52.08q-7-7.09-7-17.92v-31q0-42-24.5-66T646-628h-71q-54 0-90.5-41.5T448-765q0-54 36.5-90.5T575-892q10.83 0 17.92 7.12 7.08 7.11 7.08 18 0 10.88-7.08 17.88-7.09 7-17.92 7-35 0-56 21t-21 56q0 35 21 61t55.57 26H646q54.38 0 94.19 37Q780-604 780-550v43q0 10.83-7.12 17.92-7.11 7.08-18 7.08-10.88 0-17.88-7.08Zm95 0q-7-7.09-7-17.92v-75q0-75-50-123t-125-48q-10.83 0-17.92-7.12-7.08-7.11-7.08-18 0-10.88 7.08-17.88 7.09-7 17.92-7 35 0 56-24t21-58q0-10.83 7.12-17.92 7.11-7.08 18-7.08 10.88 0 17.88 7.08 7 7.09 7 17.92 0 33-12.5 57T732-787q58 20 100.5 75T875-582v75q0 10.83-7.12 17.92-7.11 7.08-18 7.08-10.88 0-17.88-7.08Z","alcohol":"M564-482 351-695h328l83-81H270l-64-64h587q19.92 0 32.46 13.81T838-795.21q0 8.21-3 16.14T826-764L564-482ZM270-120q-12.75 0-21.37-8.68-8.63-8.67-8.63-21.5 0-12.82 8.63-21.32 8.62-8.5 21.37-8.5h180v-245L82-792q-9-8.5-9-21.25T81.61-835q9.39-9 21.86-9 12.46 0 21.53 9l710 710q9 9 9 21t-9.05 21q-9.06 9-21.5 9Q801-74 792-83L511-364l-1 184h180q12.75 0 21.38 8.68 8.62 8.67 8.62 21.5 0 12.82-8.62 21.32-8.63 8.5-21.38 8.5H270Z","musica":"M286.5-163.5Q243-207 243-270t43.5-106.5Q330-420 393-420q28 0 50.5 8t39.5 22v-420q0-13 8.5-21.5T513-840h174q13 0 21.5 8.5T717-810v75q0 13-8.5 21.5T687-705H543v435q0 63-43.5 106.5T393-120q-63 0-106.5-43.5Z","idioma":"m584-197-38 98q-3 8-10.5 13.5T519-80q-16 0-25-13t-3-28l160-415q4-11 13.5-17.5T685-560h29q11 0 20.5 6.5T748-536l160 415q6 15-3 28t-25 13q-10 0-17.5-5.5T852-100l-38-97H584ZM363-401 183-222q-9 8-21 8.5t-21-8.5q-9-9-9-21t9-21l180-180q-51-53-85.5-107.5T183-660h65q16 43 43.5 85t72.5 88q46-48 85-117.5T505-740H70q-13 0-21.5-8.5T40-770q0-13 8.5-21.5T70-800h260v-50q0-13 8.5-21.5T360-880q13 0 21.5 8.5T390-850v50h260q13 0 21.5 8.5T680-770q0 13-8.5 21.5T650-740h-83q-17 78-61.5 159.5T406-443l102 104-24 63-121-125Zm242 149h188l-94-248-94 248Z","familia":"M720.08-727q-30.08 0-51.58-21.42t-21.5-51.5q0-30.08 21.42-51.58t51.5-21.5q30.08 0 51.58 21.42t21.5 51.5q0 30.08-21.42 51.58t-51.5 21.5ZM660-110v-306q0-30-15-54t-44-35l41-120q8-25 29.5-40t48.5-15q27 0 48.5 15t29.5 40l88 255q5 14-3.5 27T858-330h-68v220q0 12.75-8.62 21.37Q772.75-80 760-80h-70q-12.75 0-21.37-8.63Q660-97.25 660-110ZM452.5-517.5Q435-535 435-560t17.5-42.5Q470-620 495-620t42.5 17.5Q555-585 555-560t-17.5 42.5Q520-500 495-500t-42.5-17.5ZM220.08-727q-30.08 0-51.58-21.42t-21.5-51.5q0-30.08 21.42-51.58t51.5-21.5q30.08 0 51.58 21.42t21.5 51.5q0 30.08-21.42 51.58t-51.5 21.5ZM150-110v-260h-40q-12.75 0-21.37-8.63Q80-387.25 80-400v-220q0-24.75 17.63-42.38Q115.25-680 140-680h160q24.75 0 42.38 17.62Q360-644.75 360-620v220q0 12.75-8.62 21.37Q342.75-370 330-370h-40v260q0 12.75-8.62 21.37Q272.75-80 260-80h-80q-12.75 0-21.37-8.63Q150-97.25 150-110Zm290 0v-140h-20q-12.75 0-21.37-8.63Q390-267.25 390-280v-136q0-18.33 12.83-31.17Q415.67-460 434-460h122q18.33 0 31.17 12.83Q600-434.33 600-416v136q0 12.75-8.62 21.37Q582.75-250 570-250h-20v140q0 12.75-8.62 21.37Q532.75-80 520-80h-50q-12.75 0-21.37-8.63Q440-97.25 440-110Z","general":"M444-80q-42 0-78.5-8T298-112q32-119 87.5-230.5T535-529q-112 54-194.5 150T228-161q-4-4-7.5-7t-7.5-7q-45-45-69-103t-24-122q0-69 26-133t75-113q70-72 175-97t303-17q20 1 36.5 8.5T765-731q13 13 21 29.5t9 36.5q10 194-17 302t-99 180q-48 50-109 76.5T444-80Z","check":"m378-332 363-363q9-9 21.5-9t21.5 9q9 9 9 21.5t-9 21.5L399-267q-9 9-21 9t-21-9L175-449q-9-9-8.5-21.5T176-492q9-9 21.5-9t21.5 9l159 160Z"};
+const WIDGET_BG_SWATCHES = ['#EDE7FB', '#FBE4EA', '#D6E8FA', '#CFE1CB', '#FCF0CF'];
+const WIDGET_TEXT_SWATCHES = ['#1F1C4B', '#7A4A72', '#4A5160', '#FFFFFF'];
+const WIDGET_ICON_SWATCHES = ['#8B6CF6', '#E57A9A', '#4C8BD9', '#5E9B6A', '#D9A23B', '#1F1C4B'];
+const WIDGET_CFG_DEFAULT = {
+  layout: 'list', title: '', bg: '#D6E8FA', text: '#1F1C4B', iconMode: 'original', iconColor: '#8B6CF6',
+  transparent: false, opacity: 90, showToday: true, showProgress: true, showTime: false,
+  singleHabitId: '', textSize: 'm', corners: 'round',
+};
+function widgetCfg() { return Object.assign({}, WIDGET_CFG_DEFAULT, (state.settings && state.settings.widgetCfg) || {}); }
+const HEX_RE = /^#[0-9a-fA-F]{6}$/;
+function widgetIconSvg(key, color, size) {
+  const d = WIDGET_ICON_PATHS[key] || WIDGET_ICON_PATHS.general;
+  return `<svg viewBox="0 -960 960 960" width="${size}" height="${size}" aria-hidden="true" style="flex:none"><path fill="${color}" d="${d}"/></svg>`;
+}
+function hexA(hex, a) {
+  const n = parseInt(String(hex).slice(1), 16);
+  return `rgba(${(n >> 16) & 255},${(n >> 8) & 255},${n & 255},${a})`;
+}
+// Datos de hoy para la vista previa (lo mismo que verá el widget).
+function widgetTodayHabits() {
+  const dow = new Date().getDay();
+  return (state.profile.habitos || []).filter(h => habitRepeatDays(h).includes(dow)).map(h => ({
+    id: h.id, key: h.key, icon: h.icon || '🌱', label: habitDisplayLabel(h), time: habitTimeForDay(h, dow) || '',
+    done: (state.agenda || []).some(a => a.done && habitOwnsItem(h, { habitId: a.habitId, habitKey: a.habitKey, label: a.task })),
+  })).sort((a, b) => String(a.time).localeCompare(String(b.time)));
+}
+function widgetPreviewHtml(c) {
+  const todays = widgetTodayHabits();
+  const sample = todays.length ? todays : [
+    { key: 'lectura', icon: '📚', label: t('wSampleRead'), time: '08:00', done: false },
+    { key: 'agua', icon: '💧', label: t('wSampleWater'), time: '12:00', done: false },
+    { key: 'general', icon: '🌿', label: t('wSampleMove'), time: '18:00', done: true },
+  ];
+  const done = sample.filter(x => x.done).length, total = sample.length;
+  const pct = total ? Math.round(done / total * 100) : 0;
+  const scale = c.textSize === 's' ? 0.88 : c.textSize === 'l' ? 1.15 : 1;
+  const radius = c.corners === 'square' ? 4 : c.corners === 'soft' ? 12 : 22;
+  const dim = hexA(c.text, 0.62);
+  const icon = (x, px) => c.iconMode === 'mono' ? widgetIconSvg(x.key, c.iconColor, px) : `<span style="font-size:${px - 2}px;line-height:1">${x.icon}</span>`;
+  const circle = (isDone, px) => isDone
+    ? `<span class="wv-dot" style="width:${px}px;height:${px}px;background:${c.iconColor}">${widgetIconSvg('check', '#fff', Math.round(px * 0.7))}</span>`
+    : `<span class="wv-ring" style="width:${px}px;height:${px}px;border-color:${hexA(c.text, 0.45)}"></span>`;
+  const head = `<div class="wv-head"><b style="font-size:${16 * scale}px">${escapeHtml(c.title || t('wDefaultTitle'))}</b>${c.showToday ? `<span style="color:${dim};font-size:${13 * scale}px">${t('wToday')}</span>` : ''}</div>`;
+  const prog = c.showProgress ? `<div class="wv-prog"><div class="wv-track" style="background:${hexA(c.text, 0.15)}"><div style="width:${pct}%;background:${c.iconColor}"></div></div><span style="color:${dim};font-size:${12 * scale}px">${t('wXofY', done, total)}</span></div>` : '';
+  let body = '';
+  if (c.layout === 'summary') {
+    const next = sample.find(x => !x.done);
+    body = prog + `<div style="color:${hexA(c.text, 0.8)};font-size:${13 * scale}px;margin-top:8px">${next ? t('wNext', `${next.icon} ${escapeHtml(next.label)}`, next.time) : t('wDayDone')}</div>`;
+  } else if (c.layout === 'single') {
+    const h = sample.find(x => x.id && x.id === c.singleHabitId) || sample.find(x => !x.done) || sample[0];
+    body = `<div class="wv-single"><span class="wv-bubble" style="background:${hexA(c.iconColor, 0.18)}">${icon(h, 26)}</span>
+      <div style="flex:1;min-width:0"><div style="font-weight:700;font-size:${18 * scale}px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escapeHtml(h.label)}</div>
+      <div style="color:${dim};font-size:${13 * scale}px">${h.done ? t('wSingleDone') : (h.time ? t('wSinglePendingAt', h.time) : t('wSinglePending'))}</div></div>${circle(h.done, 26)}</div>`;
+  } else {
+    body = sample.slice(0, 3).map(x => `<div class="wv-row">${circle(x.done, 22)}${icon(x, 20)}<span style="flex:1;font-size:${15 * scale}px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escapeHtml(x.label)}</span>${c.showTime && x.time ? `<span style="color:${dim};font-size:${12 * scale}px">${x.time}</span>` : ''}</div>`).join('') + prog;
+  }
+  const bgAlpha = c.transparent ? 0 : c.opacity / 100;
+  return `<div class="wv" style="color:${c.text};border-radius:${radius}px">
+    <div class="wv-bg" style="background:${c.bg};opacity:${bgAlpha};border-radius:${radius}px"></div>
+    <div class="wv-in">${head}${body}</div></div>`;
 }
 function widgetSettingsHtml() {
   if (!canUpdateWidget()) return '';
-  const s = widgetStyle(), o = widgetOpacity();
-  const chip = (k) => `<button type="button" class="qr-btn widget-style-chip${k === s ? ' selected' : ''}" data-wstyle="${k}">${t('widgetStyle_' + k)}</button>`;
   return `
     <div class="profile-card" id="widget-card">
       <h4>${t('widgetTitle')}</h4>
       <div style="font-size:13px;color:var(--text-dim);margin-bottom:10px;">${t('widgetDesc')}</div>
-      <div class="widget-preview-wrap"><div class="widget-preview" id="widget-preview"></div></div>
-      <div style="display:flex;flex-wrap:wrap;gap:6px;margin:12px 0 10px;">${WIDGET_STYLES.map(chip).join('')}</div>
-      <label style="display:block;font-size:13px;color:var(--text);">${t('widgetOpacity')}: <b id="widget-opacity-val">${o}%</b>
-        <input type="range" id="widget-opacity" min="0" max="100" step="5" value="${o}" style="width:100%;accent-color:var(--accent);margin-top:6px;">
-      </label>
-      <div style="font-size:11.5px;color:var(--text-dim);margin-top:6px;">${t('widgetHowToAdd')}</div>
+      <div class="wz-wall" style="padding:16px">${widgetPreviewHtml(widgetCfg())}</div>
+      <button type="button" class="premium-btn" id="widget-open-editor" style="margin-top:12px;">${t('wCustomize')}</button>
     </div>`;
 }
-function paintWidgetPreview() {
-  const el = document.getElementById('widget-preview');
-  if (!el) return;
-  const c = widgetPreviewColors(widgetStyle()), o = widgetOpacity() / 100;
-  // Mismo conteo que el widget real: hábitos de hoy y cuántos están marcados.
-  const dow = new Date().getDay();
-  const todays = (state.profile.habitos || []).filter(h => habitRepeatDays(h).includes(dow));
-  const total = todays.length || 3;
-  const done = todays.length ? todays.filter(h => (state.agenda || []).some(a => a.done && habitOwnsItem(h, { habitId: a.habitId, habitKey: a.habitKey, label: a.task }))).length : 1;
-  const pct = Math.round(Math.min(done, total) / total * 100);
-  el.style.color = c.text;
-  el.innerHTML = `<div class="wp-bg" style="background:${c.bg};opacity:${o};"></div>
-    <div class="wp-row"><b>${t('widgetPreviewTitle')}</b><b style="color:${c.accent}">${Math.min(done, total)}/${total}</b></div>
-    <div class="wp-row"><div class="wp-track"><div class="wp-fill" style="width:${pct}%"></div></div><span style="color:${c.dim};font-size:11px;font-weight:700;margin-left:8px;">${pct}%</span></div>
-    <div style="color:${c.dim};font-size:12px;position:relative;">${t('widgetPreviewNext')}</div>`;
-}
 function bindWidgetSettings() {
-  const card = document.getElementById('widget-card');
-  if (!card) return;
-  paintWidgetPreview();
-  card.querySelectorAll('.widget-style-chip').forEach(b => b.onclick = () => {
-    state.settings.widgetStyle = b.dataset.wstyle;
-    card.querySelectorAll('.widget-style-chip').forEach(x => x.classList.toggle('selected', x === b));
-    paintWidgetPreview();
-    saveStateToServer();
-  });
-  const range = document.getElementById('widget-opacity');
-  range.oninput = () => { state.settings.widgetOpacity = parseInt(range.value, 10); document.getElementById('widget-opacity-val').textContent = range.value + '%'; paintWidgetPreview(); };
-  range.onchange = () => saveStateToServer();
+  const b = document.getElementById('widget-open-editor');
+  if (b) b.onclick = () => openWidgetEditor();
+}
+function openWidgetEditor() {
+  document.querySelectorAll('.wz-overlay').forEach(x => x.remove());
+  const c = widgetCfg();
+  let tab = 'style';
+  const ov = document.createElement('div');
+  ov.className = 'wz-overlay';
+  const layouts = [
+    { k: 'summary', label: t('wLayoutSummary'), mini: `<div class="mini-sum"><span>🌱</span><i>2/5</i><b></b></div>` },
+    { k: 'list', label: t('wLayoutList'), mini: `<div class="mini-list"><p><u class="on"></u><s></s></p><p><u></u><s></s></p><p><u></u><s></s></p></div>` },
+    { k: 'single', label: t('wLayoutSingle'), mini: `<div class="mini-single"><span>🌱</span><div><s></s><s></s></div></div>` },
+  ];
+  const sw = (field, color, extra = '') => `<button type="button" class="wz-sw${c[field].toLowerCase() === color.toLowerCase() ? ' on' : ''}" data-f="${field}" data-c="${color}" style="background:${color}${extra}" aria-label="${color}"></button>`;
+  const custom = (field) => {
+    const isCustom = !(field === 'bg' ? WIDGET_BG_SWATCHES : field === 'text' ? WIDGET_TEXT_SWATCHES : WIDGET_ICON_SWATCHES).some(x => x.toLowerCase() === c[field].toLowerCase());
+    return `<label class="wz-sw wz-custom${isCustom ? ' on' : ''}" title="${t('wCustomColor')}" ${isCustom ? `style="background:${c[field]}"` : ''}>${isCustom ? '' : '+'}<input type="color" data-f="${field}" value="${c[field]}"></label>`;
+  };
+  const toggle = (field, label) => `<label class="switch-row" style="margin-top:8px"><div class="switch-text">${label}</div><span class="bless-switch"><input type="checkbox" data-t="${field}" ${c[field] ? 'checked' : ''}><span class="knob"></span></span></label>`;
+  const seg = (field, opts) => `<div class="wz-seg">${opts.map(([v, l]) => `<button type="button" data-s="${field}" data-v="${v}" class="${c[field] === v ? 'on' : ''}">${l}</button>`).join('')}</div>`;
+  const tabHtml = () => {
+    if (tab === 'design') return `
+      <div class="wz-lbl">${t('wCorners')}</div>${seg('corners', [['round', t('wCornersRound')], ['soft', t('wCornersSoft')], ['square', t('wCornersSquare')]])}
+      <div class="wz-lbl">${t('wTextSize')}</div>${seg('textSize', [['s', t('wSizeS')], ['m', t('wSizeM')], ['l', t('wSizeL')]])}`;
+    if (tab === 'content') return `
+      <div class="wz-lbl">${t('wTitleLabel')}</div>
+      <input type="text" class="wz-input" id="wz-title" maxlength="32" placeholder="${escapeHtml(t('wDefaultTitle'))}" value="${escapeHtml(c.title)}">
+      ${c.layout === 'single' ? `<div class="wz-lbl">${t('wSingleHabit')}</div><select class="wz-input" id="wz-single">${(state.profile.habitos || []).map(h => `<option value="${h.id}" ${h.id === c.singleHabitId ? 'selected' : ''}>${h.icon || '🌱'} ${escapeHtml(habitDisplayLabel(h))}</option>`).join('')}</select>` : ''}
+      ${toggle('showToday', t('wShowToday'))}
+      ${c.layout !== 'single' ? toggle('showProgress', t('wShowProgress')) : ''}
+      ${c.layout === 'list' ? toggle('showTime', t('wShowTime')) : ''}`;
+    return `
+      <div class="wz-line"><b>${t('wBg')}</b><div class="wz-sws">${WIDGET_BG_SWATCHES.map(x => sw('bg', x)).join('')}${custom('bg')}</div></div>
+      <div class="wz-line"><b>${t('wText')}</b><div class="wz-sws">${WIDGET_TEXT_SWATCHES.map(x => sw('text', x, x === '#FFFFFF' ? ';border:1px solid var(--border)' : '')).join('')}${custom('text')}</div></div>
+      <div class="wz-line top"><b>${t('wIcons')}</b><div style="flex:1">
+        <div class="wz-icons">
+          <button type="button" class="wz-icard${c.iconMode === 'original' ? ' on' : ''}" data-icon="original"><span>📚 💧 🌿</span>${t('wIconsOriginal')}</button>
+          <button type="button" class="wz-icard${c.iconMode === 'mono' ? ' on' : ''}" data-icon="mono"><span>${['lectura', 'agua', 'general'].map(k => widgetIconSvg(k, c.iconColor, 24)).join(' ')}</span>${t('wIconsMono')}</button>
+        </div>
+        <div class="wz-crow"><span>${t('wAccentColor')}</span><div class="wz-sws small">${WIDGET_ICON_SWATCHES.map(x => sw('iconColor', x)).join('')}${custom('iconColor')}</div></div>
+      </div></div>
+      <label class="switch-row"><div class="switch-text">▦ ${t('wTransparent')}</div><span class="bless-switch"><input type="checkbox" data-t="transparent" ${c.transparent ? 'checked' : ''}><span class="knob"></span></span></label>
+      <div class="wz-opacity${c.transparent ? ' off' : ''}"><div><b>${t('wOpacity')}</b><span id="wz-op-val">${c.opacity}%</span></div>
+        <input type="range" id="wz-opacity" min="10" max="100" step="5" value="${c.opacity}" ${c.transparent ? 'disabled' : ''}></div>`;
+  };
+  const paint = () => {
+    ov.innerHTML = `
+      <div class="wz-sheet" role="dialog" aria-modal="true" aria-label="${escapeHtml(t('wEditorTitle'))}">
+        <button type="button" class="wz-close" aria-label="${t('dialogCancel')}">✕</button>
+        <div class="wz-top"><span class="wz-logo"><svg viewBox="0 0 24 24" width="34" height="34" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="3" width="7.5" height="7.5" rx="2"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="2"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="2"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="2"/></svg></span><div><h3>${t('wEditorTitle')}</h3><p>${t('wEditorSub')}</p></div></div>
+        <div class="wz-wall">${widgetPreviewHtml(c)}</div>
+        <div class="wz-cap">${t('wPreviewCaption')}</div>
+        <div class="wz-layouts">${layouts.map(l => `<button type="button" class="wz-layout${c.layout === l.k ? ' on' : ''}" data-l="${l.k}"><div class="wz-mini">${l.mini}</div>${l.label}</button>`).join('')}</div>
+        <div class="wz-tabs">${[['design', '▦ ' + t('wTabDesign')], ['content', '☰ ' + t('wTabContent')], ['style', '🎨 ' + t('wTabStyle')]].map(([k, l]) => `<button type="button" data-tab="${k}" class="${tab === k ? 'on' : ''}">${l}</button>`).join('')}</div>
+        <div class="wz-body">${tabHtml()}</div>
+        <button type="button" class="premium-btn wz-save">${t('wSave')}</button>
+        <div class="wz-hint">${t('wHint')}</div>
+      </div>`;
+    bind();
+  };
+  const repaintPreview = () => { const w = ov.querySelector('.wz-wall'); if (w) w.innerHTML = widgetPreviewHtml(c); };
+  const bind = () => {
+    ov.querySelector('.wz-close').onclick = close;
+    ov.querySelectorAll('[data-l]').forEach(b => b.onclick = () => { c.layout = b.dataset.l; if (c.layout === 'single' && !c.singleHabitId && state.profile.habitos[0]) c.singleHabitId = state.profile.habitos[0].id; paint(); });
+    ov.querySelectorAll('[data-tab]').forEach(b => b.onclick = () => { tab = b.dataset.tab; paint(); });
+    ov.querySelectorAll('.wz-sw[data-f]').forEach(b => b.onclick = () => { c[b.dataset.f] = b.dataset.c; paint(); });
+    ov.querySelectorAll('input[type=color][data-f]').forEach(inp => {
+      inp.oninput = () => { if (HEX_RE.test(inp.value)) { c[inp.dataset.f] = inp.value; repaintPreview(); } };
+      inp.onchange = () => paint();
+    });
+    ov.querySelectorAll('[data-icon]').forEach(b => b.onclick = () => { c.iconMode = b.dataset.icon; paint(); });
+    ov.querySelectorAll('[data-t]').forEach(inp => inp.onchange = () => { c[inp.dataset.t] = inp.checked; paint(); });
+    ov.querySelectorAll('[data-s]').forEach(b => b.onclick = () => { c[b.dataset.s] = b.dataset.v; paint(); });
+    const op = ov.querySelector('#wz-opacity');
+    if (op) op.oninput = () => { c.opacity = parseInt(op.value, 10); ov.querySelector('#wz-op-val').textContent = op.value + '%'; repaintPreview(); };
+    const title = ov.querySelector('#wz-title');
+    if (title) title.oninput = () => { c.title = title.value.slice(0, 32); repaintPreview(); };
+    const single = ov.querySelector('#wz-single');
+    if (single) single.onchange = () => { c.singleHabitId = single.value; repaintPreview(); };
+    ov.querySelector('.wz-save').onclick = () => {
+      state.settings.widgetCfg = Object.assign({}, c, { title: String(c.title || '').trim() });
+      saveStateToServer();
+      close();
+      renderProfile();
+      uiAlert(t('wSaved'));
+    };
+  };
+  const close = () => { ov.remove(); if (uiDialogClose === close) uiDialogClose = null; };
+  ov.addEventListener('click', (e) => { if (e.target === ov) close(); });
+  uiDialogClose = close;
+  paint();
+  document.body.appendChild(ov);
 }
 let widgetTimer = null, lastWidgetJson = '';
 function pushWidgetSoon() {
@@ -4137,13 +4358,13 @@ async function pushWidgetData() {
       const times = {};
       habitRepeatDays(h).forEach(d => { times[d] = habitTimeForDay(h, d) || ''; });
       const until = h.durationWeeks && h.createdAt ? ymd(addDays(new Date(h.createdAt + 'T00:00:00'), h.durationWeeks * 7 - 1)) : '';
-      return { id: h.id, label: habitDisplayLabel(h), icon: h.icon || '🌱', days: habitRepeatDays(h), times, until };
+      return { id: h.id, key: h.key, label: habitDisplayLabel(h), icon: h.icon || '🌱', days: habitRepeatDays(h), times, until };
     });
     const done = (state.agenda || []).filter(a => a.done).map(a => {
       const h = (state.profile.habitos || []).find(x => habitOwnsItem(x, { habitId: a.habitId, habitKey: a.habitKey, label: a.task }));
       return h ? h.id : null;
     }).filter(Boolean);
-    const json = JSON.stringify({ date: state.lastActiveDate || today, done, habits, style: widgetStyle(), opacity: widgetOpacity() });
+    const json = JSON.stringify({ date: state.lastActiveDate || today, done, habits, cfg: widgetCfg() });
     if (json === lastWidgetJson) return;
     lastWidgetJson = json;
     await blessDevice().updateWidget({ data: json });

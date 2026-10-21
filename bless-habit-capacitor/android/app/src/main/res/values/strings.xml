@@ -6,7 +6,14 @@
     <string name="custom_url_scheme">app.blesshabit.android</string>
     <string name="loading_slow">Despertando a Bless… puede tardar unos segundos 🌱</string>
     <!-- Widget de la pantalla de inicio -->
-    <string name="widget_title">🌱 Mis hábitos de hoy</string>
+    <string name="widget_title">Mi pequeño progreso ✨</string>
+    <string name="widget_today">Hoy</string>
+    <string name="widget_x_of_y">%1$d de %2$d completados</string>
+    <string name="widget_more">+%1$d más · agranda el widget para verlos</string>
+    <string name="widget_single_done">Hecho hoy ✓</string>
+    <string name="widget_single_pending">Pendiente para hoy</string>
+    <string name="widget_single_pending_at">Pendiente · %1$s</string>
+    <string name="widget_single_not_today">Hoy no toca 🌿</string>
     <string name="widget_description">Tu progreso de hoy y tu próximo hábito</string>
     <string name="widget_open_app">Abre Bless Habit para ver tu día aquí</string>
     <string name="widget_no_habits_today">Hoy no tienes hábitos programados 🌿</string>
