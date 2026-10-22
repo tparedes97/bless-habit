@@ -13,3 +13,12 @@ npm i
 npm run dev                                   # Remotion Studio para previsualizar y editar
 npx remotion render BlessPromo out/bless-habit-promo.mp4 --crf=18
 ```
+
+## Video POV (`BlessPov`)
+
+Formato "POV" sin persona, ~21 s: noche de ansiedad → se lo cuentas a Bless → amanece tranquila → descarga.
+Escenas en `src/pov/`. Video renderizado: `bless-habit-capacitor/play-store/promo-video-pov-1080x1920.mp4`.
+
+```
+npx remotion render BlessPov out/bless-habit-pov.mp4 --crf=18
+```

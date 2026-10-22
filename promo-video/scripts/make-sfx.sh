@@ -55,6 +55,14 @@ ff -f lavfi -i "aevalsrc='
   -af "volume='0.75+0.25*sin(2*PI*0.12*t)':eval=frame,lowpass=f=1800,aecho=0.8:0.7:400|800:0.35|0.25,afade=t=in:d=3,afade=t=out:st=$((D-4)):d=4,aeval='val(0)*(0.85+0.15*sin(2*PI*0.07*t))|val(0)*(0.85+0.15*cos(2*PI*0.07*t))':c=stereo" \
   sfx/ambient-pad.wav
 
+# Tic de reloj (escena nocturna)
+ff -f lavfi -i "aevalsrc='0.6*sin(2*PI*2400*t)*exp(-140*t)+0.4*sin(2*PI*1200*t)*exp(-90*t)':s=$R:d=0.12" \
+  -af "highpass=f=500,aecho=0.6:0.3:30:0.2,pan=stereo|c0=c0|c1=c0" sfx/tick.wav
+
+# Latido de corazón (lub-dub)
+ff -f lavfi -i "aevalsrc='sin(2*PI*58*t)*exp(-16*t)*min(1,t*300)+0.75*sin(2*PI*52*(t-0.2))*exp(-16*(t-0.2))*gte(t,0.2)':s=$R:d=0.7" \
+  -af "lowpass=f=180,volume=2,pan=stereo|c0=c0|c1=c0" sfx/heartbeat.wav
+
 # Normaliza: efectos con pico en -3 dB, el fondo ambiental más bajo (-12 dB)
 norm() { # archivo pico_objetivo
   local peak gain

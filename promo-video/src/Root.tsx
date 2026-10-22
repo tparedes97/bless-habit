@@ -1,5 +1,8 @@
 import { Composition, Folder } from "remotion";
+import { AbsoluteFill } from "remotion";
 import { BlessPromo, SCENES, TOTAL, withBackdrop } from "./BlessPromo";
+import { BlessPov, POV_SCENES, POV_TOTAL } from "./pov/BlessPov";
+import { NightBackdrop } from "./pov/NightBackdrop";
 
 const W = 1080;
 const H = 1920;
@@ -20,5 +23,29 @@ export const RemotionRoot: React.FC = () => (
         />
       ))}
     </Folder>
+    <Composition id="BlessPov" component={BlessPov} width={W} height={H} fps={30} durationInFrames={POV_TOTAL} />
+    <Folder name="BlessPov-Scenes">
+      {POV_SCENES.map((s) => (
+        <Composition
+          key={s.id}
+          id={s.id}
+          component={s.night ? withNight(s.component) : withBackdrop(s.component)}
+          width={W}
+          height={H}
+          fps={30}
+          durationInFrames={s.duration}
+        />
+      ))}
+    </Folder>
   </>
 );
+
+const withNight = (Scene: React.FC) => {
+  const Wrapped: React.FC = () => (
+    <AbsoluteFill>
+      <NightBackdrop />
+      <Scene />
+    </AbsoluteFill>
+  );
+  return Wrapped;
+};
