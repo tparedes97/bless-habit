@@ -1,6 +1,7 @@
 import { AbsoluteFill, Interactive, interpolate, useCurrentFrame } from "remotion";
 import { Card, Headline } from "../Headline";
 import { C, calm, clamp, sans, serif } from "../theme";
+import { Sfx } from "../Sfx";
 
 const DAYS = ["L", "M", "M", "J", "V", "S", "D"];
 const HEIGHTS = [0.45, 0.6, 0.55, 0.75, 0.7, 0.9, 1];
@@ -12,6 +13,10 @@ export const Growth: React.FC = () => {
   const streak = Math.round(interpolate(f, [24, 70], [0, 7], clamp));
   return (
     <AbsoluteFill style={{ alignItems: "center", justifyContent: "center" }}>
+      <Sfx at={70} name="note-4" volume={0.35} />
+      {[0, 2, 4, 6].map((i) => (
+        <Sfx key={i} at={60 + i * 5} name="bubble" volume={0.18} />
+      ))}
       <Headline title="Mira cómo creces." sub="Tu constancia y tu ánimo, juntos." />
       <Card enter={8} style={{ marginTop: 90 }}>
         <div style={{ display: "flex", alignItems: "baseline", gap: 20 }}>

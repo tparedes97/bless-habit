@@ -1,5 +1,6 @@
 import { AbsoluteFill, Interactive, interpolate, useCurrentFrame } from "remotion";
 import { C, calm, clamp, sans, serif } from "../theme";
+import { Sfx } from "../Sfx";
 
 // El caos del día: pendientes que se agitan y luego se disuelven
 const CHIPS = [
@@ -16,6 +17,10 @@ export const Hook: React.FC = () => {
   const settle = interpolate(f, [58, 90], [0, 1], { ...clamp, easing: calm });
   return (
     <AbsoluteFill>
+      <Sfx at={2} name="bubble" volume={0.25} />
+      <Sfx at={10} name="bubble" volume={0.2} />
+      <Sfx at={18} name="bubble" volume={0.18} />
+      <Sfx at={56} name="whoosh-low" volume={0.5} />
       {CHIPS.map((c, i) => (
         <div
           key={c.t}

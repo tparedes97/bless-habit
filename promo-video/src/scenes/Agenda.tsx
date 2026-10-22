@@ -1,6 +1,7 @@
 import { AbsoluteFill, Interactive, interpolate, useCurrentFrame } from "remotion";
 import { Card, Headline } from "../Headline";
 import { C, calm, clamp, sans, serif } from "../theme";
+import { Sfx } from "../Sfx";
 
 const HABITS = [
   { e: "🧘", time: "06:30", name: "Meditar" },
@@ -24,6 +25,9 @@ export const Agenda: React.FC = () => {
   const circ = 2 * Math.PI * R;
   return (
     <AbsoluteFill style={{ alignItems: "center", justifyContent: "center" }}>
+      {CHECK_AT.map((t, i) => (
+        <Sfx key={t} at={t} name={`note-${i + 1}`} volume={0.45} />
+      ))}
       <Headline title="Tu día, en orden." sub="Hábitos con hora, a tu ritmo." />
       <Card enter={8} style={{ marginTop: 90 }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 30 }}>

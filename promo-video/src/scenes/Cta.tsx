@@ -1,6 +1,7 @@
 import { AbsoluteFill, Interactive, interpolate, useCurrentFrame } from "remotion";
 import { LogoTile } from "../Sprout";
 import { C, calm, clamp, sans, serif } from "../theme";
+import { Sfx } from "../Sfx";
 
 const WORDS = [
   { w: "Calma.", at: 6, color: C.ink },
@@ -13,6 +14,8 @@ export const Cta: React.FC = () => {
   const f = useCurrentFrame();
   return (
     <AbsoluteFill style={{ alignItems: "center", justifyContent: "center" }}>
+      <Sfx at={62} name="sparkle" volume={0.55} />
+      <Sfx at={82} name="bubble" volume={0.35} />
       {WORDS.map(({ w, at, color }) => (
         <Interactive.Div
           key={w}

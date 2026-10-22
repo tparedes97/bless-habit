@@ -1,6 +1,7 @@
 import { AbsoluteFill, Interactive, interpolate, useCurrentFrame } from "remotion";
 import { LogoTile } from "../Sprout";
 import { C, calm, clamp, sans, serif } from "../theme";
+import { Sfx } from "../Sfx";
 
 // Anillos que respiran y el brote que crece: el logo aparece
 export const Breathe: React.FC = () => {
@@ -8,6 +9,7 @@ export const Breathe: React.FC = () => {
   const breath = (Math.sin(f / 14) + 1) / 2;
   return (
     <AbsoluteFill style={{ justifyContent: "center", alignItems: "center" }}>
+      <Sfx at={6} name="chime" volume={0.45} />
       <div style={{ position: "relative", width: 300, height: 300, marginTop: -120 }}>
         {[0, 1, 2].map((i) => {
           const size = 460 + i * 220;

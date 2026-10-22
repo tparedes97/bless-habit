@@ -1,6 +1,7 @@
 import { AbsoluteFill, Interactive, interpolate, useCurrentFrame } from "remotion";
 import { Card, Headline } from "../Headline";
 import { C, calm, clamp, sans } from "../theme";
+import { Sfx } from "../Sfx";
 
 const bubbleIn = (f: number, at: number) => ({
   opacity: interpolate(f, [at, at + 14], [0, 1], { ...clamp, easing: calm }),
@@ -13,6 +14,9 @@ export const Chat: React.FC = () => {
   const typing = interpolate(f, [48, 52, 70, 74], [0, 1, 1, 0], clamp);
   return (
     <AbsoluteFill style={{ alignItems: "center", justifyContent: "center" }}>
+      <Sfx at={24} name="bubble" volume={0.5} />
+      <Sfx at={74} name="bubble" volume={0.45} />
+      <Sfx at={104} name="chime" volume={0.4} />
       <Headline title="Cuéntale tu día." sub="Bless lo convierte en un plan." />
       <Card enter={10} style={{ marginTop: 90, minHeight: 640, display: "flex", flexDirection: "column", gap: 34 }}>
         <Interactive.Div
