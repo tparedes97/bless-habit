@@ -1699,7 +1699,7 @@ function addHabitQuietly({ label, time, days }) {
     time: time || defaultTimeFor(key),
     timesByDay: {},
     durationWeeks: null,
-    minutesPerDay: HABIT_SUGGESTED_MINUTES[key] || null,
+    minutesPerDay: null, // "Marcar como hecho": sin tiempo (el tiempo es solo para hábitos "Por tiempo")
     reminderOffsets: [0],
     createdAt: ymd(new Date()),
     suggestedByBless: true,
@@ -1996,8 +1996,8 @@ const I18N = {
     obAsk15: 'Última cosa: dime a qué hora y cuánto tiempo al día quieres dedicarle a cada uno. Ya te dejé una sugerencia, cámbiala si quieres 🌱',
     hsTimeLabel: 'Hora', hsMinutesLabel: 'Tiempo al día', hsMinutesNone: 'Sin definir',
 
-    diagLabel: 'Diagnóstico de Bless',
-    diagnosingMsg: (n) => `Perfecto, ${n}. Con todo esto ya te entiendo mucho mejor 🧠. Dame un segundo para armar tu diagnóstico…`,
+    diagLabel: 'Tu punto de partida',
+    diagnosingMsg: (n) => `Perfecto, ${n}. Con todo esto ya te entiendo mucho mejor 🧠. Dame un segundo para armar tu punto de partida…`,
     afterDiagMsg: 'A partir de ahora, cada vez que abras la app te voy a preguntar qué quieres lograr y te ayudo a organizarlo, tomando en cuenta todo esto. ¡Vamos a tu primer día! 🚀',
     evalCompleteNote: 'Evaluación completa ✓',
     langSelectIntro: '¡Hola! 👋 Antes de empezar, confirma tu idioma y tu país — detecté esto automáticamente, pero puedes cambiarlo.',
@@ -2267,7 +2267,7 @@ const I18N = {
     diarySub: 'Un espacio para guardar lo que importa.',
     metricsTitle: 'Tu evolución', metricsSub: 'Entiende cómo está cambiando tu constancia.',
     profileGreeting: (n) => n ? `Tu espacio, ${n} ✨` : 'Tu espacio ✨', profileGreetingSub: 'Aquí ves tu progreso y configuras Bless.',
-    diagLabel: 'Diagnóstico de Bless',
+    diagLabel: 'Tu punto de partida',
     deleteAccountLink: 'Eliminar mi cuenta',
     deleteAccountWarn: 'Se borrarán para siempre tu perfil, hábitos, chat, recuerdos, diario y fotos. No se puede deshacer.',
     deleteAccountWarnPremium: 'Se cancelará tu suscripción Premium ahora mismo y se borrarán para siempre tu perfil, hábitos, chat, recuerdos, diario y fotos. No se puede deshacer.',
@@ -2610,8 +2610,8 @@ const I18N = {
     obAsk15: "Last thing: tell me what time and how much time per day you want to give each one. I left a suggestion — change it if you like 🌱",
     hsTimeLabel: 'Time', hsMinutesLabel: 'Per day', hsMinutesNone: 'Not set',
 
-    diagLabel: "Bless's diagnosis",
-    diagnosingMsg: (n) => `Perfect, ${n}. With all this I already understand you much better 🧠. Give me a second to put together your diagnosis…`,
+    diagLabel: "Your starting point",
+    diagnosingMsg: (n) => `Perfect, ${n}. With all this I already understand you much better 🧠. Give me a second to put together your starting point…`,
     afterDiagMsg: "From now on, every time you open the app I'll ask you what you want to accomplish and help you organize it, taking all this into account. Let's get to your first day! 🚀",
     evalCompleteNote: 'Assessment complete ✓',
     langSelectIntro: "Hi! 👋 Before we start, confirm your language and country — I detected this automatically, but you can change it.",
@@ -2877,7 +2877,7 @@ const I18N = {
     diarySub: 'A space to keep what matters.',
     metricsTitle: 'Your progress', metricsSub: 'See how your consistency is changing.',
     profileGreeting: (n) => n ? `Your space, ${n} ✨` : 'Your space ✨', profileGreetingSub: 'See your progress and set up Bless here.',
-    diagLabel: "Bless's diagnosis",
+    diagLabel: "Your starting point",
     deleteAccountLink: 'Delete my account',
     deleteAccountWarn: 'Your profile, habits, chat, memories, journal and photos will be deleted forever. This cannot be undone.',
     deleteAccountWarnPremium: 'Your Premium subscription will be cancelled right now and your profile, habits, chat, memories, journal and photos will be deleted forever. This cannot be undone.',
@@ -3417,7 +3417,7 @@ function minutesLabel(mins) {
   const hrs = Math.floor(mins / 60), rest = mins % 60;
   return rest ? `${hrs} h ${rest} min` : `${hrs} h`;
 }
-function habitMinutesLabel(h) { return h ? minutesLabel(h.minutesPerDay) : ''; }
+function habitMinutesLabel(h) { return h && habitKind(h) === 'timer' ? minutesLabel(h.minutesPerDay) : ''; }
 function habitForAgendaItem(habitKey, label) {
   return (state.profile.habitos || []).find(h => h.key === habitKey && h.label === label) || null;
 }
@@ -3501,7 +3501,7 @@ function renderHabitKindPicker(h, pf) {
     document.getElementById('he-count-row').style.display = heKind === 'count' ? 'block' : 'none';
     // Por tiempo: la duración es obligatoria y es la meta del cronómetro.
     document.getElementById('he-minutes-q').textContent = heKind === 'timer' ? t('heTimerQ') : t('heMinutesQ');
-    const showMinutes = heKind !== 'count';
+    const showMinutes = heKind === 'timer'; // "Marcar como hecho" y "Por cantidad" no llevan tiempo
     document.getElementById('he-minutes-q').style.display = showMinutes ? '' : 'none';
     document.getElementById('he-minutes').style.display = showMinutes ? '' : 'none';
     if (!showMinutes) document.getElementById('he-minutes-custom-row').style.display = 'none';
@@ -3972,34 +3972,44 @@ async function advanceOnboarding() {
 // el primer ítem de dificultades/detonantes — por eso salía tan genérico. Ahora
 // también teje el intento previo que no funcionó y si tiene días difíciles
 // declarados, para que incluso el respaldo sin IA se sienta específico.
+// v2 (oct 2026): "Tu punto de partida" — se le habla a la persona, en
+// positivo, sin etiquetas ("procrastinadora"), sin género y solo con funciones
+// reales. Los textos guardados antes (sin v) se regeneran una vez.
+const DIAG_VERSION = 2;
 function buildDiagnostic(p) {
   const habitCount = (p.habitos || []).length;
   if (currentLang() === 'en') {
-    const TIPO = { madrugador: 'an early riser', nocturno: 'a night-energy person', depende: 'someone with a variable rhythm' };
-    const MOTIV = { disciplina: 'discipline', recompensa: 'rewards', competencia: 'competition', acompanamiento: 'feeling accompanied' };
-    const tipoTxt = TIPO[p.tipo] || 'someone with your own rhythm';
+    const TIPO = { madrugador: 'Your best energy shows up early', nocturno: 'Your energy shines at night', depende: 'You move at your own rhythm' };
+    const MOTIV = { disciplina: 'keeping your word to yourself', recompensa: 'giving yourself little rewards', competencia: 'beating your own record', acompanamiento: 'feeling accompanied' };
+    const title = TIPO[p.tipo] || 'Your path starts here';
     const motivTxt = MOTIV[p.motivacion] || 'your own reasons';
-    const dificultad = (optLabel('dificultades', p.dificultades[0]) || 'staying consistent').toLowerCase();
-    const detonante = (optLabel('detonantes', p.detonantes[0]) || 'tough starts').toLowerCase();
-    const intento = optLabel('intentosPrevios', p.intentosPrevios && p.intentosPrevios[0]);
-    const intentoTxt = intento ? ` You've already tried ${intento.toLowerCase()} before, so this time we're doing it differently.` : '';
-    const diasTxt = (p.diasDificiles && p.diasDificiles.length) ? ` I'll go easier on you on your hard days — I won't push the same way then.` : '';
-    const title = `${p.nombre ? p.nombre + ': ' : ''}${tipoTxt}, motivated by ${motivTxt}`;
-    const body = `What's hardest for you is "${dificultad}", and you tend to slip up when "${detonante}".${intentoTxt} That's why, with the ${habitCount || 'few'} habit${habitCount === 1 ? '' : 's'} you picked, I'm going to suggest small steps with reminders and no extra pressure.${diasTxt} It's not about willpower — it's about designing your day in your favor.`;
-    return { title, body };
+    const DIF = { procrastino: 'getting started is sometimes hard', olvido: 'things sometimes slip your mind', pierdo_motivacion: 'motivation sometimes fades halfway', falta_tiempo: 'time sometimes feels short', falta_consistencia: 'staying consistent is sometimes hard' };
+    const dificultad = DIF[p.dificultades && p.dificultades[0]] || 'some days are harder than others';
+    const body = `What drives you is ${motivTxt}, and that's a great place to start. If ${dificultad}, that's completely normal: we'll go with small steps. I'll remind you of ${habitCount ? 'your ' + habitCount + ' habit' + (habitCount === 1 ? '' : 's') : 'your habits'} at the right time and we'll celebrate every streak together.`;
+    return { title, body, v: DIAG_VERSION };
   }
-  const TIPO = { madrugador: 'madrugadora/or', nocturno: 'de energía nocturna', depende: 'de energía variable' };
-  const MOTIV = { disciplina: 'la disciplina', recompensa: 'las recompensas', competencia: 'la competencia', acompanamiento: 'sentirte acompañada/o' };
-  const tipoTxt = TIPO[p.tipo] || 'con tu propio ritmo';
+  const TIPO = { madrugador: 'Tu mejor energía llega temprano', nocturno: 'Tu energía brilla de noche', depende: 'Avanzas a tu propio ritmo' };
+  const MOTIV = { disciplina: 'cumplir lo que te propones', recompensa: 'darte pequeños premios', competencia: 'superar tu propia marca', acompanamiento: 'sentir compañía en el camino' };
+  const title = TIPO[p.tipo] || 'Tu camino empieza aquí';
   const motivTxt = MOTIV[p.motivacion] || 'tus propias razones';
-  const dificultad = (optLabel('dificultades', p.dificultades[0]) || 'mantener la constancia').toLowerCase();
-  const detonante = (optLabel('detonantes', p.detonantes[0]) || 'los inicios difíciles').toLowerCase();
-  const intento = optLabel('intentosPrevios', p.intentosPrevios && p.intentosPrevios[0]);
-  const intentoTxt = intento ? ` Ya intentaste antes con ${intento.toLowerCase()}, así que esta vez lo vamos a hacer distinto.` : '';
-  const diasTxt = (p.diasDificiles && p.diasDificiles.length) ? ` En tus días difíciles voy a bajarte el ritmo — ahí no te voy a exigir igual.` : '';
-  const title = `${p.nombre ? p.nombre + ': ' : ''}${tipoTxt}, con motivación en ${motivTxt}`;
-  const body = `Lo que más se te dificulta es "${dificultad}", y sueles fallar cuando "${detonante}".${intentoTxt} Por eso, con ${habitCount ? `los ${habitCount} hábito${habitCount === 1 ? '' : 's'} que elegiste` : 'lo que elijas construir'}, voy a proponerte pasos pequeños, con recordatorios y sin presión extra.${diasTxt} No se trata de fuerza de voluntad — se trata de diseñar tu día a tu favor.`;
-  return { title, body };
+  const DIF = { procrastino: 'a veces cuesta empezar', olvido: 'a veces se te pasan las cosas', pierdo_motivacion: 'a veces la motivación baja a mitad de camino', falta_tiempo: 'a veces sientes que el tiempo no alcanza', falta_consistencia: 'a veces cuesta mantener la constancia' };
+  const dificultad = DIF[p.dificultades && p.dificultades[0]] || 'hay días más difíciles que otros';
+  const body = `Te motiva ${motivTxt}, y eso es un gran punto de partida. Si ${dificultad}, es algo muy normal: vamos a ir con pasos pequeños. Te recordaré ${habitCount ? (habitCount === 1 ? 'tu hábito' : 'tus ' + habitCount + ' hábitos') : 'tus hábitos'} a la hora justa y celebraremos juntos cada racha.`;
+  return { title, body, v: DIAG_VERSION };
+}
+// Quien tenía el texto viejo: se cambia ya por el de respaldo y, si hay IA, se
+// reescribe en segundo plano una sola vez.
+let diagUpgrading = false;
+function upgradeDiagnosticIfOld() {
+  const d = state.diagnostic;
+  if (!d || d.v === DIAG_VERSION || !state.profile || !state.profile.nombre) return;
+  state.diagnostic = buildDiagnostic(state.profile);
+  saveStateToServer();
+  if (diagUpgrading || !aiEnabled()) return;
+  diagUpgrading = true;
+  buildDiagnosticAI(state.profile).then(ai => {
+    if (ai) { state.diagnostic = ai; saveStateToServer(); if (document.getElementById('view-profile').classList.contains('active')) renderProfile(); }
+  }).catch(() => {}).finally(() => { diagUpgrading = false; });
 }
 
 // Diagnóstico generado por IA — usa TODOS los campos de la evaluación (no solo
@@ -4019,10 +4029,17 @@ async function buildDiagnosticAI(p) {
 - Días difíciles declarados: ${(p.diasDificiles||[]).length ? 'sí' : 'no'}
 - Hábitos elegidos para construir: ${(p.habitos||[]).map(h => h.label).join(', ') || '—'}
 
-Como consultor profesional de hábitos (mitad coach, mitad psicólogo/a, mitad consultor motivacional), escribe en ${langName} un diagnóstico breve y ESPECÍFICO de esta persona (nunca genérico), usando al menos 3 de estos datos conectados entre sí, no solo repetidos uno por uno. Responde EXACTAMENTE en este formato, dos líneas, sin nada más:
-TITULO: <una frase corta tipo "Nombre: perfil en 4-6 palabras", sin comillas>
-CUERPO: <2-3 frases que conecten los datos con una lectura real del patrón (no solo listar los datos) y terminen con la estrategia concreta que vas a usar con ella>`;
-  const raw = await callBlessAI('Eres Bless, un consultor profesional de hábitos escribiendo el diagnóstico inicial de una persona nueva en la app. Responde solo en el formato exacto que se te pide, nada de comillas ni texto extra.', prompt);
+Escribe en ${langName} el "punto de partida" de esta persona en Bless Habit: un mensaje corto que le hablas DIRECTAMENTE a ella (en segunda persona: "tú", "te", "tu"), cálido y esperanzador, usando al menos 3 de estos datos conectados entre sí.
+REGLAS (obligatorias):
+- No la etiquetes ni la juzgues: nada de "procrastinador/a", "flojo/a", "desordenado/a", "falta de…", "problema", "fallas". Describe lo que le cuesta como algo normal y que se puede trabajar.
+- Lenguaje neutro de género: no uses adjetivos con -o/-a sobre la persona (ni "motivada", "lista", "comprometido"). Usa frases como "te motiva…", "tu energía…".
+- No es un diagnóstico médico ni psicológico: no uses palabras clínicas (diagnóstico, trastorno, ansiedad, terapia, paciente).
+- Empieza por una fortaleza o algo positivo de la persona.
+- Solo menciona cosas que Bless Habit SÍ tiene: chat con Bless, recordatorios a la hora de cada hábito (pueden sonar como alarma), hábitos por cantidad o por tiempo con cronómetro, calendario, rachas, niveles y logros, diario y métricas. NUNCA prometas retos con otras personas, compañeros, grupos, comunidad, coaches humanos ni nada que no esté en esa lista.
+Responde EXACTAMENTE en este formato, dos líneas, sin nada más:
+TITULO: <frase corta y positiva de 3 a 7 palabras sobre su camino, sin su nombre y sin etiquetas (ej.: "Tu energía brilla de noche")>
+CUERPO: <2 o 3 frases dirigidas a la persona: una fortaleza, lo que le cuesta dicho con amabilidad, y cómo la vas a acompañar con funciones reales de la app>`;
+  const raw = await callBlessAI('Eres Bless, el compañero amable de la app Bless Habit. Escribes el punto de partida de una persona nueva: hablándole directamente, en positivo, sin etiquetas ni juicios y con lenguaje neutro de género. Responde solo en el formato exacto que se te pide, sin comillas ni texto extra.', prompt);
   if (!raw) return null;
   const titleMatch = raw.match(/T[IÍ]TULO:\s*(.+)/i);
   const bodyMatch = raw.match(/CUERPO:\s*([\s\S]+)/i);
@@ -4030,7 +4047,7 @@ CUERPO: <2-3 frases que conecten los datos con una lectura real del patrón (no 
   const title = titleMatch[1].split('\n')[0].trim();
   const body = bodyMatch[1].trim();
   if (!title || !body) return null;
-  return { title, body };
+  return { title, body, v: DIAG_VERSION };
 }
 
 /* El diagnóstico se escribe una vez, en el idioma de ese momento. Si la
@@ -4056,7 +4073,7 @@ async function translateDiagnostic(lang) {
   try {
     const d = state.diagnostic;
     const target = lang === 'en' ? 'English' : 'español';
-    const raw = await callBlessAI(`Eres un traductor. Traduce al ${target} manteniendo el tono cálido y el nombre de la persona. Responde EXACTAMENTE en dos líneas, sin nada más:\nTITULO: <título traducido>\nCUERPO: <texto traducido>`,
+    const raw = await callBlessAI(`Eres un traductor. Traduce al ${target} manteniendo el tono cálido, hablándole a la persona en segunda persona y con lenguaje neutro de género. Responde EXACTAMENTE en dos líneas, sin nada más:\nTITULO: <título traducido>\nCUERPO: <texto traducido>`,
       `TITULO: ${d.title}\nCUERPO: ${d.body}`);
     const tm = raw && raw.match(/T[IÍ]TULO:\s*(.+)/i), bm = raw && raw.match(/CUERPO:\s*([\s\S]+)/i);
     if (tm && bm) {
@@ -4890,6 +4907,7 @@ async function bootstrapApp() {
       migrateOneOffAgendaToTasks();
       scheduleNativeRemindersSoon(); // reprograma el "te extrañé" a 3 días desde hoy
       pushWidgetSoon(); // el widget se pone al día al abrir la app
+      upgradeDiagnosticIfOld(); // "Tu punto de partida" v2
       // App 1.3+: cronómetro en la pantalla bloqueada y botones de notificaciones.
       setTimeout(async () => { syncTimerNotification(); await checkLaunchUrlForNotifAction(); runPendingNotifAction(); }, 600);
       if (IS_NATIVE_APP && !isPremium) setTimeout(() => restoreGplayPurchases(true), 3000); // compras sin confirmar
@@ -9667,8 +9685,12 @@ function syncTodayAgendaForHabit(h) {
     if (idx === -1) {
       state.agenda.push({ time, task: h.label, done: false, icon: h.icon, habitKey: h.key, habitId: h.id, recurring: true });
     } else {
-      state.agenda[idx].time = time; // conserva si ya estaba marcado como hecho
-      state.agenda[idx].habitId = h.id;
+      const it = state.agenda[idx];
+      // Pospuesto hoy: se respeta la hora nueva mientras el hábito siga con la
+      // misma hora de siempre. Si se cambió la hora del hábito, manda la nueva.
+      if (it.origTime && it.origTime === time) { /* conserva it.time pospuesto */ }
+      else { it.time = time; delete it.origTime; } // conserva si ya estaba marcado como hecho
+      it.habitId = h.id;
     }
   } else if (idx !== -1 && !state.agenda[idx].done) {
     state.agenda.splice(idx, 1);
@@ -9689,7 +9711,7 @@ function addManualHabit({ key, icon, label, repeatDays, sameTimeEveryday, time, 
     time: time || defaultTimeFor(key),
     timesByDay: timesByDay || {},
     durationWeeks: durationWeeks || null,
-    minutesPerDay: HABIT_SUGGESTED_MINUTES[key] || null,
+    minutesPerDay: null, // "Marcar como hecho": sin tiempo (el tiempo es solo para hábitos "Por tiempo")
     createdAt: ymd(new Date()),
   };
   entry.repeatWeekly = entry.repeatDays.length === 7; // compatibilidad con lecturas antiguas
@@ -9945,7 +9967,7 @@ function saveHabitEditor() {
     time,
     timesByDay,
     durationWeeks,
-    minutesPerDay: kindData.kind === 'timer' ? kindData.minutes : readHabitMinutesPicker(),
+    minutesPerDay: kindData.kind === 'timer' ? kindData.minutes : null,
     kind: kindData.kind,
     goal: kindData.kind === 'count' ? kindData.goal : null,
     unit: kindData.kind === 'count' ? kindData.unit : null,
@@ -10510,7 +10532,7 @@ function renderCalDay() {
   const label = isToday ? t('hoy') : `${DAY_NAMES[day.dow]} ${date.getDate()}/${date.getMonth()+1}`;
   // Filtro: todas / pendientes / completadas / omitidas (las omitidas son
   // hábitos quitados "solo por hoy"; se listan abajo en "No salen este día").
-  const filter = calDayFilter;
+  const filter = 'all'; // (los filtros se quitaron: la lista del día ya es corta)
   const rowHtml = (it, idx) => {
     const h = itemHabit(it), k = habitKind(h);
     const agendaIt = isToday ? state.agenda[idx] : null;
@@ -10523,12 +10545,11 @@ function renderCalDay() {
       const lbl = running ? '● ' + fmtClock(timerElapsedSec(agendaIt)) : (agendaIt ? progressLabel(agendaIt, h) : (it.progress ? `${Math.floor(it.progress / 60)}/${h.minutesPerDay} min` : ''));
       extra = `${lbl ? `<span class="prog-pill${running ? ' live' : ''}" ${running ? `data-live-timer="${idx}"` : ''}>${escapeHtml(lbl)}</span>` : ''}${isToday ? `<button type="button" class="prog-btn" data-cal-timer="${idx}" aria-label="${t('timerOpenAria')}">⏱</button>` : ''}`;
     }
-    const postponed = agendaIt && agendaIt.origTime ? `<span class="mins"> · ${t('postponedTag', agendaIt.origTime)}</span>` : '';
     return `
     <div class="agenda-item ${it.done ? 'done' : ''}">
       <span class="check" ${isToday ? `onclick="toggleDoneFromCal(${idx})" style="cursor:pointer;"` : ''}>${it.done ? '✓' : ''}</span>
       <span class="icon">${it.icon}</span>
-      ${it.time ? `<span class="time">${it.time}${k !== 'timer' && habitMinutesLabel(h) ? `<span class="mins"> · ${habitMinutesLabel(h)}</span>` : ''}${postponed}</span>` : ''}
+      ${it.time ? `<span class="time">${it.time}</span>` : ''}
       <span class="task">${itemDisplayLabel(it)}</span>
       ${extra}
       <span class="edit" data-cal-edit="${idx}" title="${t('editRemoveTitle')}">✏️</span>
@@ -10569,7 +10590,6 @@ function renderCalDay() {
       <button id="day-next" ${calDayOffset >= CAL_DAY_MAX_AHEAD ? 'disabled' : ''}>›</button>
     </div>
     <div class="day-section-head"><span>🌱 ${t('daySecHabits')}${isPremium ? '' : ` <span class="day-habit-count">${t('habitCountFree', (state.profile.habitos || []).length, habitLimit())}</span>`}</span><button type="button" class="day-sec-add" id="day-add-habit">＋ ${t('daySecAdd')}</button></div>
-    ${filterHtml}
     <div id="day-items">${itemsHtml}</div>${offHtml}
     <div class="day-section-head"><span>✅ ${t('daySecTasks')}</span>${isPast ? '' : `<button type="button" class="day-sec-add" id="day-add-task">＋ ${t('daySecAdd')}</button>`}</div>
     <div id="day-tasks">${tasksHtml}</div>${!isPast && dateBeyondFree(dateStr) ? `<div class="day-off-habits">📅 ${t('farDateHint', FREE_SCHEDULE_DAYS)} ${canWatchRewarded() ? `<button type="button" class="day-off-chip" id="day-unlock-far">${t('unlockDayAdBtn')}</button>` : ''}</div>` : ''}
