@@ -2391,7 +2391,7 @@ const I18N = {
     taskAlarmSwitch: '⏰ Las tareas suenan como alarma',
     taskAlarmHint: 'A la hora de cada tarea suena el sonido de alarma del teléfono (aunque esté en silencio) hasta que la detengas.',
     habitAlarmSwitch: '⏰ Los hábitos suenan como alarma',
-    habitAlarmHint: 'Igual que las tareas, pero para tus hábitos. Si ya marcaste el hábito hoy, no suena.',
+    habitAlarmHint: 'A la hora exacta de cada hábito suena como alarma (los avisos anticipados llegan como notificación normal). Si ya lo marcaste hoy, no suena.',
     notifTestAlarm: 'Probar alarma',
     notifTestNative: 'Recordatorios programados (próximos 14 días)',
     clockAlarmDeleteMsg: (name, times) => `Borré el hábito ${name} y sus notificaciones. Su alarma de las ${times} sigue en la app Reloj: quítala desde ahí ⏰ (Android no deja que otra app borre alarmas).`,
@@ -3002,7 +3002,7 @@ const I18N = {
     taskAlarmSwitch: '⏰ Tasks ring like an alarm',
     taskAlarmHint: "At each task's time, the phone's alarm sound plays (even on silent) until you stop it.",
     habitAlarmSwitch: '⏰ Habits ring like an alarm',
-    habitAlarmHint: "Same as tasks, but for your habits. If you already checked the habit today, it won't ring.",
+    habitAlarmHint: "At each habit's exact time it rings like an alarm (early reminders arrive as normal notifications). If you already checked it today, it won't ring.",
     notifTestAlarm: 'Test alarm',
     notifTestNative: 'Scheduled reminders (next 14 days)',
     clockAlarmDeleteMsg: (name, times) => `I deleted the habit ${name} and its notifications. Its ${times} alarm is still in the Clock app: remove it there ⏰ (Android doesn't let another app delete alarms).`,
@@ -5730,7 +5730,7 @@ function hasNativeReminders() {
   const h = headers.find(x => x.name === 'BlessDevice');
   return !!(h && (h.methods || []).some(m => m.name === 'scheduleReminders'));
 }
-function habitAlarmsOn() { return !!(state.settings && state.settings.habitAlarms); }
+function habitAlarmsOn() { return !(state.settings && state.settings.habitAlarms === false); } // por defecto, sí: a la hora exacta suena como alarma
 function taskAlarmsOn() { return !(state.settings && state.settings.taskAlarms === false); } // por defecto, sí
 const REMINDER_DAYS_AHEAD = 14;
 function buildReminderItems() {
