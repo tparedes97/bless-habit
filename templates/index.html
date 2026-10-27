@@ -647,6 +647,41 @@
   .bar-row .bar-sub { font-size: 10.5px; color: var(--text-dim); margin-top: 2px; white-space: nowrap; }
   .bar-row.former { flex-wrap: wrap; row-gap: 2px; }
   .bar-row.former .bar-sub-full { flex-basis: 100%; font-size: 10.5px; color: var(--text-dim); }
+  /* ---- Hábitos por cantidad / por tiempo ---- */
+  .prog-pill { font-size: 11.5px; font-weight: 700; color: var(--accent); background: rgba(124,98,245,.10); border-radius: 999px; padding: 3px 9px; white-space: nowrap; margin-left: 6px; }
+  .prog-pill.live { color: #fff; background: var(--accent); font-variant-numeric: tabular-nums; }
+  .prog-btn { flex: none; width: 32px; height: 32px; border-radius: 50%; border: 1.5px solid var(--accent); background: var(--panel); color: var(--accent); font-size: 15px; font-weight: 700; margin-left: 6px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; }
+  .day-filter { display: flex; gap: 6px; flex-wrap: wrap; margin: 4px 0 8px; }
+  .day-filter-chip { border: 1px solid var(--border); background: var(--panel); color: var(--text-dim); border-radius: 999px; padding: 5px 11px; font-size: 12px; cursor: pointer; }
+  .day-filter-chip.on { background: var(--accent); color: var(--on-accent); border-color: var(--accent); font-weight: 600; }
+  .postpone-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; width: 100%; margin-bottom: 8px; }
+  .postpone-lbl { font-size: 13px; color: var(--text-dim); width: 100%; }
+  .tm-overlay { position: fixed; inset: 0; z-index: 1100; background: rgba(23,32,51,.45); display: flex; align-items: center; justify-content: center; padding: 16px; }
+  .tm-sheet { position: relative; width: 100%; max-width: 380px; background: var(--panel); color: var(--text); border-radius: 26px; padding: 26px 20px 20px; text-align: center; box-shadow: 0 20px 60px rgba(46,39,90,.25); }
+  .tm-close { position: absolute; top: 12px; right: 12px; width: 32px; height: 32px; border-radius: 50%; border: none; background: var(--panel-3); color: var(--text-dim); cursor: pointer; }
+  .tm-title { font-size: 19px; font-weight: 800; padding: 0 30px; }
+  .tm-goal { font-size: 13.5px; color: var(--text-dim); margin-top: 2px; }
+  .tm-ring { position: relative; width: 240px; height: 240px; margin: 14px auto 10px; }
+  .tm-ring circle:last-of-type { transition: stroke-dashoffset .5s linear; }
+  .tm-clock { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+  .tm-time { font-size: 46px; font-weight: 800; font-variant-numeric: tabular-nums; letter-spacing: 1px; }
+  .tm-state { font-size: 13px; color: var(--text-dim); margin-top: 2px; }
+  .tm-actions { display: flex; flex-direction: column; gap: 8px; }
+  .tm-soft { background: linear-gradient(135deg, var(--panel-3), var(--panel-2)) !important; color: var(--text) !important; }
+  .tm-finish { background: none !important; border: 1.5px solid var(--border) !important; color: var(--text) !important; box-shadow: none !important; }
+  .tm-hint { font-size: 11.5px; color: var(--text-dim); margin-top: 12px; }
+  .notif-prefs { margin-top: 14px; border-top: 1px solid var(--border); padding-top: 10px; text-align: left; }
+  .np-title { font-size: 13px; font-weight: 700; color: var(--text-dim); text-transform: uppercase; letter-spacing: .5px; }
+  .np-quiet { margin-top: 12px; padding: 12px 14px; border-radius: 14px; background: var(--panel-2); border: 1px solid var(--border); }
+  .np-quiet-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 8px; font-size: 13px; }
+  .np-quiet-row input { margin-left: 4px; }
+  .pm-row { padding: 10px 0; border-bottom: 1px solid var(--border); }
+  .pm-row:last-of-type { border-bottom: none; }
+  .pm-head { font-size: 14px; }
+  .pm-goal { font-size: 11.5px; color: var(--text-dim); margin-left: 4px; }
+  .pm-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-top: 8px; text-align: center; }
+  .pm-stats span { display: block; font-weight: 800; font-size: 14px; color: var(--accent); }
+  .pm-stats small { font-size: 10.5px; color: var(--text-dim); }
   /* ---- Personalizar widget ("Tu widget, a tu estilo") ---- */
   .wz-overlay { position: fixed; inset: 0; z-index: 1200; background: rgba(23,32,51,.35); display: flex; justify-content: center; align-items: flex-start; overflow-y: auto; padding: 16px 12px 40px; }
   .wz-sheet { position: relative; width: 100%; max-width: 480px; background: var(--panel); color: var(--text); border-radius: 26px; padding: 22px 18px 18px; box-shadow: 0 20px 60px rgba(46,39,90,.25); }
@@ -1265,7 +1300,16 @@
         <input type="time" id="he-time" value="18:00">
       </div>
       <div id="he-per-day-times" style="display:none;"></div>
-      <div style="font-size:12px;color:var(--text-dim);margin:14px 0 6px;" data-i18n="heMinutesQ">¿Cuánto tiempo al día?</div>
+      <div style="font-size:12px;color:var(--text-dim);margin:14px 0 6px;" data-i18n="heKindQ">¿Cómo lo vas a cumplir?</div>
+      <div class="quick-replies he-kind" id="he-kind"></div>
+      <div id="he-count-row" style="display:none;margin-top:8px;">
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+          <input type="number" id="he-goal" min="1" max="10000" inputmode="numeric" style="max-width:90px;" data-i18n-ph="heGoalPh" placeholder="20">
+          <input type="text" id="he-unit" maxlength="20" style="flex:1;min-width:120px;" data-i18n-ph="heUnitPh" placeholder="páginas">
+        </div>
+        <div class="quick-replies" id="he-unit-suggest" style="margin-top:6px;"></div>
+      </div>
+      <div style="font-size:12px;color:var(--text-dim);margin:14px 0 6px;" id="he-minutes-q" data-i18n="heMinutesQ">¿Cuánto tiempo al día?</div>
       <div class="quick-replies he-minutes" id="he-minutes"></div>
       <div class="row-input" id="he-minutes-custom-row" style="display:none;margin-top:6px;align-items:center;gap:8px;">
         <input type="number" id="he-minutes-custom" min="1" max="600" inputmode="numeric" style="max-width:110px;"> <span style="font-size:13px;color:var(--text-dim);" data-i18n="heMinutesUnit">minutos</span>
@@ -2411,6 +2455,28 @@ const I18N = {
     formerHabitsTitle: (n) => `Hábitos anteriores (${n})`,
     formerHabitsDesc: 'Hábitos que ya no tienes, con cómo te fue mientras los tuviste. No cuentan en el ranking de arriba.',
     formerLastDay: (d) => `último: ${d}`,
+    heKindQ: '¿Cómo lo vas a cumplir?', heKindCheck: '✓ Marcar como hecho', heKindCount: '🔢 Por cantidad', heKindTimer: '⏱️ Por tiempo',
+    heGoalPh: 'Meta', heUnitPh: 'Unidad (páginas, vasos…)', heTimerQ: '¿Cuánto tiempo quieres dedicarle? (meta del cronómetro)',
+    heGoalMissing: 'Escribe la meta (por ejemplo, 20) para un hábito por cantidad.', heTimerMissing: 'Elige cuántos minutos para un hábito por tiempo.',
+    minShort: (m) => `${m} min`, hourMinShort: (h, m) => m ? `${h} h ${m} min` : `${h} h`,
+    progressSheetMsg: (name, cur, goal, unit) => `${name}\nLlevas ${cur} de ${goal} ${unit}. ¿Cuánto avanzaste?`,
+    progressCompleteAll: (n, unit) => `✓ Completar (+${n} ${unit})`, progressSetValue: '✏️ Escribir la cantidad', progressReset: '↺ Volver a 0',
+    progressSetPrompt: (unit, goal) => `¿Cuántos ${unit} llevas hoy? (meta: ${goal})`,
+    progressGoalReached: (name, goal, unit) => `¡Meta cumplida! 🎉 ${name}: ${goal} ${unit}.`,
+    progressAddAria: 'Registrar avance', timerOpenAria: 'Abrir cronómetro',
+    timerGoal: (m) => `Meta: ${m} min`, timerRunning: 'En curso', timerPaused: 'En pausa', timerReady: 'Listo para empezar', timerGoalDone: '¡Meta cumplida! 🎉',
+    timerStart: 'Encender cronómetro', timerPause: 'Pausar', timerResume: 'Reanudar', timerFinish: 'Finalizar',
+    timerBgHint: 'Sigue contando aunque cierres la app o bloquees el teléfono. Te aviso cuando cumplas la meta.',
+    timerFinishShort: (done, goal) => `Dedicaste ${done} de ${goal} min. Guardé tu tiempo. ¿Lo marco como hecho igual?`, timerMarkDoneAnyway: 'Sí, marcar hecho',
+    timerDoneNotif: (m) => `¡Completaste tus ${m} minutos! 🎉 Abre Bless para finalizar.`,
+    postponeLbl: 'Posponer', postponedMsg: (name, time) => `Listo ⏰ «${name}» quedó para las ${time}. Te aviso a esa hora.`, postponedTag: (orig) => `pospuesto (era ${orig})`,
+    dayFilterAll: 'Todas', dayFilterPending: 'Pendientes', dayFilterDone: 'Completadas', dayFilterSkipped: 'Omitidas', dayFilterEmpty: 'Nada por aquí 🙂',
+    notifPrefsTitle: 'Qué avisos recibir', notifPrefHabits: '🌱 Recordatorios de hábitos', notifPrefTasks: '✅ Recordatorios de tareas', notifPrefReengage: '🤍 Mensaje si pasan días sin abrir la app',
+    notifQuietTitle: 'Horario de silencio', notifQuietHint: 'En ese horario no llegan avisos de hábitos ni el mensaje de Bless. Las tareas con hora sí te avisan.',
+    notifQuietFrom: 'Desde', notifQuietTo: 'Hasta', notifQuietClear: 'Quitar',
+    pmTitle: '⏱️ Tiempo y metas', pmDesc: 'Lo que registraste en tus hábitos por tiempo y por cantidad.',
+    pmGoalTime: (m) => `meta ${m} min/día`, pmGoalCount: (g, u) => `meta ${g} ${u}/día`,
+    pmLast7: 'últimos 7 días', pmLast30: 'últimos 30 días', pmAvgDay: 'promedio por día', pmGoalsMet: 'metas cumplidas (30 d)',
     wEditorTitle: 'Tu widget, a tu estilo', wEditorSub: 'Hazlo tan único como tu rutina.',
     wPreviewCaption: 'Vista previa · Mediano', wCustomize: '🎨 Personalizar mi widget',
     wLayoutSummary: 'Resumen', wLayoutList: 'Lista', wLayoutSingle: 'Un hábito',
@@ -2999,6 +3065,28 @@ const I18N = {
     formerHabitsTitle: (n) => `Past habits (${n})`,
     formerHabitsDesc: "Habits you no longer have, and how they went while you had them. They don't count in the ranking above.",
     formerLastDay: (d) => `last: ${d}`,
+    heKindQ: 'How will you do it?', heKindCheck: '✓ Check it off', heKindCount: '🔢 By amount', heKindTimer: '⏱️ By time',
+    heGoalPh: 'Goal', heUnitPh: 'Unit (pages, glasses…)', heTimerQ: 'How much time do you want to spend? (timer goal)',
+    heGoalMissing: 'Enter the goal (for example, 20) for an amount habit.', heTimerMissing: 'Choose how many minutes for a time habit.',
+    minShort: (m) => `${m} min`, hourMinShort: (h, m) => m ? `${h} h ${m} min` : `${h} h`,
+    progressSheetMsg: (name, cur, goal, unit) => `${name}\nYou've done ${cur} of ${goal} ${unit}. How much did you do?`,
+    progressCompleteAll: (n, unit) => `✓ Complete (+${n} ${unit})`, progressSetValue: '✏️ Type the amount', progressReset: '↺ Back to 0',
+    progressSetPrompt: (unit, goal) => `How many ${unit} have you done today? (goal: ${goal})`,
+    progressGoalReached: (name, goal, unit) => `Goal reached! 🎉 ${name}: ${goal} ${unit}.`,
+    progressAddAria: 'Log progress', timerOpenAria: 'Open timer',
+    timerGoal: (m) => `Goal: ${m} min`, timerRunning: 'Running', timerPaused: 'Paused', timerReady: 'Ready to start', timerGoalDone: 'Goal reached! 🎉',
+    timerStart: 'Start timer', timerPause: 'Pause', timerResume: 'Resume', timerFinish: 'Finish',
+    timerBgHint: "It keeps counting even if you close the app or lock your phone. I'll let you know when you reach the goal.",
+    timerFinishShort: (done, goal) => `You spent ${done} of ${goal} min. I saved your time. Mark it as done anyway?`, timerMarkDoneAnyway: 'Yes, mark done',
+    timerDoneNotif: (m) => `You completed your ${m} minutes! 🎉 Open Bless to finish.`,
+    postponeLbl: 'Postpone', postponedMsg: (name, time) => `Done ⏰ "${name}" moved to ${time}. I'll remind you then.`, postponedTag: (orig) => `postponed (was ${orig})`,
+    dayFilterAll: 'All', dayFilterPending: 'Pending', dayFilterDone: 'Done', dayFilterSkipped: 'Skipped', dayFilterEmpty: 'Nothing here 🙂',
+    notifPrefsTitle: 'Which reminders', notifPrefHabits: '🌱 Habit reminders', notifPrefTasks: '✅ Task reminders', notifPrefReengage: "🤍 Message if days pass without opening the app",
+    notifQuietTitle: 'Quiet hours', notifQuietHint: "No habit reminders or Bless messages during these hours. Tasks with a time still remind you.",
+    notifQuietFrom: 'From', notifQuietTo: 'To', notifQuietClear: 'Clear',
+    pmTitle: '⏱️ Time and goals', pmDesc: 'What you logged in your time and amount habits.',
+    pmGoalTime: (m) => `goal ${m} min/day`, pmGoalCount: (g, u) => `goal ${g} ${u}/day`,
+    pmLast7: 'last 7 days', pmLast30: 'last 30 days', pmAvgDay: 'average per day', pmGoalsMet: 'goals met (30 d)',
     wEditorTitle: 'Your widget, your style', wEditorSub: 'Make it as unique as your routine.',
     wPreviewCaption: 'Preview · Medium', wCustomize: '🎨 Customize my widget',
     wLayoutSummary: 'Summary', wLayoutList: 'List', wLayoutSingle: 'One habit',
@@ -3383,6 +3471,63 @@ function renderHabitMinutesPicker(current) {
       if (heSelectedMinutes === 'custom') setTimeout(() => customInput.focus(), 30);
     };
   });
+}
+/* ---- Tipo de hábito en el editor ----
+   'check' (como hasta ahora: se marca como hecho), 'count' (meta + unidad:
+   20 páginas, 8 vasos) o 'timer' (duración con cronómetro: usa los minutos
+   de "¿Cuánto tiempo al día?" como meta). Los hábitos viejos no tienen
+   'kind' y se tratan como 'check'. */
+let heKind = 'check';
+const HE_UNIT_SUGGEST_ES = ['páginas', 'vasos', 'veces', 'ejercicios', 'minutos', 'capítulos', 'pasos'];
+const HE_UNIT_SUGGEST_EN = ['pages', 'glasses', 'times', 'exercises', 'minutes', 'chapters', 'steps'];
+// Sugerencias al elegir un tipo, según el hábito predefinido.
+const HE_KIND_DEFAULTS = { agua: { count: [8, 'vasos', 'glasses'] }, lectura: { count: [20, 'páginas', 'pages'] }, estudio: { timer: 45 }, meditacion: { timer: 10 }, ejercicio: { timer: 30 }, caminar: { timer: 30 } };
+function habitKind(h) { return h && (h.kind === 'count' || h.kind === 'timer') ? h.kind : 'check'; }
+function renderHabitKindPicker(h, pf) {
+  heKind = habitKind(h);
+  const key = h ? h.key : (pf && pf.preset ? pf.preset.key : pickHabitKey(document.getElementById('he-label').value || ''));
+  const wrap = document.getElementById('he-kind');
+  const opts = [['check', t('heKindCheck')], ['count', t('heKindCount')], ['timer', t('heKindTimer')]];
+  wrap.innerHTML = opts.map(([v, l]) => `<button type="button" class="qr-btn${heKind === v ? ' selected' : ''}" data-kind="${v}">${l}</button>`).join('');
+  const goalInp = document.getElementById('he-goal'), unitInp = document.getElementById('he-unit');
+  goalInp.value = h && h.goal ? h.goal : '';
+  unitInp.value = h && h.unit ? h.unit : '';
+  const units = currentLang() === 'en' ? HE_UNIT_SUGGEST_EN : HE_UNIT_SUGGEST_ES;
+  const sug = document.getElementById('he-unit-suggest');
+  sug.innerHTML = units.map(u => `<button type="button" class="qr-btn">${u}</button>`).join('');
+  sug.querySelectorAll('button').forEach(b => b.onclick = () => { unitInp.value = b.textContent; });
+  const paint = () => {
+    wrap.querySelectorAll('[data-kind]').forEach(b => b.classList.toggle('selected', b.dataset.kind === heKind));
+    document.getElementById('he-count-row').style.display = heKind === 'count' ? 'block' : 'none';
+    // Por tiempo: la duración es obligatoria y es la meta del cronómetro.
+    document.getElementById('he-minutes-q').textContent = heKind === 'timer' ? t('heTimerQ') : t('heMinutesQ');
+    const showMinutes = heKind !== 'count';
+    document.getElementById('he-minutes-q').style.display = showMinutes ? '' : 'none';
+    document.getElementById('he-minutes').style.display = showMinutes ? '' : 'none';
+    if (!showMinutes) document.getElementById('he-minutes-custom-row').style.display = 'none';
+  };
+  wrap.querySelectorAll('[data-kind]').forEach(b => b.onclick = () => {
+    heKind = b.dataset.kind;
+    const d = HE_KIND_DEFAULTS[key] || {};
+    if (heKind === 'count' && !goalInp.value && d.count) { goalInp.value = d.count[0]; unitInp.value = currentLang() === 'en' ? d.count[2] : d.count[1]; }
+    if (heKind === 'timer' && !readHabitMinutesPicker()) renderHabitMinutesPicker((d.timer) || 30);
+    paint();
+  });
+  paint();
+}
+function readHabitKindPicker() {
+  if (heKind === 'count') {
+    const goal = parseInt(document.getElementById('he-goal').value, 10);
+    const unit = document.getElementById('he-unit').value.trim().slice(0, 20);
+    if (!(goal > 0)) return { error: 'heGoalMissing' };
+    return { kind: 'count', goal: Math.min(goal, 10000), unit: unit || (currentLang() === 'en' ? 'times' : 'veces') };
+  }
+  if (heKind === 'timer') {
+    const minutes = readHabitMinutesPicker();
+    if (!(minutes > 0)) return { error: 'heTimerMissing' };
+    return { kind: 'timer', minutes };
+  }
+  return { kind: 'check' };
 }
 function readHabitMinutesPicker() {
   if (heSelectedMinutes === 'custom') {
@@ -5569,19 +5714,23 @@ function buildReminderItems() {
   const now = Date.now();
   const todayS = ymd(new Date());
   const doneToday = (state.agenda || []).filter(a => a.done);
-  (state.profile.habitos || []).forEach(h => {
+  const prefs = notifPrefs();
+  (prefs.habits ? (state.profile.habitos || []) : []).forEach(h => {
     for (let add = 0; add < REMINDER_DAYS_AHEAD; add++) {
       const day = addDays(new Date(), add);
       const dayS = ymd(day), dow = day.getDay();
       if (!habitRepeatDays(h).includes(dow) || !habitActiveOnDate(h, dayS)) continue;
       // Si hoy ya lo marcó, no se le avisa (y menos con alarma).
       if (dayS === todayS && doneToday.some(a => habitOwnsItem(h, { habitId: a.habitId, habitKey: a.habitKey, label: a.task }))) continue;
-      const [hh, mm] = String(habitTimeForDay(h, dow) || '').split(':').map(Number);
+      // Hoy pospuesto: se avisa a la hora nueva.
+      const todayItem = dayS === todayS ? (state.agenda || []).find(a => a.origTime && habitOwnsItem(h, { habitId: a.habitId, habitKey: a.habitKey, label: a.task })) : null;
+      const [hh, mm] = String(todayItem ? todayItem.time : (habitTimeForDay(h, dow) || '')).split(':').map(Number);
       if (!Number.isFinite(hh)) continue;
       habitReminderOffsets(h).forEach(offset => {
         const at = new Date(day); at.setHours(hh, Number.isFinite(mm) ? mm : 0, 0, 0);
         at.setMinutes(at.getMinutes() - offset);
         if (at.getTime() <= now) return;
+        if (inQuietHours(at, prefs)) return; // horario de silencio
         items.push({
           at: at.getTime(),
           title: offset ? `${h.icon || '🌱'} ${t('remindSoonTitle', offset, habitDisplayLabel(h))}` : `${h.icon || '🌱'} ${habitDisplayLabel(h)}${habitMinutesLabel(h) ? ' · ' + habitMinutesLabel(h) : ''}`,
@@ -5591,7 +5740,7 @@ function buildReminderItems() {
       });
     }
   });
-  tasksList().forEach(tk => {
+  (prefs.tasks ? tasksList() : []).forEach(tk => {
     if (tk.done || !tk.time || !tk.date) return;
     const offsets = isPremium && Array.isArray(tk.reminderOffsets) && tk.reminderOffsets.length ? tk.reminderOffsets : [0];
     offsets.forEach(offset => {
@@ -5606,10 +5755,36 @@ function buildReminderItems() {
       });
     });
   });
-  const comeBack = addDays(new Date(), 3); comeBack.setHours(19, 0, 0, 0);
-  items.push({ at: comeBack.getTime(), title: 'Bless Habit 🤍', body: tp('reengageBody'), alarm: false });
+  // Cronómetro corriendo: aviso cuando llegue a la meta (aunque la app esté cerrada).
+  timerFinishReminders().forEach(it => { if (it.at > now) items.push(it); });
+  if (prefs.reengage) {
+    const comeBack = addDays(new Date(), 3); comeBack.setHours(19, 0, 0, 0);
+    if (!inQuietHours(comeBack, prefs)) items.push({ at: comeBack.getTime(), title: 'Bless Habit 🤍', body: tp('reengageBody'), alarm: false });
+  }
   items.sort((a, b) => a.at - b.at);
   return items.slice(0, 300).map((it, i) => Object.assign({ id: i + 1 }, it));
+}
+// Preferencias de notificaciones (Perfil → Notificaciones).
+function notifPrefs() {
+  const p = (state.settings && state.settings.notif) || {};
+  return { habits: p.habits !== false, tasks: p.tasks !== false, reengage: p.reengage !== false, quietFrom: p.quietFrom || '', quietTo: p.quietTo || '' };
+}
+// ¿Esa hora cae en el horario de silencio? (puede cruzar la medianoche: 22:00–07:00)
+function inQuietHours(date, prefs) {
+  if (!prefs.quietFrom || !prefs.quietTo || prefs.quietFrom === prefs.quietTo) return false;
+  const hm = String(date.getHours()).padStart(2, '0') + ':' + String(date.getMinutes()).padStart(2, '0');
+  return prefs.quietFrom < prefs.quietTo ? (hm >= prefs.quietFrom && hm < prefs.quietTo) : (hm >= prefs.quietFrom || hm < prefs.quietTo);
+}
+function timerFinishReminders() {
+  const out = [];
+  (state.agenda || []).forEach(a => {
+    if (!a.timer || !a.timer.running) return;
+    const h = itemHabit(a); if (habitKind(h) !== 'timer') return;
+    const left = habitGoal(h) - timerElapsedSec(a);
+    if (left <= 0) return;
+    out.push({ at: Date.now() + left * 1000, title: `⏱️ ${habitDisplayLabel(h)}`, body: t('timerDoneNotif', h.minutesPerDay), alarm: false });
+  });
+  return out;
 }
 let lastNativeReminderResult = null;
 async function scheduleWithNativeReminders(LN) {
@@ -5643,7 +5818,8 @@ async function scheduleNativeReminders() {
     const today = ymd(new Date());
     let notifications = [];
     let id = 1;
-    (state.profile.habitos || []).forEach(h => {
+    const prefs = notifPrefs();
+    (prefs.habits ? (state.profile.habitos || []) : []).forEach(h => {
       if (h.durationWeeks && h.createdAt && ymd(addDays(new Date(h.createdAt + 'T00:00:00'), h.durationWeeks * 7)) < today) return; // ya terminó
       habitRepeatDays(h).forEach(dow => {
         const [hh, mm] = String(habitTimeForDay(h, dow) || '').split(':').map(Number);
@@ -5653,6 +5829,8 @@ async function scheduleNativeReminders() {
           let total = hh * 60 + (Number.isFinite(mm) ? mm : 0) - offset;
           let wd = dow;
           if (total < 0) { total += 24 * 60; wd = (dow + 6) % 7; }
+          const probe = new Date(); probe.setHours(Math.floor(total / 60), total % 60, 0, 0);
+          if (inQuietHours(probe, prefs)) return; // horario de silencio
           notifications.push({
             id: id++,
             title: offset
@@ -5667,7 +5845,7 @@ async function scheduleNativeReminders() {
     // Tareas con hora: un aviso puntual (a la hora; Premium además X min antes).
     let taskId = 500000;
     const now = Date.now();
-    tasksList().forEach(tk => {
+    (prefs.tasks ? tasksList() : []).forEach(tk => {
       if (tk.done || !tk.time || !tk.date) return;
       const offsets = isPremium && Array.isArray(tk.reminderOffsets) && tk.reminderOffsets.length ? tk.reminderOffsets : [0];
       offsets.forEach(offset => {
@@ -5684,7 +5862,14 @@ async function scheduleNativeReminders() {
     });
     const comeBack = addDays(new Date(), 3);
     comeBack.setHours(19, 0, 0, 0);
-    notifications.push({ id: NATIVE_REENGAGE_ID, title: 'Bless Habit 🤍', body: tp('reengageBody'), schedule: { at: comeBack, allowWhileIdle: true } });
+    if (prefs.reengage && !inQuietHours(comeBack, prefs)) notifications.push({ id: NATIVE_REENGAGE_ID, title: 'Bless Habit 🤍', body: tp('reengageBody'), schedule: { at: comeBack, allowWhileIdle: true } });
+    // Cronómetro corriendo → aviso al llegar a la meta. Hábito pospuesto → aviso a la hora nueva.
+    let extraId = 700000;
+    timerFinishReminders().forEach(it => notifications.push({ id: extraId++, title: it.title, body: it.body, schedule: { at: new Date(it.at), allowWhileIdle: true } }));
+    (state.agenda || []).filter(a => a.origTime && !a.done && a.time).forEach(a => {
+      const at = new Date(`${ymd(new Date())}T${a.time}:00`);
+      if (at.getTime() > Date.now()) notifications.push({ id: extraId++, title: `${a.icon || '🌱'} ${a.task}`, body: reminderLine('habit'), schedule: { at, allowWhileIdle: true } });
+    });
     refreshReminderLinesIfNeeded(); // en segundo plano; al terminar se reprograma con las frases nuevas
     notifications = await withReminderChannel(notifications);
     try {
@@ -6069,6 +6254,27 @@ function refreshNativeRemindersUI(textEl, btnEl) {
       (v) => { state.settings.taskAlarms = v; saveStateToServer(); }, anchor);
     addSwitch('habit-alarm-switch', t('habitAlarmSwitch'), t('habitAlarmHint'), habitAlarmsOn(),
       (v) => { state.settings.habitAlarms = v; saveStateToServer(); }, taskRow);
+  }
+  // Qué avisos recibir y horario de silencio (cualquier versión de la app).
+  if (on && !document.getElementById('notif-prefs')) {
+    const p = notifPrefs();
+    const box = document.createElement('div');
+    box.id = 'notif-prefs';
+    box.className = 'notif-prefs';
+    const sw = (key, label) => `<label class="switch-row"><div class="switch-text">${label}</div><span class="bless-switch"><input type="checkbox" data-np="${key}" ${p[key] ? 'checked' : ''}><span class="knob"></span></span></label>`;
+    box.innerHTML = `<div class="np-title">${t('notifPrefsTitle')}</div>
+      ${sw('habits', t('notifPrefHabits'))}${sw('tasks', t('notifPrefTasks'))}${sw('reengage', t('notifPrefReengage'))}
+      <div class="np-quiet"><div class="switch-text">🌙 ${t('notifQuietTitle')}</div><div class="switch-hint">${t('notifQuietHint')}</div>
+        <div class="np-quiet-row"><label>${t('notifQuietFrom')} <input type="time" data-nq="quietFrom" value="${p.quietFrom}"></label>
+        <label>${t('notifQuietTo')} <input type="time" data-nq="quietTo" value="${p.quietTo}"></label>
+        <button type="button" class="pin-link" data-nq-clear>${t('notifQuietClear')}</button></div></div>`;
+    const save = (patch) => { state.settings.notif = Object.assign({}, state.settings.notif || {}, patch); saveStateToServer(); };
+    box.querySelectorAll('[data-np]').forEach(inp => inp.onchange = () => save({ [inp.dataset.np]: inp.checked }));
+    box.querySelectorAll('[data-nq]').forEach(inp => inp.onchange = () => save({ [inp.dataset.nq]: inp.value }));
+    box.querySelector('[data-nq-clear]').onclick = () => { box.querySelectorAll('[data-nq]').forEach(i => i.value = ''); save({ quietFrom: '', quietTo: '' }); };
+    (document.getElementById('habit-alarm-switch-row') || document.getElementById('notif-test-link') || btnEl).insertAdjacentElement('afterend', box);
+  } else if (!on) {
+    const old = document.getElementById('notif-prefs'); if (old) old.remove();
   }
   // Interruptor "Alarma del reloj" (app 1.1): crea alarmas en la app Reloj.
   if (canSetClockAlarm()) {
@@ -6487,6 +6693,7 @@ function awardXp(amount) {
 
 function toggleDone(idx) {
   const item = state.agenda[idx]; item.done = !item.done;
+  syncProgressWithDone(item); // cantidad / cronómetro: el avance acompaña al ✓
   state.streaks[item.habitKey] = Math.max(0, (state.streaks[item.habitKey] || 0) + (item.done ? 1 : -1));
   renderAgenda(); renderHeaderRing();
   pushWidgetSoon();
@@ -9624,6 +9831,7 @@ function openHabitEditor(index, prefill) {
   renderPerDayTimeInputs(days, h);
 
   renderHabitMinutesPicker(h ? h.minutesPerDay : null);
+  renderHabitKindPicker(h, pf);
   renderHabitRemindPicker(h);
 
   const hasWeeks = !!(h && h.durationWeeks);
@@ -9710,6 +9918,9 @@ function saveHabitEditor() {
   }
   const usingWeeks = document.getElementById('he-duration-weeks').checked;
   const durationWeeks = usingWeeks ? (parseInt(document.getElementById('he-weeks').value, 10) || 4) : null;
+  // Tipo de hábito: marcar como hecho / por cantidad (meta + unidad) / por tiempo (cronómetro).
+  const kindData = readHabitKindPicker();
+  if (kindData.error) { document.getElementById('habit-editor-status').textContent = t(kindData.error); return; }
 
   const existing = isNew ? null : state.profile.habitos[editingHabitIndex];
   const pf = habitEditorPrefill || {};
@@ -9728,7 +9939,10 @@ function saveHabitEditor() {
     time,
     timesByDay,
     durationWeeks,
-    minutesPerDay: readHabitMinutesPicker(),
+    minutesPerDay: kindData.kind === 'timer' ? kindData.minutes : readHabitMinutesPicker(),
+    kind: kindData.kind,
+    goal: kindData.kind === 'count' ? kindData.goal : null,
+    unit: kindData.kind === 'count' ? kindData.unit : null,
     reminderOffsets: isPremium ? readHabitRemindPicker() : ((existing && existing.reminderOffsets) || [0]),
     createdAt: existing ? (existing.createdAt || ymd(new Date())) : ymd(new Date()),
   };
@@ -9838,7 +10052,7 @@ function addDays(d, n) { const r = new Date(d); r.setDate(r.getDate()+n); return
 function archiveAgendaAsHistory(dateStr, agendaSnapshot) {
   if (!agendaSnapshot || !agendaSnapshot.length) return;
   const dow = new Date(dateStr + 'T00:00:00').getDay();
-  const items = agendaSnapshot.map(a => ({ habitKey: a.habitKey, habitId: a.habitId, recurring: !!a.recurring, icon: a.icon, label: a.task, done: a.done, time: a.time }));
+  const items = agendaSnapshot.map(a => Object.assign({ habitKey: a.habitKey, habitId: a.habitId, recurring: !!a.recurring, icon: a.icon, label: a.task, done: a.done, time: a.time }, progressFields(a)));
   const total = items.length, doneCt = items.filter(x=>x.done).length;
   const entry = { date: dateStr, dow, items, pct: total ? Math.round((doneCt/total)*100) : null };
   state.history = state.history || [];
@@ -9863,7 +10077,7 @@ function rolloverDayIfNeeded() {
 }
 
 function todayDayEntry() {
-  const items = state.agenda.map(a => ({ habitKey: a.habitKey, habitId: a.habitId, recurring: !!a.recurring, icon: a.icon, label: a.task, done: a.done, time: a.time }));
+  const items = state.agenda.map(a => Object.assign({ habitKey: a.habitKey, habitId: a.habitId, recurring: !!a.recurring, icon: a.icon, label: a.task, done: a.done, time: a.time }, progressFields(a)));
   const total = items.length, doneCt = items.filter(x=>x.done).length;
   return { date: ymd(new Date()), dow: new Date().getDay(), items, pct: total ? Math.round((doneCt/total)*100) : null, isToday: true };
 }
@@ -9919,6 +10133,209 @@ document.querySelectorAll('.cal-subtab').forEach(t => {
 });
 
 function toggleDoneFromCal(idx) { toggleDone(idx); renderCalDay(); }
+var calDayFilter = 'all'; // Calendario → Día: todas / pendientes / completadas / omitidas
+
+/* ============================================================
+   HÁBITOS POR CANTIDAD Y POR TIEMPO — el avance del día vive en la fila de
+   la agenda de hoy (state.agenda[i]):
+     progress: unidades hechas (cantidad) o segundos dedicados (tiempo)
+     timer:    { running, startedAt (ms), accSec } mientras se cronometra
+     origTime: la hora original si se pospuso
+   El cronómetro se calcula con la hora del reloj (startedAt), no contando
+   segundos, así que sigue exacto con la app en segundo plano o el teléfono
+   bloqueado. Al llegar a la meta, el hábito se marca como hecho.
+   ============================================================ */
+function itemHabit(a) {
+  if (!a) return null;
+  return (state.profile.habitos || []).find(h => habitOwnsItem(h, { habitId: a.habitId, habitKey: a.habitKey, label: a.task || a.label })) || null;
+}
+// Lo que el historial guarda del avance de un día (solo hábitos por cantidad o tiempo).
+function progressFields(a) {
+  const h = itemHabit(a), k = habitKind(h);
+  if (k === 'check') return {};
+  return { kind: k, progress: k === 'timer' ? timerElapsedSec(a) : (a.progress || 0), goal: habitGoal(h), unit: k === 'count' ? h.unit : 'seg' };
+}
+function habitGoal(h) {
+  const k = habitKind(h);
+  if (k === 'count') return h.goal || 0;
+  if (k === 'timer') return (h.minutesPerDay || 0) * 60;
+  return 0;
+}
+function timerElapsedSec(a) {
+  const tm = a && a.timer;
+  const base = tm ? (tm.accSec || 0) : ((a && a.progress) || 0);
+  return Math.max(0, Math.floor(base + (tm && tm.running ? (Date.now() - tm.startedAt) / 1000 : 0)));
+}
+function fmtClock(sec) {
+  sec = Math.max(0, Math.floor(sec));
+  const h = Math.floor(sec / 3600), m = Math.floor((sec % 3600) / 60), s = sec % 60;
+  return (h ? h + ':' + String(m).padStart(2, '0') : String(m).padStart(2, '0')) + ':' + String(s).padStart(2, '0');
+}
+function fmtMinutesTotal(sec) {
+  const m = Math.round(sec / 60);
+  if (m < 60) return t('minShort', m);
+  return t('hourMinShort', Math.floor(m / 60), m % 60);
+}
+// "8/20 páginas" o "12/30 min" (para filas, widget y métricas).
+function progressLabel(a, h) {
+  const k = habitKind(h);
+  if (k === 'count') return `${a.progress || 0}/${h.goal} ${h.unit || ''}`.trim();
+  if (k === 'timer') return `${Math.floor(timerElapsedSec(a) / 60)}/${h.minutesPerDay} min`;
+  return '';
+}
+// Al marcar ✓ a mano: cantidad → queda completa; al desmarcar, si estaba
+// completa vuelve a 0 (si tenía un avance parcial, se conserva).
+function syncProgressWithDone(a) {
+  const h = itemHabit(a), k = habitKind(h);
+  if (k === 'check') return;
+  const goal = habitGoal(h);
+  if (a.done && k === 'count') a.progress = Math.max(a.progress || 0, goal);
+  if (!a.done && (k === 'count' ? (a.progress || 0) : timerElapsedSec(a)) >= goal) { a.progress = 0; a.timer = null; }
+}
+function agendaIndexOf(a) { return state.agenda.indexOf(a); }
+function setAgendaDone(a, done) {
+  const idx = agendaIndexOf(a);
+  if (idx === -1 || !!a.done === !!done) return;
+  toggleDone(idx);
+}
+function afterProgressChanged() {
+  saveStateToServer(); // guarda, reprograma avisos y actualiza el widget
+  renderHeaderRing();
+  if (document.getElementById('view-calendar').classList.contains('active') && calSubTab === 'day') renderCalDay();
+}
+
+// ---- Por cantidad: registrar avance (también parcial) ----
+async function openProgressSheet(idx) {
+  const a = state.agenda[idx], h = itemHabit(a);
+  if (!a || habitKind(h) !== 'count') return;
+  const goal = habitGoal(h), cur = a.progress || 0, left = Math.max(0, goal - cur);
+  const opts = [{ key: '1', label: `+1 ${h.unit}` }];
+  if (goal >= 5) opts.push({ key: String(Math.max(2, Math.round(goal / 4))), label: `+${Math.max(2, Math.round(goal / 4))} ${h.unit}` });
+  if (left > 0) opts.push({ key: 'all', label: t('progressCompleteAll', left, h.unit) });
+  opts.push({ key: 'set', label: t('progressSetValue') });
+  if (cur > 0) opts.push({ key: 'reset', label: t('progressReset') });
+  const choice = await uiChoice(t('progressSheetMsg', `${h.icon || '🌱'} ${habitDisplayLabel(h)}`, cur, goal, h.unit), opts);
+  if (!choice) return;
+  let next = cur;
+  if (choice === 'all') next = goal;
+  else if (choice === 'reset') next = 0;
+  else if (choice === 'set') {
+    const v = await uiPrompt(t('progressSetPrompt', h.unit, goal), String(cur), { type: 'number', inputmode: 'numeric' });
+    if (v === null || v === undefined || v === '') return;
+    const n = parseInt(v, 10);
+    if (!(n >= 0)) return;
+    next = Math.min(n, 100000);
+  } else next = cur + parseInt(choice, 10);
+  a.progress = next;
+  if (next >= goal && !a.done) { setAgendaDone(a, true); uiAlert(t('progressGoalReached', `${h.icon || '🌱'} ${habitDisplayLabel(h)}`, goal, h.unit)); }
+  else if (next < goal && a.done) setAgendaDone(a, false);
+  afterProgressChanged();
+}
+
+// ---- Por tiempo: pantalla del cronómetro ----
+let timerTick = null;
+function openTimerScreen(idx) {
+  const a = state.agenda[idx], h = itemHabit(a);
+  if (!a || habitKind(h) !== 'timer') return;
+  document.querySelectorAll('.tm-overlay').forEach(x => x.remove());
+  const goal = habitGoal(h);
+  const ov = document.createElement('div');
+  ov.className = 'tm-overlay';
+  let celebrated = timerElapsedSec(a) >= goal;
+  const R = 108, C = 2 * Math.PI * R;
+  const paint = () => {
+    const el = timerElapsedSec(a), pct = Math.min(1, goal ? el / goal : 0);
+    const running = !!(a.timer && a.timer.running), started = !!a.timer || (a.progress || 0) > 0;
+    ov.innerHTML = `
+      <div class="tm-sheet" role="dialog" aria-modal="true" aria-label="${escapeHtml(habitDisplayLabel(h))}">
+        <button type="button" class="tm-close" aria-label="${t('closeBtn')}">✕</button>
+        <div class="tm-title">${h.icon || '⏱️'} ${escapeHtml(habitDisplayLabel(h))}</div>
+        <div class="tm-goal">${t('timerGoal', h.minutesPerDay)}</div>
+        <div class="tm-ring">
+          <svg viewBox="0 0 240 240" width="240" height="240" aria-hidden="true">
+            <circle cx="120" cy="120" r="${R}" fill="none" stroke="var(--panel-3)" stroke-width="14"/>
+            <circle cx="120" cy="120" r="${R}" fill="none" stroke="${pct >= 1 ? 'var(--accent-2)' : 'var(--accent)'}" stroke-width="14" stroke-linecap="round"
+              stroke-dasharray="${C}" stroke-dashoffset="${C * (1 - pct)}" transform="rotate(-90 120 120)"/>
+          </svg>
+          <div class="tm-clock"><div class="tm-time">${fmtClock(el)}</div><div class="tm-state">${pct >= 1 ? t('timerGoalDone') : running ? t('timerRunning') : started ? t('timerPaused') : t('timerReady')}</div></div>
+        </div>
+        <div class="tm-actions">
+          ${!started ? `<button type="button" class="premium-btn" data-tm="start">▶ ${t('timerStart')}</button>`
+            : running ? `<button type="button" class="premium-btn tm-soft" data-tm="pause">⏸ ${t('timerPause')}</button>`
+            : `<button type="button" class="premium-btn" data-tm="resume">▶ ${t('timerResume')}</button>`}
+          ${started ? `<button type="button" class="premium-btn tm-finish" data-tm="finish">■ ${t('timerFinish')}</button>` : ''}
+        </div>
+        <div class="tm-hint">${t('timerBgHint')}</div>
+      </div>`;
+    ov.querySelector('.tm-close').onclick = close;
+    ov.querySelectorAll('[data-tm]').forEach(b => b.onclick = () => act(b.dataset.tm));
+  };
+  const act = async (what) => {
+    if (what === 'start' || what === 'resume') { a.timer = { running: true, startedAt: Date.now(), accSec: timerElapsedSec(a) }; }
+    if (what === 'pause' && a.timer) { a.timer = { running: false, startedAt: 0, accSec: timerElapsedSec(a) }; }
+    if (what === 'finish') {
+      const el = timerElapsedSec(a);
+      a.timer = null; a.progress = el;
+      if (el >= goal) setAgendaDone(a, true);
+      else if (!a.done && el > 0 && await uiConfirm(t('timerFinishShort', fmtMinutesTotal(el), h.minutesPerDay), { okText: t('timerMarkDoneAnyway') })) setAgendaDone(a, true);
+      afterProgressChanged();
+      close();
+      return;
+    }
+    afterProgressChanged();
+    paint();
+  };
+  const close = () => { clearInterval(timerTick); timerTick = null; ov.remove(); if (uiDialogClose === close) uiDialogClose = null; };
+  uiDialogClose = close;
+  document.body.appendChild(ov);
+  paint();
+  clearInterval(timerTick);
+  timerTick = setInterval(() => {
+    if (!ov.isConnected) { clearInterval(timerTick); return; }
+    const el = timerElapsedSec(a);
+    const timeEl = ov.querySelector('.tm-time');
+    if (timeEl) timeEl.textContent = fmtClock(el);
+    if (a.timer && a.timer.running && el >= goal && !celebrated) {
+      celebrated = true;
+      a.progress = el;
+      if (!a.done) setAgendaDone(a, true); // meta cumplida: ✓ (puede seguir contando)
+      try { navigator.vibrate && navigator.vibrate([200, 100, 200]); } catch (e) {}
+      afterProgressChanged();
+      paint();
+    } else if (a.timer && a.timer.running) {
+      const pct = Math.min(1, goal ? el / goal : 0);
+      const ring = ov.querySelectorAll('circle')[1];
+      if (ring) ring.setAttribute('stroke-dashoffset', String(C * (1 - pct)));
+    }
+  }, 500);
+}
+
+// ---- Posponer 15 / 30 / 60 minutos (solo hoy) ----
+function postponeAgendaItem(a, minutes) {
+  if (!a) return;
+  const now = new Date();
+  const [hh, mm] = String(a.time || '00:00').split(':').map(Number);
+  const scheduled = new Date(now); scheduled.setHours(hh || 0, mm || 0, 0, 0);
+  const base = scheduled > now ? scheduled : now;
+  const next = new Date(base.getTime() + minutes * 60000);
+  if (ymd(next) !== ymd(now)) next.setHours(23, 59, 0, 0); // no se pasa a mañana
+  a.origTime = a.origTime || a.time;
+  a.time = String(next.getHours()).padStart(2, '0') + ':' + String(next.getMinutes()).padStart(2, '0');
+  state.agenda.sort((x, y) => timeToMinutes(x.time) - timeToMinutes(y.time));
+  afterProgressChanged();
+  uiAlert(t('postponedMsg', itemDisplayLabel({ label: a.task, habitKey: a.habitKey }), a.time));
+}
+// Mientras el Calendario muestra un cronómetro corriendo, su fila se actualiza.
+let calTimerTick = null;
+function startCalTimerTick() {
+  clearInterval(calTimerTick);
+  if (!state.agenda.some(a => a.timer && a.timer.running)) return;
+  calTimerTick = setInterval(() => {
+    const els = document.querySelectorAll('[data-live-timer]');
+    if (!els.length) { clearInterval(calTimerTick); return; }
+    els.forEach(el => { const a = state.agenda[parseInt(el.dataset.liveTimer, 10)]; if (a) el.textContent = '● ' + fmtClock(timerElapsedSec(a)); });
+  }, 1000);
+}
 
 function renderCalendar() {
   dayAddFabEl.classList.remove('show'); // solo Calendario Día lo vuelve a mostrar
@@ -9939,6 +10356,18 @@ function promptDeleteDayItem(dateStr, item) {
   const wrap = document.getElementById('day-item-action-buttons');
   wrap.innerHTML = '';
   document.getElementById('day-item-action-title').textContent = itemDisplayLabel(item);
+
+  // Posponer (solo hoy y si aún no está hecho): 15 / 30 / 60 minutos.
+  if (isToday && !item.done) {
+    const a = state.agenda.find(x => x.task === item.label && x.time === item.time && x.habitKey === item.habitKey);
+    if (a) {
+      const row = document.createElement('div');
+      row.className = 'postpone-row';
+      row.innerHTML = `<div class="postpone-lbl">⏰ ${t('postponeLbl')}</div>` + [15, 30, 60].map(m => `<button type="button" class="qr-btn" data-pp="${m}">+${m} min</button>`).join('');
+      row.querySelectorAll('[data-pp]').forEach(b => b.onclick = () => { closeDayItemAction(); postponeAgendaItem(a, parseInt(b.dataset.pp, 10)); });
+      wrap.appendChild(row);
+    }
+  }
 
   if (habitIdx === -1) {
     // No corresponde a un hábito con serie (se agregó suelto por chat) — no hay
@@ -10008,20 +10437,47 @@ function renderCalDay() {
   const day = calDayOffset === 0 ? todayDayEntry() : findDay(dateStr);
   const isToday = calDayOffset === 0;
   const label = isToday ? t('hoy') : `${DAY_NAMES[day.dow]} ${date.getDate()}/${date.getMonth()+1}`;
-  const itemsHtml = day.items.length ? day.items.map((it, idx) => `
+  // Filtro: todas / pendientes / completadas / omitidas (las omitidas son
+  // hábitos quitados "solo por hoy"; se listan abajo en "No salen este día").
+  const filter = calDayFilter;
+  const rowHtml = (it, idx) => {
+    const h = itemHabit(it), k = habitKind(h);
+    const agendaIt = isToday ? state.agenda[idx] : null;
+    let extra = '';
+    if (k === 'count') {
+      const lbl = agendaIt ? progressLabel(agendaIt, h) : (it.progress !== undefined ? `${it.progress || 0}/${it.goal || h.goal} ${it.unit || h.unit || ''}` : '');
+      extra = `${lbl ? `<span class="prog-pill">${escapeHtml(lbl)}</span>` : ''}${isToday ? `<button type="button" class="prog-btn" data-cal-progress="${idx}" aria-label="${t('progressAddAria')}">＋</button>` : ''}`;
+    } else if (k === 'timer') {
+      const running = agendaIt && agendaIt.timer && agendaIt.timer.running;
+      const lbl = running ? '● ' + fmtClock(timerElapsedSec(agendaIt)) : (agendaIt ? progressLabel(agendaIt, h) : (it.progress ? `${Math.floor(it.progress / 60)}/${h.minutesPerDay} min` : ''));
+      extra = `${lbl ? `<span class="prog-pill${running ? ' live' : ''}" ${running ? `data-live-timer="${idx}"` : ''}>${escapeHtml(lbl)}</span>` : ''}${isToday ? `<button type="button" class="prog-btn" data-cal-timer="${idx}" aria-label="${t('timerOpenAria')}">⏱</button>` : ''}`;
+    }
+    const postponed = agendaIt && agendaIt.origTime ? `<span class="mins"> · ${t('postponedTag', agendaIt.origTime)}</span>` : '';
+    return `
     <div class="agenda-item ${it.done ? 'done' : ''}">
       <span class="check" ${isToday ? `onclick="toggleDoneFromCal(${idx})" style="cursor:pointer;"` : ''}>${it.done ? '✓' : ''}</span>
       <span class="icon">${it.icon}</span>
-      ${it.time ? `<span class="time">${it.time}${habitMinutesLabel(habitForAgendaItem(it.habitKey, it.label)) ? `<span class="mins"> · ${habitMinutesLabel(habitForAgendaItem(it.habitKey, it.label))}</span>` : ''}</span>` : ''}
+      ${it.time ? `<span class="time">${it.time}${k !== 'timer' && habitMinutesLabel(h) ? `<span class="mins"> · ${habitMinutesLabel(h)}</span>` : ''}${postponed}</span>` : ''}
       <span class="task">${itemDisplayLabel(it)}</span>
+      ${extra}
       <span class="edit" data-cal-edit="${idx}" title="${t('editRemoveTitle')}">✏️</span>
-    </div>`).join('') : `<div style="font-size:12px;color:var(--text-dim);">${t('sinActividades')}</div>`;
+    </div>`;
+  };
+  const shown = day.items.map((it, idx) => ({ it, idx })).filter(({ it }) => filter === 'all' || (filter === 'pending' ? !it.done : filter === 'done' ? it.done : false));
+  const itemsHtml = shown.length ? shown.map(({ it, idx }) => rowHtml(it, idx)).join('')
+    : `<div style="font-size:12px;color:var(--text-dim);">${filter === 'all' ? t('sinActividades') : filter === 'skipped' ? '' : t('dayFilterEmpty')}</div>`;
   const pctLabel = day.pct !== null ? t('pctCumplido', day.pct) : (day.items.length ? t('programadoConBless') : t('sinDatos'));
   const isPast = dateStr < ymd(new Date());
   // Hábitos que existen pero no salen este día (no les toca, o se quitaron
   // "solo por hoy"): se muestran aparte, así no parece que "desaparecieron"
   // y se entiende por qué cuentan para el límite.
   const offHabits = isPast ? [] : (state.profile.habitos || []).map((h, i) => ({ h, i })).filter(({ h }) => !day.items.some(it => it.habitKey === h.key && (it.label === h.label || it.task === h.label)));
+  const skippedCount = offHabits.filter(({ h }) => (h.skippedDates || []).includes(dateStr)).length;
+  const counts = { pending: day.items.filter(x => !x.done).length, done: day.items.filter(x => x.done).length, skipped: skippedCount };
+  const filterHtml = (day.items.length || skippedCount) ? `<div class="day-filter">${[['all', t('dayFilterAll')], ['pending', `⏳ ${t('dayFilterPending')} ${counts.pending}`], ['done', `✅ ${t('dayFilterDone')} ${counts.done}`], ['skipped', `⏭️ ${t('dayFilterSkipped')} ${counts.skipped}`]]
+    .map(([k, l]) => `<button type="button" class="day-filter-chip${filter === k ? ' on' : ''}" data-day-filter="${k}">${l}</button>`).join('')}</div>` : '';
+  if (filter === 'skipped') offHabits.splice(0, offHabits.length, ...offHabits.filter(({ h }) => (h.skippedDates || []).includes(dateStr)));
+  else if (filter !== 'all') offHabits.length = 0;
   const offHtml = offHabits.length ? `<div class="day-off-habits">${t('dayOffHabits')} ${offHabits.map(({ h, i }) => `<button type="button" class="day-off-chip" data-off-habit="${i}">${h.icon || '🎯'} ${escapeHtml(habitDisplayLabel(h))} · <em>${(h.skippedDates || []).includes(dateStr) ? t('daySkippedTag') : t('dayNotScheduledTag')}</em></button>`).join('')}</div>` : '';
   const tasks = tasksForDate(dateStr);
   const notes = notesForDate(dateStr);
@@ -10042,6 +10498,7 @@ function renderCalDay() {
       <button id="day-next" ${calDayOffset >= CAL_DAY_MAX_AHEAD ? 'disabled' : ''}>›</button>
     </div>
     <div class="day-section-head"><span>🌱 ${t('daySecHabits')}${isPremium ? '' : ` <span class="day-habit-count">${t('habitCountFree', (state.profile.habitos || []).length, habitLimit())}</span>`}</span><button type="button" class="day-sec-add" id="day-add-habit">＋ ${t('daySecAdd')}</button></div>
+    ${filterHtml}
     <div id="day-items">${itemsHtml}</div>${offHtml}
     <div class="day-section-head"><span>✅ ${t('daySecTasks')}</span>${isPast ? '' : `<button type="button" class="day-sec-add" id="day-add-task">＋ ${t('daySecAdd')}</button>`}</div>
     <div id="day-tasks">${tasksHtml}</div>${!isPast && dateBeyondFree(dateStr) ? `<div class="day-off-habits">📅 ${t('farDateHint', FREE_SCHEDULE_DAYS)} ${canWatchRewarded() ? `<button type="button" class="day-off-chip" id="day-unlock-far">${t('unlockDayAdBtn')}</button>` : ''}</div>` : ''}
@@ -10073,6 +10530,10 @@ function renderCalDay() {
   calBody.querySelectorAll('[data-cal-edit]').forEach(btn => {
     btn.onclick = () => promptDeleteDayItem(dateStr, day.items[parseInt(btn.dataset.calEdit, 10)]);
   });
+  calBody.querySelectorAll('[data-day-filter]').forEach(b => { b.onclick = () => { calDayFilter = b.dataset.dayFilter; renderCalDay(); }; });
+  calBody.querySelectorAll('[data-cal-progress]').forEach(b => { b.onclick = () => openProgressSheet(parseInt(b.dataset.calProgress, 10)); });
+  calBody.querySelectorAll('[data-cal-timer]').forEach(b => { b.onclick = () => openTimerScreen(parseInt(b.dataset.calTimer, 10)); });
+  if (isToday) startCalTimerTick();
   calBody.querySelectorAll('[data-task-check]').forEach(el => { el.onclick = () => toggleTaskDone(el.dataset.taskCheck); });
   calBody.querySelectorAll('[data-task-edit]').forEach(el => { el.onclick = () => openTaskEditor(el.dataset.taskEdit); });
   calBody.querySelectorAll('[data-note-id]').forEach(el => { el.onclick = () => openNoteEditor(el.dataset.noteId); });
@@ -10451,6 +10912,37 @@ function renderCalMonth() {
 /* ============================================================
    MÉTRICAS — dashboard de KPIs
    ============================================================ */
+/* ---- Métricas: tiempo dedicado y metas por cantidad (para todos) ----
+   Suma lo que guardó cada día (progress) para los hábitos por tiempo o por
+   cantidad: hoy, últimos 7 días y últimos 30 días. */
+function progressMetricsHtml() {
+  const habits = (state.profile.habitos || []).filter(h => habitKind(h) !== 'check');
+  if (!habits.length) return '';
+  const all = fullHistory();
+  const todayS = ymd(new Date());
+  const since = (n) => ymd(addDays(new Date(), -(n - 1)));
+  const rows = habits.map(h => {
+    const k = habitKind(h);
+    let d7 = 0, d30 = 0, days7 = 0, met30 = 0, sched30 = 0;
+    all.forEach(d => d.items.forEach(it => {
+      if (!habitOwnsItem(h, it)) return;
+      const p = d.date === todayS && it.progress === undefined ? 0 : (it.progress || 0);
+      if (d.date >= since(30)) { d30 += p; sched30++; if (it.done) met30++; }
+      if (d.date >= since(7)) { d7 += p; if (p > 0) days7++; }
+    }));
+    const fmt = (v) => k === 'timer' ? fmtMinutesTotal(v) : `${v} ${h.unit || ''}`.trim();
+    const avg = days7 ? (k === 'timer' ? fmtMinutesTotal(d7 / days7) : `${Math.round(d7 / days7)} ${h.unit || ''}`.trim()) : '—';
+    return `<div class="pm-row">
+      <div class="pm-head">${h.icon || '🌱'} <b>${escapeHtml(habitDisplayLabel(h))}</b> <span class="pm-goal">${k === 'timer' ? t('pmGoalTime', h.minutesPerDay) : t('pmGoalCount', h.goal, h.unit)}</span></div>
+      <div class="pm-stats">
+        <div><span>${fmt(d7)}</span><small>${t('pmLast7')}</small></div>
+        <div><span>${fmt(d30)}</span><small>${t('pmLast30')}</small></div>
+        <div><span>${avg}</span><small>${t('pmAvgDay')}</small></div>
+        <div><span>${sched30 ? met30 + '/' + sched30 : '—'}</span><small>${t('pmGoalsMet')}</small></div>
+      </div></div>`;
+  }).join('');
+  return `<div class="metrics-section"><h4>${t('pmTitle')}</h4>${rows}<div style="font-size:11px;color:var(--text-dim);margin-top:4px;">${t('pmDesc')}</div></div>`;
+}
 function fmtShortDate(ymdStr) {
   try { return new Date(ymdStr + 'T00:00:00').toLocaleDateString(currentLang() === 'en' ? 'en-US' : 'es', { day: 'numeric', month: 'short' }); }
   catch (e) { return ymdStr; }
@@ -10765,6 +11257,8 @@ function renderMetrics() {
         <div class="kpi-tile"><div class="kpi-num" style="color:${tileColor(m.pctMonth)}">${m.pctMonth!==null?m.pctMonth+'%':(m.hasHistory?'—':t('sinDatosCap'))}</div><div class="kpi-lbl">${t('cumplimientoMes')}</div></div>
         <div class="kpi-tile"><div class="kpi-num">${isPremium ? m.rachaActual+' 🔥' : '🔒'}</div><div class="kpi-lbl">${t('rachaActualLbl')}</div><div class="kpi-sub" style="color:var(--text-dim);">${isPremium ? t('maximaLbl', m.rachaMax) : t('soloPremium')}</div></div>
       </div>
+
+      ${progressMetricsHtml()}
 
       ${isPremium ? (m.hasHistory ? fullSectionsHtml : weeklySummaryHtml() + moodInsightsHtml(computeMoodInsights()) + emptyHistoryHtml) : (weeklyTeaserHtml() + (m.hasHistory ? '' : emptyHistoryHtml) + lockedSectionHtml)}
 
