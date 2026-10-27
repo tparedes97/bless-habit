@@ -4260,6 +4260,8 @@ function setupNativeAppUrlListener() {
     try {
       const url = new URL(data.url);
       if (url.protocol.replace(':', '') !== NATIVE_APP_URL_SCHEME) return;
+      // Botones de las notificaciones (app 1.3+): cronómetro y posponer.
+      if (url.hostname === 'timer' || url.hostname === 'postpone') { queueNotifAction(url); return; }
       if (url.hostname === 'premium-done' || url.pathname === '/premium-done') {
         if (plugins.Browser) { try { await plugins.Browser.close(); } catch (e) {} }
         if (!isPremium) pollPremiumStatus(10, 2000);
@@ -4888,6 +4890,8 @@ async function bootstrapApp() {
       migrateOneOffAgendaToTasks();
       scheduleNativeRemindersSoon(); // reprograma el "te extrañé" a 3 días desde hoy
       pushWidgetSoon(); // el widget se pone al día al abrir la app
+      // App 1.3+: cronómetro en la pantalla bloqueada y botones de notificaciones.
+      setTimeout(async () => { syncTimerNotification(); await checkLaunchUrlForNotifAction(); runPendingNotifAction(); }, 600);
       if (IS_NATIVE_APP && !isPremium) setTimeout(() => restoreGplayPurchases(true), 3000); // compras sin confirmar
       if (IS_NATIVE_APP && state.settings.nativeReminders) setTimeout(async () => { await maybePromptExactAlarm(); maybePromptBackground(false); }, 5000);
       migrateDiaryPhotos();
@@ -5736,6 +5740,8 @@ function buildReminderItems() {
           title: offset ? `${h.icon || '🌱'} ${t('remindSoonTitle', offset, habitDisplayLabel(h))}` : `${h.icon || '🌱'} ${habitDisplayLabel(h)}${habitMinutesLabel(h) ? ' · ' + habitMinutesLabel(h) : ''}`,
           body: offset ? reminderLine('soon') : reminderLine('habit'),
           alarm: !offset && habitAlarmsOn(),
+          // App 1.3+: botones "Encender cronómetro" / "Posponer 15 min" en la notificación.
+          habitId: h.id, kind: habitKind(h),
         });
       });
     }
@@ -10199,6 +10205,7 @@ function setAgendaDone(a, done) {
   toggleDone(idx);
 }
 function afterProgressChanged() {
+  syncTimerNotification(); // cronómetro en la pantalla bloqueada (app 1.3+)
   saveStateToServer(); // guarda, reprograma avisos y actualiza el widget
   renderHeaderRing();
   if (document.getElementById('view-calendar').classList.contains('active') && calSubTab === 'day') renderCalDay();
@@ -10234,7 +10241,7 @@ async function openProgressSheet(idx) {
 
 // ---- Por tiempo: pantalla del cronómetro ----
 let timerTick = null;
-function openTimerScreen(idx) {
+function openTimerScreen(idx, autoAction) {
   const a = state.agenda[idx], h = itemHabit(a);
   if (!a || habitKind(h) !== 'timer') return;
   document.querySelectorAll('.tm-overlay').forEach(x => x.remove());
@@ -10289,6 +10296,12 @@ function openTimerScreen(idx) {
   uiDialogClose = close;
   document.body.appendChild(ov);
   paint();
+  // Desde un botón de la notificación: aplica la acción si tiene sentido ahora.
+  if (autoAction) {
+    const running = !!(a.timer && a.timer.running), started = !!a.timer || (a.progress || 0) > 0;
+    if ((autoAction === 'start' && !started) || (autoAction === 'resume' && started && !running) || (autoAction === 'pause' && running) || (autoAction === 'finish' && started)) act(autoAction);
+    else if (autoAction === 'start' && started && !running) act('resume');
+  }
   clearInterval(timerTick);
   timerTick = setInterval(() => {
     if (!ov.isConnected) { clearInterval(timerTick); return; }
@@ -10308,6 +10321,64 @@ function openTimerScreen(idx) {
       if (ring) ring.setAttribute('stroke-dashoffset', String(C * (1 - pct)));
     }
   }, 500);
+}
+
+// ---- Cronómetro en la pantalla bloqueada (app 1.3+) ----
+function canTimerNotif() {
+  if (!blessDevice()) return false;
+  const h = ((window.Capacitor && window.Capacitor.PluginHeaders) || []).find(x => x.name === 'BlessDevice');
+  return !!(h && (h.methods || []).some(m => m.name === 'showTimerNotification'));
+}
+let lastTimerNotifKey = '';
+function syncTimerNotification() {
+  if (!canTimerNotif()) return;
+  // El cronómetro activo o en pausa (con tiempo ya contado) de hoy.
+  const a = (state.agenda || []).find(x => x.timer && (x.timer.running || x.timer.accSec > 0));
+  const h = a && itemHabit(a);
+  const BD = blessDevice();
+  if (!a || habitKind(h) !== 'timer') {
+    if (lastTimerNotifKey) { lastTimerNotifKey = ''; BD.hideTimerNotification().catch(() => {}); }
+    return;
+  }
+  const el = timerElapsedSec(a), goal = habitGoal(h), running = !!a.timer.running;
+  const key = `${h.id}|${running}|${running ? Math.round((Date.now() / 1000) - el) : el}|${el >= goal}`;
+  if (key === lastTimerNotifKey) return;
+  lastTimerNotifKey = key;
+  BD.showTimerNotification({ habitId: h.id, title: habitDisplayLabel(h), elapsedSec: el, goalSec: goal, running }).catch(() => {});
+}
+
+// ---- Botones de las notificaciones (blesshabit://timer…, blesshabit://postpone…) ----
+// Si la app se abrió en frío desde la notificación, se espera a que carguen los datos.
+let pendingNotifAction = null, lastNotifActionKey = '', lastNotifActionAt = 0;
+function queueNotifAction(url) {
+  // El mismo botón puede llegar dos veces al abrir la app (aviso + enlace de arranque).
+  if (url.href === lastNotifActionKey && Date.now() - lastNotifActionAt < 5000) return;
+  lastNotifActionKey = url.href; lastNotifActionAt = Date.now();
+  pendingNotifAction = url;
+  if (state.profile && state.profile.nombre && Array.isArray(state.agenda)) runPendingNotifAction();
+}
+function runPendingNotifAction() {
+  const url = pendingNotifAction; pendingNotifAction = null;
+  if (!url) return;
+  const hid = url.searchParams.get('habit') || '';
+  const idx = (state.agenda || []).findIndex(a => { const h = itemHabit(a); return h && h.id === hid; });
+  switchTab('calendar'); calSubTab = 'day'; calDayOffset = 0; renderCalendar();
+  if (idx === -1) return; // hoy no le toca: queda en el Calendario
+  if (url.hostname === 'postpone') {
+    const min = parseInt(url.searchParams.get('min') || '15', 10);
+    if (!state.agenda[idx].done) postponeAgendaItem(state.agenda[idx], [15, 30, 60].includes(min) ? min : 15);
+    return;
+  }
+  const what = url.searchParams.get('do') || 'open';
+  openTimerScreen(idx, ['start', 'pause', 'resume', 'finish'].includes(what) ? what : null);
+}
+async function checkLaunchUrlForNotifAction() {
+  const App = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.App;
+  if (!App || !App.getLaunchUrl) return;
+  try {
+    const res = await App.getLaunchUrl();
+    if (res && res.url) { const u = new URL(res.url); if (u.hostname === 'timer' || u.hostname === 'postpone') queueNotifAction(u); }
+  } catch (e) {}
 }
 
 // ---- Posponer 15 / 30 / 60 minutos (solo hoy) ----

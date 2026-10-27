@@ -133,6 +133,27 @@ public class BlessDevicePlugin extends Plugin {
         }
     }
 
+    /**
+     * Cronómetro fijo en la barra de notificaciones y la pantalla bloqueada.
+     * habitId, title, elapsedSec, goalSec, running. hideTimerNotification lo quita.
+     */
+    @PluginMethod
+    public void showTimerNotification(PluginCall call) {
+        BlessReminders.showTimer(getContext(),
+                call.getString("habitId", ""),
+                call.getString("title", "Bless Habit"),
+                call.getLong("elapsedSec", 0L),
+                call.getLong("goalSec", 0L),
+                call.getBoolean("running", true));
+        call.resolve();
+    }
+
+    @PluginMethod
+    public void hideTimerNotification(PluginCall call) {
+        BlessReminders.hideTimer(getContext());
+        call.resolve();
+    }
+
     /** Muestra un aviso ahora mismo (para la prueba de Perfil → Notificaciones). */
     @PluginMethod
     public void testReminder(PluginCall call) {
