@@ -2474,6 +2474,7 @@ const I18N = {
     notifPrefsTitle: 'Qué avisos recibir', notifPrefHabits: '🌱 Recordatorios de hábitos', notifPrefTasks: '✅ Recordatorios de tareas', notifPrefReengage: '🤍 Mensaje si pasan días sin abrir la app',
     notifQuietTitle: 'Horario de silencio', notifQuietHint: 'En ese horario no llegan avisos de hábitos ni el mensaje de Bless. Las tareas con hora sí te avisan.',
     notifQuietFrom: 'Desde', notifQuietTo: 'Hasta', notifQuietClear: 'Quitar',
+    notifChanReminders: 'Canal de recordatorios', notifChanAlarms: 'Canal de alarmas', notifChanOn: 'activo con sonido', notifChanSilenced: (i) => `silenciado en Ajustes de Android (nivel ${i})`, notifChanOff: 'apagado', notifTestUpcoming: 'Próximos avisos programados',
     pmTitle: '⏱️ Tiempo y metas', pmDesc: 'Lo que registraste en tus hábitos por tiempo y por cantidad.',
     pmGoalTime: (m) => `meta ${m} min/día`, pmGoalCount: (g, u) => `meta ${g} ${u}/día`,
     pmLast7: 'últimos 7 días', pmLast30: 'últimos 30 días', pmAvgDay: 'promedio por día', pmGoalsMet: 'metas cumplidas (30 d)',
@@ -3084,6 +3085,7 @@ const I18N = {
     notifPrefsTitle: 'Which reminders', notifPrefHabits: '🌱 Habit reminders', notifPrefTasks: '✅ Task reminders', notifPrefReengage: "🤍 Message if days pass without opening the app",
     notifQuietTitle: 'Quiet hours', notifQuietHint: "No habit reminders or Bless messages during these hours. Tasks with a time still remind you.",
     notifQuietFrom: 'From', notifQuietTo: 'To', notifQuietClear: 'Clear',
+    notifChanReminders: 'Reminder channel', notifChanAlarms: 'Alarm channel', notifChanOn: 'on with sound', notifChanSilenced: (i) => `silenced in Android Settings (level ${i})`, notifChanOff: 'off', notifTestUpcoming: 'Next scheduled reminders',
     pmTitle: '⏱️ Time and goals', pmDesc: 'What you logged in your time and amount habits.',
     pmGoalTime: (m) => `goal ${m} min/day`, pmGoalCount: (g, u) => `goal ${g} ${u}/day`,
     pmLast7: 'last 7 days', pmLast30: 'last 30 days', pmAvgDay: 'average per day', pmGoalsMet: 'goals met (30 d)',
@@ -6003,7 +6005,7 @@ async function runNotificationTest() {
     if (!(state.settings && state.settings.nativeReminders)) { state.settings.nativeReminders = true; saveStateToServer(); }
     let exact = null;
     try { if (LN.checkExactNotificationSetting) exact = (await LN.checkExactNotificationSetting()).exact_alarm; } catch (e) {}
-    if (exact) lines.push(`${ok(exact === 'granted')} ${t('notifTestExact')}: ${exact}`);
+    if (exact && !hasNativeReminders()) lines.push(`${ok(exact === 'granted')} ${t('notifTestExact')}: ${exact}`);
     const BD = blessDevice();
     if (BD) {
       try {
@@ -6020,8 +6022,33 @@ async function runNotificationTest() {
       items.push({ id: 299, at: Date.now() + 60000, title: 'Bless Habit ⏰', body: t('notifTestLaterBody'), alarm: taskAlarmsOn() });
       const res = await BD.scheduleReminders({ data: JSON.stringify(items) });
       lines.push(`${ok(res && res.scheduled > 0)} ${t('notifTestNative')}: ${res ? res.scheduled - 1 : 0}`);
-      const next = nextHabitReminder();
-      lines.push(`ℹ️ ${t('notifTestNext')}: ${next || t('notifTestNone')}`);
+      lines.push(`${ok(res && res.exact)} ${t('notifTestExact')}: ${res && res.exact ? 'granted' : 'denied'}`);
+      // Diagnóstico detallado: versión, canales silenciados y los próximos avisos reales.
+      try {
+        const App = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.App;
+        if (App && App.getInfo) { const info = await App.getInfo(); lines.push(`ℹ️ App ${info.version} (${info.build})`); }
+      } catch (e) {}
+      try {
+        if (LN.listChannels) {
+          const chs = (await LN.listChannels()).channels || [];
+          [['bless_recordatorios_v2', t('notifChanReminders')], ['bless_alarmas_v1', t('notifChanAlarms')]].forEach(([id, name]) => {
+            const ch = chs.find(c => c.id === id);
+            if (ch) lines.push(`${ok(ch.importance >= 3)} ${name}: ${ch.importance >= 3 ? t('notifChanOn') : t('notifChanSilenced', ch.importance)}`);
+          });
+        }
+      } catch (e) {}
+      const p = notifPrefs();
+      if (!p.habits) lines.push(`❌ ${t('notifPrefHabits')}: ${t('notifChanOff')}`);
+      if (p.quietFrom && p.quietTo) lines.push(`🌙 ${t('notifQuietTitle')}: ${p.quietFrom}–${p.quietTo}`);
+      const upcoming = items.filter(x => x.id !== 299).slice(0, 4);
+      lines.push('', `📋 ${t('notifTestUpcoming')}:`);
+      upcoming.forEach(x => {
+        const d = new Date(x.at);
+        const day = ymd(d) === ymd(new Date()) ? t('hoy') : DAY_NAMES_SHORT[d.getDay()];
+        lines.push(`• ${day} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')} ${x.alarm ? '⏰' : '🔔'} ${x.title}`);
+      });
+      if (!upcoming.length) lines.push(`• ${t('notifTestNone')}`);
+      if (lastReminderError) lines.push(`⚠️ ${lastReminderError}`);
       lines.push('', t('notifTestHowTo'));
       uiAlert(lines.join('\n'));
       return;
