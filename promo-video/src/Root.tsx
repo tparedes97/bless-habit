@@ -4,6 +4,7 @@ import { BlessPromo, SCENES, TOTAL, withBackdrop } from "./BlessPromo";
 import { BlessPov, POV_SCENES, POV_TOTAL } from "./pov/BlessPov";
 import { NightBackdrop } from "./pov/NightBackdrop";
 import { BlessOrganic, ORGANIC_TOTAL } from "./organic/BlessOrganic";
+import { BlessAd, adDuration, AdProps } from "./ads/BlessAd";
 
 const W = 1080;
 const H = 1920;
@@ -25,6 +26,15 @@ export const RemotionRoot: React.FC = () => (
       ))}
     </Folder>
     <Composition id="BlessOrganic" component={BlessOrganic} width={W} height={H} fps={30} durationInFrames={ORGANIC_TOTAL} />
+    <Folder name="Anuncios">
+      {([
+        ["Ad-A-Problema-28s", { hook: "problema", short: false }],
+        ["Ad-B-Lista-28s", { hook: "lista", short: false }],
+        ["Ad-A-Problema-15s", { hook: "problema", short: true }],
+      ] as [string, AdProps][]).map(([id, p]) => (
+        <Composition key={id} id={id} component={BlessAd} defaultProps={p} width={W} height={H} fps={30} durationInFrames={adDuration(p)} />
+      ))}
+    </Folder>
     <Composition id="BlessPov" component={BlessPov} width={W} height={H} fps={30} durationInFrames={POV_TOTAL} />
     <Folder name="BlessPov-Scenes">
       {POV_SCENES.map((s) => (

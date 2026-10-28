@@ -35,3 +35,18 @@ La pantalla de bloqueo y la notificación con botones están recreadas (son de A
 python3 scripts/make-music.py      # genera public/music/lofi-calm.wav (requiere numpy)
 npx remotion render BlessOrganic out/bless-habit-organico.mp4 --crf=18
 ```
+
+## Versiones para anuncios pagados (`Anuncios/`)
+
+Basadas en el video orgánico, preparadas para Reels/Stories pagados: texto dentro de la zona
+segura (y 300–1250), gancho con movimiento desde el primer frame, marca antes de los 3 s,
+cierre con llamada a descargar en Google Play y música original (apta para anuncios).
+
+- `Ad-A-Problema-28s`: gancho "¿empiezas hábitos y los dejas a los 3 días?"
+- `Ad-B-Lista-28s`: gancho "5 cosas que mi app de hábitos ahora hace"
+- `Ad-A-Problema-15s`: versión corta
+
+```
+npx remotion render Ad-A-Problema-28s out/Ad-A-Problema-28s.mp4 --crf=17
+```
+Renderizados en `bless-habit-capacitor/play-store/ads/`.
