@@ -72,7 +72,7 @@ const Timer: React.FC<{ n: string }> = ({ n }) => {
       <Screen
         shots={[{ at: 0, src: "cal-0" }, { at: 14, src: "timer-0" }, ...run, ...end]}
         taps={[tapAt("timer-open", 10), tapAt("timer-start", 30)]}
-        cams={[{ at: 0, fy: 900, zoom: 1.05 }, { at: 16, fy: 1200, zoom: 1.12 }, { at: 86, fy: 1150, zoom: 1.12 }, { at: 110, fy: 1100, zoom: 1.3 }]}
+        cams={[{ at: 0, fy: 900, zoom: 1 }, { at: 16, fy: 1200, zoom: 1 }, { at: 86, fy: 1150, zoom: 1 }, { at: 110, fy: 1100, zoom: 1.3 }]}
       />
       <Caption from={0} to={86} lines={[`${n}un cronómetro`, "para cada hábito ⏱️"]} y={CAP_Y} />
       <Caption from={86} lines={["y te avisa cuando", "cumples la meta 🎉"]} y={CAP_Y} />
@@ -91,7 +91,7 @@ const Amount: React.FC<{ n: string }> = ({ n }) => (
     <Screen
       shots={[{ at: 0, src: "cal-1" }, { at: 12, src: "water-0" }, { at: 32, src: "water-1" }, { at: 54, src: "water-2" }, { at: 74, src: "water-3" }]}
       taps={[tapAt("water-open", 8), tapAt("water-plus1", 28), tapAt("water-open2", 50), tapAt("water-plus2", 70)]}
-      cams={[{ at: 0, fy: 1142, zoom: 1.12 }, { at: 14, fy: 1080, zoom: 1.12 }, { at: 74, fy: 1142, zoom: 1.25 }]}
+      cams={[{ at: 0, fy: 1142, zoom: 1 }, { at: 14, fy: 1080, zoom: 1 }, { at: 74, fy: 1142, zoom: 1 }]}
     />
     <Caption from={0} to={78} lines={[`${n}metas por cantidad:`, "vasos, páginas… 💧"]} y={CAP_Y} />
     <Caption from={78} lines={["3 de 8 vasos ✓", "sin complicarte"]} y={CAP_Y} />
@@ -107,7 +107,7 @@ const Postpone: React.FC<{ n: string }> = ({ n }) => (
     <Screen
       shots={[{ at: 0, src: "water-3" }, { at: 12, src: "post-0" }, { at: 38, src: "post-1" }, { at: 84, src: "post-2" }]}
       taps={[tapAt("post-open", 8), tapAt("post-15", 34), tapAt("post-ok", 80)]}
-      cams={[{ at: 0, fy: 975, zoom: 1.12 }, { at: 12, fy: 1050, zoom: 1.15 }, { at: 84, fy: 975, zoom: 1.2 }]}
+      cams={[{ at: 0, fy: 975, zoom: 1 }, { at: 12, fy: 1050, zoom: 1 }, { at: 84, fy: 975, zoom: 1 }]}
     />
     <Caption from={0} to={84} lines={[`${n}¿no llegas?`, "lo pospones ⏰"]} y={CAP_Y} />
     <Caption from={84} lines={["y el recordatorio", "se mueve solo ✨"]} y={CAP_Y} />
@@ -141,11 +141,11 @@ const Metrics: React.FC<{ n: string }> = ({ n }) => (
     <Sfx at={44} name="whoosh-soft" volume={0.3} />
     <Screen
       shots={[{ at: 0, src: "metrics-00" }, ...Array.from({ length: 5 }, (_, i) => ({ at: 44 + i * 8, src: `metricsB-${pad(i)}` }))]}
-      cams={[{ at: 0, fy: 950, zoom: 1.12 }, { at: 86, fy: 950, zoom: 1.18 }]}
+      cams={[{ at: 0, fy: 950, zoom: 1 }, { at: 86, fy: 950, zoom: 1 }]}
     />
     <Caption from={0} to={44} lines={[`${n}y ves tu progreso`, "de verdad 📊"]} y={CAP_Y} />
     <Caption from={44} lines={[`${n}y ves tu progreso`, "de verdad 📊"]} y={1080} />
-    <div style={{ position: "absolute", top: 1215, right: 80, fontFamily: sans, fontSize: 26, color: "#6B6585", background: "rgba(255,255,255,0.85)", padding: "4px 14px", borderRadius: 10 }}>
+    <div style={{ position: "absolute", top: 495, right: 80, fontFamily: sans, fontSize: 26, color: "#6B6585", background: "rgba(255,255,255,0.85)", padding: "4px 14px", borderRadius: 10 }}>
       datos de ejemplo
     </div>
   </Punch>

@@ -21,7 +21,7 @@ const Punch: React.FC<React.PropsWithChildren> = ({ children }) => {
 
 const Hook: React.FC = () => (
   <Punch>
-    <Screen shots={[{ at: 0, src: "cal-0" }]} cams={[{ at: 0, fy: 1000, zoom: 1 }, { at: 86, fy: 1000, zoom: 1.08 }]} />
+    <Screen shots={[{ at: 0, src: "cal-0" }]} cams={[{ at: 0, fy: 1000, zoom: 1 }, { at: 86, fy: 1000, zoom: 1 }]} />
     <Caption from={2} lines={["5 cosas que mi app", "de hábitos ahora hace 👀"]} y={560} size={66} />
   </Punch>
 );
@@ -38,9 +38,9 @@ const Timer: React.FC = () => {
         shots={[{ at: 0, src: "cal-0" }, { at: 20, src: "timer-0" }, ...run, ...end]}
         taps={[tapAt("timer-open", 14), tapAt("timer-start", 44)]}
         cams={[
-          { at: 0, fy: 900, zoom: 1.05 },
-          { at: 22, fy: 1200, zoom: 1.12 },
-          { at: 104, fy: 1150, zoom: 1.12 },
+          { at: 0, fy: 900, zoom: 1 },
+          { at: 22, fy: 1200, zoom: 1 },
+          { at: 104, fy: 1150, zoom: 1 },
           { at: 140, fy: 1100, zoom: 1.3 },
         ]}
       />
@@ -83,9 +83,9 @@ const Amount: React.FC = () => (
       ]}
       taps={[tapAt("water-open", 12), tapAt("water-plus1", 40), tapAt("water-open2", 70), tapAt("water-plus2", 98)]}
       cams={[
-        { at: 0, fy: 1142, zoom: 1.12 },
-        { at: 20, fy: 1080, zoom: 1.12 },
-        { at: 104, fy: 1142, zoom: 1.25 },
+        { at: 0, fy: 1142, zoom: 1 },
+        { at: 20, fy: 1080, zoom: 1 },
+        { at: 104, fy: 1142, zoom: 1 },
       ]}
     />
     <Caption from={0} to={110} lines={["2. metas por cantidad:", "vasos, páginas… 💧"]} />
@@ -108,9 +108,9 @@ const Postpone: React.FC = () => (
       ]}
       taps={[tapAt("post-open", 14), tapAt("post-15", 50), tapAt("post-ok", 104)]}
       cams={[
-        { at: 0, fy: 975, zoom: 1.12 },
-        { at: 20, fy: 1050, zoom: 1.15 },
-        { at: 110, fy: 975, zoom: 1.2 },
+        { at: 0, fy: 975, zoom: 1 },
+        { at: 20, fy: 1050, zoom: 1 },
+        { at: 110, fy: 975, zoom: 1 },
       ]}
     />
     <Caption from={0} to={110} lines={["3. ¿no llegas?", "lo pospones ⏰"]} />
@@ -146,7 +146,7 @@ const Metrics: React.FC = () => (
         { at: 0, src: "metrics-00" },
         ...Array.from({ length: 5 }, (_, i) => ({ at: 44 + i * 8, src: `metricsB-${String(i).padStart(2, "0")}` })),
       ]}
-      cams={[{ at: 0, fy: 950, zoom: 1.12 }, { at: 86, fy: 950, zoom: 1.18 }]}
+      cams={[{ at: 0, fy: 950, zoom: 1 }, { at: 86, fy: 950, zoom: 1 }]}
     />
     <Caption from={0} to={44} lines={["5. y ves tu progreso", "de verdad 📊"]} />
     <Caption from={44} lines={["5. y ves tu progreso", "de verdad 📊"]} y={1640} />
