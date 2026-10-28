@@ -5,6 +5,7 @@ import { BlessPov, POV_SCENES, POV_TOTAL } from "./pov/BlessPov";
 import { NightBackdrop } from "./pov/NightBackdrop";
 import { BlessOrganic, ORGANIC_TOTAL } from "./organic/BlessOrganic";
 import { BlessAd, adDuration, AdProps } from "./ads/BlessAd";
+import { LogoLockup } from "./LogoLockup";
 
 const W = 1080;
 const H = 1920;
@@ -34,6 +35,10 @@ export const RemotionRoot: React.FC = () => (
       ] as [string, AdProps][]).map(([id, p]) => (
         <Composition key={id} id={id} component={BlessAd} defaultProps={p} width={W} height={H} fps={30} durationInFrames={adDuration(p)} />
       ))}
+    </Folder>
+    <Folder name="Logo">
+      <Composition id="Logo-Horizontal-Claro" component={LogoLockup} defaultProps={{ dark: false }} width={2000} height={600} fps={30} durationInFrames={1} />
+      <Composition id="Logo-Horizontal-Oscuro" component={LogoLockup} defaultProps={{ dark: true }} width={2000} height={600} fps={30} durationInFrames={1} />
     </Folder>
     <Composition id="BlessPov" component={BlessPov} width={W} height={H} fps={30} durationInFrames={POV_TOTAL} />
     <Folder name="BlessPov-Scenes">
