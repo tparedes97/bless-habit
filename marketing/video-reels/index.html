@@ -1,0 +1,171 @@
+<!doctype html><html><head><meta charset="utf-8"><style>
+@font-face{font-family:P;font-weight:400;src:url(node_modules/@fontsource/poppins/files/poppins-latin-400-normal.woff2)}
+@font-face{font-family:P;font-weight:500;src:url(node_modules/@fontsource/poppins/files/poppins-latin-500-normal.woff2)}
+@font-face{font-family:P;font-weight:600;src:url(node_modules/@fontsource/poppins/files/poppins-latin-600-normal.woff2)}
+@font-face{font-family:P;font-weight:700;src:url(node_modules/@fontsource/poppins/files/poppins-latin-700-normal.woff2)}
+@font-face{font-family:P;font-weight:800;src:url(node_modules/@fontsource/poppins/files/poppins-latin-800-normal.woff2)}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:1080px;height:1920px;overflow:hidden}
+body{font-family:P,'Noto Color Emoji',sans-serif;position:relative;color:#2A2350;
+ background:linear-gradient(165deg,#EFE8FF 0%,#FBF9FF 48%,#E6FAF1 100%)}
+.blob{position:absolute;border-radius:50%;filter:blur(70px)}
+#b1{width:820px;height:820px;background:#D6C8FF;left:-300px;top:-260px;opacity:.75}
+#b2{width:760px;height:760px;background:#C6F3DF;right:-280px;bottom:-240px;opacity:.75}
+#b3{width:520px;height:520px;background:#FFE0EC;right:-120px;top:520px;opacity:.5}
+#parts{position:absolute;inset:0}
+.pt{position:absolute;border-radius:50%}
+.scene{position:absolute;inset:0;opacity:0;transform:translateY(90px)}
+.el{position:absolute;opacity:0;will-change:transform,opacity}
+h1{font-weight:800;font-size:92px;line-height:1.06;letter-spacing:-2.5px;text-align:center;color:#2A2350}
+h2{font-weight:800;font-size:76px;line-height:1.08;letter-spacing:-2px;text-align:center;color:#2A2350}
+em{font-style:normal;background:linear-gradient(90deg,#7C62F5,#43B98C);-webkit-background-clip:text;background-clip:text;color:transparent}
+.center{left:0;right:0;display:flex;justify-content:center}
+.phone{width:500px;border-radius:72px;background:#1d1a2e;padding:16px;box-shadow:0 50px 100px rgba(60,40,140,.30),0 10px 30px rgba(60,40,140,.18)}
+.phone img{width:100%;display:block;border-radius:58px}
+.pill{background:#fff;border:2px solid #E6E0FA;border-radius:34px;padding:26px 30px;font-size:36px;font-weight:700;line-height:1.22;color:#3F348F;box-shadow:0 14px 34px rgba(80,60,170,.12);width:470px}
+.pill.green{background:linear-gradient(135deg,#43D6A1,#2FB98A);color:#fff;border:none}
+.pill.violet{background:linear-gradient(135deg,#7C62F5,#A58CFF);color:#fff;border:none}
+.notif{width:780px;background:rgba(255,255,255,.97);border-radius:40px;padding:30px 34px;box-shadow:0 30px 70px rgba(60,40,140,.28);display:flex;gap:26px;align-items:center}
+.notif img{width:96px;height:96px;border-radius:26px;flex:0 0 96px}
+.notif .a{font-size:28px;color:#8A85A3;font-weight:500}
+.notif .b{font-size:40px;font-weight:800;color:#2A2350;margin:2px 0}
+.notif .c{font-size:32px;color:#5F5A7A;font-weight:500}
+.days{display:flex;gap:22px}
+.day{width:112px;height:112px;border-radius:50%;border:5px solid #D9D2F3;background:#fff;display:flex;align-items:center;justify-content:center;font-size:38px;font-weight:700;color:#B3ABD3}
+.day.on{background:linear-gradient(135deg,#7C62F5,#A58CFF);border-color:transparent;color:#fff}
+.day.ok{background:linear-gradient(135deg,#43D6A1,#2FB98A);border-color:transparent;color:#fff}
+.sub{font-size:46px;font-weight:600;color:#5F5A7A;text-align:center;line-height:1.3}
+.grid{display:grid;grid-template-columns:440px 440px;gap:30px}
+.card{background:#fff;border:2px solid #E6E0FA;border-radius:40px;height:230px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;box-shadow:0 16px 36px rgba(80,60,170,.10);font-size:38px;font-weight:700;color:#3F348F;text-align:center;line-height:1.15}
+.card .i{font-size:72px;line-height:1}
+.cta{background:linear-gradient(135deg,#7C62F5,#9B7BFF 55%,#43C99A);color:#fff;font-weight:800;font-size:54px;padding:40px 86px;border-radius:999px;box-shadow:0 24px 50px rgba(124,98,245,.40)}
+.badge{display:flex;align-items:center;gap:20px}
+.badge img{width:84px;height:84px;border-radius:24px;box-shadow:0 10px 24px rgba(124,98,245,.30)}
+.badge span{font-size:44px;font-weight:800;color:#2A2350;letter-spacing:-.5px}
+.small{font-size:34px;font-weight:600;color:#6B6585;text-align:center}
+</style></head><body>
+<div class="blob" id="b1"></div><div class="blob" id="b2"></div><div class="blob" id="b3"></div>
+<div id="parts"></div>
+
+<!-- top brand badge, scenes 2-5 -->
+<div class="el center" id="topbadge" style="top:120px"><div class="badge"><img src="../../bless-habit-capacitor/play-store/icon-512.png"><span>Bless Habit</span></div></div>
+
+<!-- S1 hook -->
+<div class="scene" id="s1">
+  <div class="el center" id="s1a" style="top:330px"><h1>¿Empiezas hábitos</h1></div>
+  <div class="el center" id="s1b" style="top:445px"><h1>y los dejas</h1></div>
+  <div class="el center" id="s1c" style="top:560px"><h1><em>a la semana?</em></h1></div>
+  <div class="el center" id="s1d" style="top:860px"><div class="days" id="days"></div></div>
+  <div class="el center" id="s1e" style="top:1080px"><div class="sub">No te faltan ganas.<br>Te falta <b style="color:#7C62F5">alguien que te acompañe</b> 💜</div></div>
+</div>
+
+<!-- S2 chat -->
+<div class="scene" id="s2">
+  <div class="el center" id="s2t" style="top:270px"><h2>Cuéntale tu día<br><em>a Bless</em></h2></div>
+  <div class="el" id="s2p" style="left:520px;top:520px"><div class="phone"><img src="../../bless-habit-capacitor/play-store/screenshot-1-chat.png"></div></div>
+  <div class="el" id="s2a" style="left:60px;top:700px"><div class="pill">💬 Te escucha sin juzgarte</div></div>
+  <div class="el" id="s2b" style="left:60px;top:900px"><div class="pill">🗓️ Arma tu día contigo</div></div>
+  <div class="el" id="s2c" style="left:60px;top:1100px"><div class="pill violet">🌱 Y celebra cada paso que das</div></div>
+</div>
+
+<!-- S3 reminders -->
+<div class="scene" id="s3">
+  <div class="el center" id="s3t" style="top:270px"><h2>Te recuerda<br><em>lo importante</em></h2></div>
+  <div class="el" id="s3p" style="left:60px;top:560px"><div class="phone"><img src="../../bless-habit-capacitor/play-store/screenshot-2-agenda.png"></div></div>
+  <div class="el" id="s3a" style="left:560px;top:1000px"><div class="pill">⏰ Avisos a la hora exacta</div></div>
+  <div class="el" id="s3b" style="left:560px;top:1200px"><div class="pill green">✅ Marca lo que cumples</div></div>
+  <div class="el center" id="s3n" style="top:560px"><div class="notif"><img src="../../bless-habit-capacitor/play-store/icon-512.png"><div><div class="a">Bless Habit · ahora</div><div class="b">🚶 Caminar · 20 min</div><div class="c">¿Le ganamos al tú de ayer? 🏆</div></div></div></div>
+</div>
+
+<!-- S4 progress -->
+<div class="scene" id="s4">
+  <div class="el center" id="s4t" style="top:270px"><h2>Y mira cómo<br><em>vas avanzando</em></h2></div>
+  <div class="el" id="s4p" style="left:520px;top:520px"><div class="phone"><img src="../../bless-habit-capacitor/play-store/screenshot-3-semana.png"></div></div>
+  <div class="el" id="s4a" style="left:60px;top:700px"><div class="pill green">✅ Caminaste 5 de 7 días</div></div>
+  <div class="el" id="s4b" style="left:60px;top:900px"><div class="pill">📊 Tu resumen de la semana</div></div>
+  <div class="el" id="s4c" style="left:60px;top:1100px"><div class="pill">💡 Descubre qué te hace bien</div></div>
+</div>
+
+<!-- S5 grid -->
+<div class="scene" id="s5">
+  <div class="el center" id="s5t" style="top:300px"><h2>Todo para lograr<br><em>tus metas</em></h2></div>
+  <div class="el center" id="s5g" style="top:560px"><div class="grid" id="grid"></div></div>
+</div>
+
+<!-- S6 end -->
+<div class="scene" id="s6">
+  <div class="el center" id="s6i" style="top:330px"><img src="../../bless-habit-capacitor/play-store/icon-512.png" style="width:300px;height:300px;border-radius:84px;box-shadow:0 30px 70px rgba(124,98,245,.40)"></div>
+  <div class="el center" id="s6n" style="top:690px"><h1 style="font-size:112px">Bless Habit</h1></div>
+  <div class="el center" id="s6s" style="top:840px"><div class="sub" style="font-size:50px">Pequeños pasos.<br><b style="color:#2A2350">Grandes metas</b> 🌱</div></div>
+  <div class="el center" id="s6c" style="top:1080px"><div class="cta">Empieza gratis hoy</div></div>
+  <div class="el center" id="s6f" style="top:1290px"><div class="small">🔒 Tus datos son tuyos · Android y web</div></div>
+</div>
+
+<script>
+const $=id=>document.getElementById(id);
+// days row
+['L','M','M','J','V','S','D'].forEach((d,i)=>{const e=document.createElement('div');e.className='day';e.textContent=d;e.id='d'+i;$('days').appendChild(e)});
+// grid
+[['💬','Habla con Bless'],['📅','Agenda y hábitos'],['⏰','Recordatorios'],['📔','Diario personal'],['😊','Tu ánimo'],['🔥','Rachas y progreso']].forEach((c,i)=>{const e=document.createElement('div');e.className='card';e.id='g'+i;e.innerHTML='<div class="i">'+c[0]+'</div>'+c[1];$('grid').appendChild(e)});
+// particles (deterministic)
+let seed=7;const rnd=()=>{seed=(seed*16807)%2147483647;return seed/2147483647};
+const parts=[];const cols=['#B9A7FF','#7C62F5','#43D6A1','#FFC1D6','#A58CFF'];
+for(let i=0;i<34;i++){const e=document.createElement('div');e.className='pt';const s=8+rnd()*20;e.style.width=e.style.height=s+'px';e.style.background=cols[i%5];$('parts').appendChild(e);parts.push({e,x:rnd()*1080,y:rnd()*1920,v:20+rnd()*50,a:rnd()*6.28,o:.25+rnd()*.35})}
+
+const clamp=(v,a=0,b=1)=>Math.min(b,Math.max(a,v));
+const eo=t=>1-Math.pow(1-t,3);
+const eb=t=>{const c1=1.6,c3=c1+1;return 1+c3*Math.pow(t-1,3)+c1*Math.pow(t-1,2)};
+// entrance: start time, duration; kind
+function enter(id,t,st,dur=.5,kind='up',dist=70){
+  const p=clamp((t-st)/dur);const e=$(id);
+  let tr='';
+  if(kind==='up')tr=`translateY(${(1-eo(p))*dist}px)`;
+  if(kind==='pop')tr=`scale(${.6+.4*eb(p)})`;
+  if(kind==='left')tr=`translateX(${-(1-eo(p))*dist}px)`;
+  if(kind==='right')tr=`translateX(${(1-eo(p))*dist}px)`;
+  if(kind==='down')tr=`translateY(${-(1-eb(p))*dist}px)`;
+  e.style.opacity=clamp(p*1.6);e.dataset.tr=tr;e.style.transform=tr;return p;
+}
+const SC=[['s1',0,3.4],['s2',3.4,6.9],['s3',6.9,10.4],['s4',10.4,13.9],['s5',13.9,16.3],['s6',16.3,20]];
+const FADE=.3;
+function render(t){
+  // bg
+  $('b1').style.transform=`translate(${Math.sin(t*.5)*60}px,${Math.cos(t*.4)*50}px)`;
+  $('b2').style.transform=`translate(${Math.cos(t*.45)*60}px,${Math.sin(t*.35)*60}px)`;
+  $('b3').style.transform=`translate(${Math.sin(t*.3)*-70}px,${Math.cos(t*.5)*40}px)`;
+  parts.forEach(p=>{let y=((p.y-p.v*t)%1920+1920)%1920;p.e.style.transform=`translate(${p.x+Math.sin(t*.8+p.a)*30}px,${y}px)`;p.e.style.opacity=p.o});
+  // scenes
+  SC.forEach(([id,a,b],i)=>{let o=0;if(t>=a&&t<b){o=1;if(i>0)o=clamp((t-a)/FADE);if(i<SC.length-1)o=Math.min(o,clamp((b-t)/FADE))}$(id).style.opacity=o;$(id).style.display=o>0?'block':'none'});
+  // top badge visible s2..s5
+  {const a=3.4,b=16.3;let o=clamp((t-a)/.4)*clamp((b-t)/.3);$('topbadge').style.opacity=o}
+  // S1
+  enter('s1a',t,.1,.45,'up');enter('s1b',t,.35,.45,'up');enter('s1c',t,.6,.5,'pop');
+  enter('s1d',t,.9,.4,'up');
+  for(let i=0;i<7;i++){const d=$('d'+i);d.className='day'+((i<2&&t>1.05+i*.18)?' on':'');
+    const shake=(i>=2&&t>1.5&&t<1.9)?Math.sin(t*60)*4:0;d.style.transform=`translateX(${shake}px)`;d.style.opacity=(i>=2&&t>1.5)?.55:1}
+  enter('s1e',t,1.9,.5,'up');
+  // S2
+  let o=3.4;enter('s2t',t,o+.1,.45,'up');enter('s2p',t,o+.25,.6,'up',260);
+  enter('s2a',t,o+.8,.45,'left',90);enter('s2b',t,o+1.25,.45,'left',90);enter('s2c',t,o+1.7,.5,'pop');
+  floatPhone('s2p',t,o);
+  // S3
+  o=6.9;enter('s3t',t,o+.1,.45,'up');enter('s3p',t,o+.25,.6,'up',260);floatPhone('s3p',t,o);
+  enter('s3n',t,o+.9,.55,'down',160);
+  enter('s3a',t,o+1.4,.45,'right',90);enter('s3b',t,o+1.85,.5,'pop');
+  // S4
+  o=10.4;enter('s4t',t,o+.1,.45,'up');enter('s4p',t,o+.25,.6,'up',260);floatPhone('s4p',t,o);
+  enter('s4a',t,o+.8,.5,'pop');enter('s4b',t,o+1.25,.45,'left',90);enter('s4c',t,o+1.7,.45,'left',90);
+  // S5
+  o=13.9;enter('s5t',t,o+.1,.45,'up');$('s5g').style.opacity=t>o?1:0;
+  for(let i=0;i<6;i++)enter('g'+i,t,o+.35+i*.14,.45,'pop');
+  // S6
+  o=16.3;enter('s6i',t,o+.05,.6,'pop');enter('s6n',t,o+.35,.5,'up');enter('s6s',t,o+.6,.5,'up');
+  const pc=enter('s6c',t,o+.95,.5,'pop');
+  if(pc>=1){const s=1+.035*Math.sin((t-o-1.45)*5.5);$('s6c').style.transform=`scale(${s})`}
+  enter('s6f',t,o+1.3,.5,'up');
+  // gentle float of end icon
+  if(t>o+.65)$('s6i').style.transform=`translateY(${Math.sin((t-o)*2.2)*10}px)`;
+}
+function floatPhone(id,t,o){if(t>o+.85){const e=$(id);e.style.transform=`translateY(${Math.sin((t-o)*1.8)*10}px) rotate(${id==='s3p'?-2:2}deg)`}}
+window.render=render;render(0);
+</script></body></html>
