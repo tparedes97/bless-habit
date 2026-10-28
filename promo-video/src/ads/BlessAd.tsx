@@ -47,7 +47,7 @@ const Hook: React.FC<{ hook: AdProps["hook"] }> = ({ hook }) => {
   return (
     <AbsoluteFill>
       <Sfx at={42} name="note-4" volume={0.5} />
-      <Screen shots={end} cams={[{ at: 0, fy: 1100, zoom: 1.35 }, { at: 86, fy: 1100, zoom: 1.45 }]} />
+      <Screen shots={end} cams={[{ at: 0, fy: 1100, zoom: 1 }, { at: 86, fy: 1100, zoom: 1 }]} />
       {hook === "problema" ? (
         <>
           <Caption from={0} to={44} lines={["¿empiezas hábitos y", "los dejas a los 3 días? 😩"]} y={CAP_Y} size={62} />
@@ -72,7 +72,7 @@ const Timer: React.FC<{ n: string }> = ({ n }) => {
       <Screen
         shots={[{ at: 0, src: "cal-0" }, { at: 14, src: "timer-0" }, ...run, ...end]}
         taps={[tapAt("timer-open", 10), tapAt("timer-start", 30)]}
-        cams={[{ at: 0, fy: 900, zoom: 1 }, { at: 16, fy: 1200, zoom: 1 }, { at: 86, fy: 1150, zoom: 1 }, { at: 110, fy: 1100, zoom: 1.3 }]}
+        cams={[{ at: 0, fy: 900, zoom: 1 }, { at: 16, fy: 1200, zoom: 1 }, { at: 86, fy: 1150, zoom: 1 }, { at: 110, fy: 1100, zoom: 1 }]}
       />
       <Caption from={0} to={86} lines={[`${n}un cronómetro`, "para cada hábito ⏱️"]} y={CAP_Y} />
       <Caption from={86} lines={["y te avisa cuando", "cumples la meta 🎉"]} y={CAP_Y} />
@@ -142,10 +142,10 @@ const Metrics: React.FC<{ n: string }> = ({ n }) => (
     <Screen
       shots={[{ at: 0, src: "metrics-00" }, ...Array.from({ length: 5 }, (_, i) => ({ at: 44 + i * 8, src: `metricsB-${pad(i)}` }))]}
       cams={[{ at: 0, fy: 950, zoom: 1 }, { at: 86, fy: 950, zoom: 1 }]}
+      cover={{ from: 0, to: 44, top: 1380 }}
     />
     <Caption from={0} to={44} lines={[`${n}y ves tu progreso`, "de verdad 📊"]} y={CAP_Y} />
-    <Caption from={44} lines={[`${n}y ves tu progreso`, "de verdad 📊"]} y={1080} />
-    <div style={{ position: "absolute", top: 495, right: 80, fontFamily: sans, fontSize: 26, color: "#6B6585", background: "rgba(255,255,255,0.85)", padding: "4px 14px", borderRadius: 10 }}>
+    <div style={{ position: "absolute", top: 1775, left: 0, right: 0, margin: "0 auto", width: "fit-content", fontFamily: sans, fontSize: 26, color: "#6B6585", background: "rgba(255,255,255,0.85)", padding: "4px 14px", borderRadius: 10 }}>
       datos de ejemplo
     </div>
   </Punch>

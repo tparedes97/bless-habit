@@ -17,8 +17,8 @@ export const Caption: React.FC<{ lines: string[]; from: number; to?: number; y?:
       style={{
         position: "absolute",
         top: y,
-        left: 70,
-        right: 70,
+        left: 120,
+        right: 120,
         display: "flex",
         flexDirection: "column",
         alignItems: "center",

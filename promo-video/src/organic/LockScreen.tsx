@@ -40,8 +40,8 @@ export const NotifCard: React.FC<{
       style={{
         position: "absolute",
         top: 640,
-        left: 50,
-        right: 50,
+        left: 110,
+        right: 110,
         background: "rgba(255,255,255,0.94)",
         borderRadius: 48,
         padding: "34px 40px 26px",
@@ -57,7 +57,7 @@ export const NotifCard: React.FC<{
       </div>
       <div style={{ fontFamily: sans, fontWeight: 700, fontSize: 52, color: "#15122B", marginTop: 20 }}>{title}</div>
       {body ? <div style={{ fontFamily: sans, fontSize: 42, color: "#3E3A55", marginTop: 8 }}>{body}</div> : null}
-      <div style={{ display: "flex", gap: 20, marginTop: 30 }}>
+      <div style={{ display: "flex", gap: 14, marginTop: 30 }}>
         {actions.map((a, i) => {
           const isPressed = pressed && pressed.index === i && f >= pressed.at && f < pressed.at + 8;
           return (
@@ -66,10 +66,11 @@ export const NotifCard: React.FC<{
               style={{
                 fontFamily: sans,
                 fontWeight: 700,
-                fontSize: 38,
+                fontSize: 33,
+                whiteSpace: "nowrap",
                 color: "#5B3FE0",
                 background: isPressed ? "#DCD4FF" : "#EFEBFF",
-                padding: "20px 30px",
+                padding: "18px 24px",
                 borderRadius: 999,
               }}
             >

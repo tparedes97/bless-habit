@@ -41,7 +41,7 @@ const Timer: React.FC = () => {
           { at: 0, fy: 900, zoom: 1 },
           { at: 22, fy: 1200, zoom: 1 },
           { at: 104, fy: 1150, zoom: 1 },
-          { at: 140, fy: 1100, zoom: 1.3 },
+          { at: 140, fy: 1100, zoom: 1 },
         ]}
       />
       <Caption from={0} to={110} lines={["1. un cronómetro", "para cada hábito ⏱️"]} />
@@ -147,9 +147,9 @@ const Metrics: React.FC = () => (
         ...Array.from({ length: 5 }, (_, i) => ({ at: 44 + i * 8, src: `metricsB-${String(i).padStart(2, "0")}` })),
       ]}
       cams={[{ at: 0, fy: 950, zoom: 1 }, { at: 86, fy: 950, zoom: 1 }]}
+      cover={{ from: 0, to: 44, top: 1380 }}
     />
     <Caption from={0} to={44} lines={["5. y ves tu progreso", "de verdad 📊"]} />
-    <Caption from={44} lines={["5. y ves tu progreso", "de verdad 📊"]} y={1640} />
   </Punch>
 );
 
