@@ -1620,6 +1620,10 @@ def index():
         # Con sesión abierta, la página llega en modo "cargando" (sin el botón de
         # Google), así no se ve la pantalla de login un segundo al abrir la app.
         has_session=bool(session.get("user_id")),
+        # TikTok App Events SDK (publicidad en TikTok). Los IDs salen de TikTok
+        # Events Manager; si faltan, la app no envía nada a TikTok.
+        tiktok_config={"ttAppId": os.environ.get("TIKTOK_APP_ID", "").strip(),
+                       "accessToken": os.environ.get("TIKTOK_APP_SECRET", "").strip()},
     )
 
 

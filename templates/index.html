@@ -4094,6 +4094,7 @@ async function finishOnboarding() {
   await new Promise(r => setTimeout(r, 1100));
   state.diagnostic = (await buildDiagnosticAI(state.profile)) || buildDiagnostic(state.profile);
   state.diagnostic.lang = currentLang();
+  trackTikTok('Registration', 'registration');
   state.history = [];
   state.lastActiveDate = ymd(new Date());
   lastCelebratedPct = 0;
@@ -4211,6 +4212,31 @@ let currentUserEmail = ''; // se llena en bootstrapApp() — Paddle lo usa para 
 const ADSENSE_CLIENT_ID = {{ adsense_client_id | tojson }};
 const ADSENSE_SLOT_ID = {{ adsense_slot_id | tojson }};
 const ADMOB = {{ admob_config | tojson }};
+// TikTok App Events (solo app Android 1.4+): mide instalaciones y registros que
+// vienen de anuncios en TikTok. Sin TIKTOK_APP_ID en el servidor no hace nada.
+const TIKTOK = {{ tiktok_config | tojson }};
+function tiktokPlugin() {
+  const h = ((window.Capacitor && window.Capacitor.PluginHeaders) || []).find(x => x.name === 'BlessDevice');
+  if (!h || !(h.methods || []).some(m => m.name === 'trackTikTok')) return null;
+  return window.Capacitor.Plugins && window.Capacitor.Plugins.BlessDevice;
+}
+let tiktokReady = null;
+function initTikTok() {
+  if (tiktokReady) return tiktokReady;
+  const p = tiktokPlugin();
+  if (!p || !TIKTOK || !TIKTOK.ttAppId) return (tiktokReady = Promise.resolve(false));
+  tiktokReady = p.initTikTok({ ttAppId: TIKTOK.ttAppId, accessToken: TIKTOK.accessToken || '' })
+    .then(r => !!(r && r.ok)).catch(() => false);
+  return tiktokReady;
+}
+// once: clave para no repetir el mismo evento en este teléfono.
+function trackTikTok(event, once) {
+  try {
+    if (once) { const k = 'tt_sent_' + once; if (localStorage.getItem(k)) return; localStorage.setItem(k, '1'); }
+  } catch (e) {}
+  initTikTok().then(ok => { if (ok) tiktokPlugin().trackTikTok({ event }).catch(() => {}); });
+}
+try { initTikTok(); } catch (e) {}
 const PADDLE_PRICE_LABEL = {{ paddle_price_label | tojson }};
 const NATIVE_APP_URL_SCHEME = {{ native_app_url_scheme | tojson }};
 
@@ -5469,6 +5495,7 @@ async function verifyGplayPurchase(purchaseToken) {
       lastGplayError = null;
       premiumSource = premiumSource || 'gplay';
       applyPremiumChange(true);
+      trackTikTok('Subscribe', 'sub_' + String(purchaseToken).slice(-24));
       return true;
     }
     lastGplayDetail = (data && data.detail) ? String(data.detail).slice(0, 400) : '';

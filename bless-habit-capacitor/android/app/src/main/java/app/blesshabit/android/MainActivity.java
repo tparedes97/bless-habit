@@ -23,6 +23,7 @@ public class MainActivity extends BridgeActivity {
     public void onCreate(Bundle savedInstanceState) {
         registerPlugin(BlessDevicePlugin.class);
         super.onCreate(savedInstanceState);
+        BlessTikTok.initFromPrefs(getApplicationContext()); // anuncios de TikTok (si ya hay IDs)
 
         // Pantalla de carga encima del WebView hasta que termine de cargar la
         // primera página (la app real o, sin internet, www/error.html).

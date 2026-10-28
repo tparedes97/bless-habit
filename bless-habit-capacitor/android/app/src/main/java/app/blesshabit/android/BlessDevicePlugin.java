@@ -154,6 +154,22 @@ public class BlessDevicePlugin extends Plugin {
         call.resolve();
     }
 
+    /** TikTok App Events: guarda los IDs y arranca el SDK. ttAppId, accessToken. */
+    @PluginMethod
+    public void initTikTok(PluginCall call) {
+        JSObject ret = new JSObject();
+        ret.put("ok", BlessTikTok.configure(getContext(), call.getString("ttAppId", ""), call.getString("accessToken", "")));
+        call.resolve(ret);
+    }
+
+    /** TikTok App Events: envía un evento (event: Registration, Subscribe…). */
+    @PluginMethod
+    public void trackTikTok(PluginCall call) {
+        JSObject ret = new JSObject();
+        ret.put("ok", BlessTikTok.track(call.getString("event", "")));
+        call.resolve(ret);
+    }
+
     /** Muestra un aviso ahora mismo (para la prueba de Perfil → Notificaciones). */
     @PluginMethod
     public void testReminder(PluginCall call) {
