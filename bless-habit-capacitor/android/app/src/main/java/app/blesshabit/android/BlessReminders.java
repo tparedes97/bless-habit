@@ -93,6 +93,10 @@ public class BlessReminders {
         fire.putExtra("title", it.optString("title", "Bless Habit"));
         fire.putExtra("body", it.optString("body", ""));
         fire.putExtra("alarm", it.optBoolean("alarm", false));
+        // Para los botones de la notificación: de qué hábito es y de qué tipo
+        // ("timer" muestra "Encender cronómetro").
+        fire.putExtra("habitId", it.optString("habitId", ""));
+        fire.putExtra("kind", it.optString("kind", ""));
         PendingIntent pi = PendingIntent.getBroadcast(ctx, id, fire,
                 PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
         if (canExact(ctx)) {
@@ -155,8 +159,27 @@ public class BlessReminders {
         nm.createNotificationChannel(alarm);
     }
 
-    /** Muestra el aviso (lo llama BlessReminderReceiver a la hora programada). */
     static void show(Context ctx, int id, String title, String body, boolean alarm) {
+        show(ctx, id, title, body, alarm, null, null);
+    }
+
+    /**
+     * Abre la app con un enlace blesshabit://… que la página interpreta
+     * (setupNativeAppUrlListener): encender el cronómetro, posponer, etc.
+     */
+    static PendingIntent deepLinkIntent(Context ctx, String uri, int requestCode) {
+        Intent i = new Intent(Intent.ACTION_VIEW, Uri.parse(uri), ctx, MainActivity.class);
+        i.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+        return PendingIntent.getActivity(ctx, requestCode, i,
+                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+    }
+
+    private static boolean isEnglish(Context ctx) {
+        return ctx.getResources().getConfiguration().getLocales().get(0).getLanguage().equals("en");
+    }
+
+    /** Muestra el aviso (lo llama BlessReminderReceiver a la hora programada). */
+    static void show(Context ctx, int id, String title, String body, boolean alarm, String habitId, String kind) {
         ensureChannels(ctx);
         NotificationCompat.Builder b = new NotificationCompat.Builder(ctx, alarm ? CH_ALARMS : CH_REMINDERS)
                 .setSmallIcon(R.drawable.ic_stat_bless)
@@ -178,6 +201,17 @@ public class BlessReminders {
             b.setOngoing(true);
             b.setTimeoutAfter(2 * 60 * 1000); // deja de sonar sola a los 2 minutos
         }
+        // Hábito: botones para encender el cronómetro (si es por tiempo) y posponer.
+        if (habitId != null && !habitId.isEmpty()) {
+            boolean en = isEnglish(ctx);
+            String hid = Uri.encode(habitId);
+            if ("timer".equals(kind)) {
+                b.addAction(0, en ? "▶ Start timer" : "▶ Encender cronómetro",
+                        deepLinkIntent(ctx, "blesshabit://timer?habit=" + hid + "&do=start", 200000 + id));
+            }
+            b.addAction(0, en ? "+15 min" : "Posponer 15 min",
+                    deepLinkIntent(ctx, "blesshabit://postpone?habit=" + hid + "&min=15", 300000 + id));
+        }
         Notification n = b.build();
         if (alarm) n.flags |= Notification.FLAG_INSISTENT; // repite el sonido hasta que se atienda
         NotificationManager nm = (NotificationManager) ctx.getSystemService(Context.NOTIFICATION_SERVICE);
@@ -187,5 +221,58 @@ public class BlessReminders {
     static void stop(Context ctx, int id) {
         NotificationManager nm = (NotificationManager) ctx.getSystemService(Context.NOTIFICATION_SERVICE);
         nm.cancel(id);
+    }
+
+    // ---- Cronómetro en la pantalla bloqueada / barra de notificaciones ----
+    static final String CH_TIMER = "bless_cronometro_v1";
+    static final int TIMER_NOTIF_ID = 777001;
+
+    /**
+     * Notificación fija mientras hay un cronómetro: el reloj lo dibuja Android
+     * (setUsesChronometer), así que avanza solo aunque la app esté cerrada.
+     * elapsedSec = tiempo ya contado; running = si está corriendo.
+     */
+    static void showTimer(Context ctx, String habitId, String title, long elapsedSec, long goalSec, boolean running) {
+        NotificationManager nm = (NotificationManager) ctx.getSystemService(Context.NOTIFICATION_SERVICE);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && nm.getNotificationChannel(CH_TIMER) == null) {
+            NotificationChannel ch = new NotificationChannel(CH_TIMER,
+                    isEnglish(ctx) ? "Timer" : "Cronómetro", NotificationManager.IMPORTANCE_LOW);
+            ch.setDescription(isEnglish(ctx) ? "Shows your running timer" : "Muestra tu cronómetro en curso");
+            ch.setShowBadge(false);
+            ch.setLockscreenVisibility(Notification.VISIBILITY_PUBLIC);
+            nm.createNotificationChannel(ch);
+        }
+        boolean en = isEnglish(ctx);
+        String hid = Uri.encode(habitId == null ? "" : habitId);
+        long goalMin = Math.max(1, goalSec / 60);
+        String text;
+        if (elapsedSec >= goalSec && goalSec > 0) text = en ? "Goal reached! 🎉 You can keep going or finish." : "¡Meta cumplida! 🎉 Puedes seguir o finalizar.";
+        else text = running ? (en ? "Goal: " + goalMin + " min" : "Meta: " + goalMin + " min")
+                : (en ? "Paused · " + (elapsedSec / 60) + " of " + goalMin + " min" : "En pausa · " + (elapsedSec / 60) + " de " + goalMin + " min");
+        NotificationCompat.Builder b = new NotificationCompat.Builder(ctx, CH_TIMER)
+                .setSmallIcon(R.drawable.ic_stat_bless)
+                .setColor(0xFF7C6CF0)
+                .setContentTitle("⏱️ " + title)
+                .setContentText(text)
+                .setOngoing(true)
+                .setOnlyAlertOnce(true)
+                .setSilent(true)
+                .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+                .setCategory("stopwatch")
+                .setContentIntent(deepLinkIntent(ctx, "blesshabit://timer?habit=" + hid + "&do=open", 400001))
+                .setShowWhen(running)
+                .setUsesChronometer(running)
+                .setWhen(System.currentTimeMillis() - elapsedSec * 1000L);
+        // La barra no avanza sola (el reloj sí): solo se muestra en pausa.
+        if (!running && goalSec > 0 && elapsedSec < goalSec) b.setProgress((int) goalSec, (int) elapsedSec, false);
+        if (running) b.addAction(0, en ? "⏸ Pause" : "⏸ Pausar", deepLinkIntent(ctx, "blesshabit://timer?habit=" + hid + "&do=pause", 400002));
+        else b.addAction(0, en ? "▶ Resume" : "▶ Reanudar", deepLinkIntent(ctx, "blesshabit://timer?habit=" + hid + "&do=resume", 400003));
+        b.addAction(0, en ? "■ Finish" : "■ Finalizar", deepLinkIntent(ctx, "blesshabit://timer?habit=" + hid + "&do=finish", 400004));
+        try { nm.notify(TIMER_NOTIF_ID, b.build()); } catch (SecurityException ignored) { }
+    }
+
+    static void hideTimer(Context ctx) {
+        NotificationManager nm = (NotificationManager) ctx.getSystemService(Context.NOTIFICATION_SERVICE);
+        nm.cancel(TIMER_NOTIF_ID);
     }
 }

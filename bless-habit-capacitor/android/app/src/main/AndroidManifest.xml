@@ -46,6 +46,15 @@
                 <data android:scheme="blesshabit" android:host="premium-done" />
             </intent-filter>
 
+            <!-- Botones de las notificaciones: encender / pausar / finalizar el
+                 cronómetro y posponer un hábito (ver BlessReminders). -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:scheme="blesshabit" android:host="timer" />
+                <data android:scheme="blesshabit" android:host="postpone" />
+            </intent-filter>
+
         </activity>
 
         <!-- Recordatorios propios (alarmas exactas que despiertan al teléfono). -->

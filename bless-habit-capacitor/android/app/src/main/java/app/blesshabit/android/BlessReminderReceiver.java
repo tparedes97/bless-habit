@@ -18,7 +18,9 @@ public class BlessReminderReceiver extends BroadcastReceiver {
             BlessReminders.show(context, id,
                     intent.getStringExtra("title"),
                     intent.getStringExtra("body"),
-                    intent.getBooleanExtra("alarm", false));
+                    intent.getBooleanExtra("alarm", false),
+                    intent.getStringExtra("habitId"),
+                    intent.getStringExtra("kind"));
             // El widget también se pone al día con la hora (próximo hábito).
             BlessWidgetProvider.refreshAll(context);
         }
