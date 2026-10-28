@@ -2,6 +2,9 @@ apply plugin: 'com.android.application'
 
 android {
     namespace = "app.blesshabit.android"
+    buildFeatures {
+        buildConfig = true
+    }
     compileSdk = rootProject.ext.compileSdkVersion
     defaultConfig {
         applicationId "app.blesshabit.android"
@@ -11,6 +14,10 @@ android {
         versionName "1.3"
         // AdMob: el ID de la app sale de gradle.properties (ADMOB_APP_ID).
         manifestPlaceholders = [admobAppId: (project.findProperty('ADMOB_APP_ID') ?: 'ca-app-pub-3940256099942544~3347511713')]
+        // TikTok Events Manager: el TikTok App ID sale de gradle.properties (TIKTOK_APP_ID).
+        // Si falta, la app funciona igual y el SDK de TikTok no se inicia.
+        buildConfigField "String", "TIKTOK_APP_ID", "\"${project.findProperty('TIKTOK_APP_ID') ?: ''}\""
+        buildConfigField "String", "TIKTOK_ACCESS_TOKEN", "\"${project.findProperty('TIKTOK_ACCESS_TOKEN') ?: ''}\""
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
@@ -59,6 +66,11 @@ dependencies {
     implementation "androidx.coordinatorlayout:coordinatorlayout:$androidxCoordinatorLayoutVersion"
     implementation "androidx.core:core-splashscreen:$coreSplashScreenVersion"
     implementation project(':capacitor-android')
+    // TikTok App Events SDK (versión oficial más reciente, sep 2026) y el Install
+    // Referrer de Google Play, que el SDK necesita para atribuir instalaciones
+    // pero no trae incluido.
+    implementation "com.github.tiktok:tiktok-business-android-sdk:1.7.1"
+    implementation "com.android.installreferrer:installreferrer:2.2"
     testImplementation "junit:junit:$junitVersion"
     androidTestImplementation "androidx.test.ext:junit:$androidxJunitVersion"
     androidTestImplementation "androidx.test.espresso:espresso-core:$androidxEspressoCoreVersion"

@@ -322,3 +322,36 @@ Para que nadie reciba mensajes extra o el resumen semanal sin ver el anuncio:
 • Fixes and improvements.
 </en-US>
 ```
+
+---
+
+## 10. TikTok Events Manager (SDK de TikTok)
+
+La app usa el **TikTok App Events SDK 1.7.1** (oficial, desde JitPack) para que
+TikTok reciba `InstallApp`, `LaunchApp` y `2DRetention`, y así quite el estado
+"Pending verification" de la app en Events Manager. Se inicia en
+`android/app/src/main/java/app/blesshabit/android/BlessApplication.java`.
+
+- **App ID** (para el SDK) = package name `app.blesshabit.android` (sale solo de `applicationId`).
+- **TikTok App ID** = `7701637065343025160`, en `android/gradle.properties` → `TIKTOK_APP_ID`.
+- **App Secret / access token**: no hace falta (el SDK 1.7.1 no lo envía con los eventos).
+- El rastreo automático de compras del SDK está apagado (la app usa Billing 9 y el SDK está hecho para Billing 8).
+
+### 10.1 Probar antes de publicar
+1. Android Studio → ▶ Run (compilación **debug**) en tu teléfono. Si tienes la
+   versión de Play instalada, desinstálala antes (la firma es distinta).
+2. **Logcat**: filtra por `BlessTikTok` (debe decir "SDK de TikTok iniciado") y por
+   `TikTok` (verás los envíos de `LaunchApp`/`InstallApp`).
+3. **Events Manager → Apps → Blessed Habit → Test Events**: en debug, los eventos
+   aparecen ahí en minutos.
+4. Para la verificación, TikTok necesita eventos **reales** (no de prueba): instala
+   una compilación **release** firmada (o la versión de Play cuando se publique) y
+   ábrela. En **Overview** los eventos pueden tardar unas horas en aparecer.
+
+### 10.2 Antes de publicar esta versión
+- Subir `versionCode` en `android/app/build.gradle`.
+- **Política de privacidad** (`docs/privacidad.html` y `docs/privacy.html`): mencionar
+  que la app de Android envía a TikTok datos de instalación y uso (ID de publicidad,
+  datos del dispositivo, IP) para medir campañas.
+- **Play Console → Seguridad de los datos**: agregar a TikTok como destinatario de
+  ID del dispositivo y de interacciones con la app (Publicidad o marketing, Análisis).
