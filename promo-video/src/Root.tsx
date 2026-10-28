@@ -3,6 +3,7 @@ import { AbsoluteFill } from "remotion";
 import { BlessPromo, SCENES, TOTAL, withBackdrop } from "./BlessPromo";
 import { BlessPov, POV_SCENES, POV_TOTAL } from "./pov/BlessPov";
 import { NightBackdrop } from "./pov/NightBackdrop";
+import { BlessOrganic, ORGANIC_TOTAL } from "./organic/BlessOrganic";
 
 const W = 1080;
 const H = 1920;
@@ -23,6 +24,7 @@ export const RemotionRoot: React.FC = () => (
         />
       ))}
     </Folder>
+    <Composition id="BlessOrganic" component={BlessOrganic} width={W} height={H} fps={30} durationInFrames={ORGANIC_TOTAL} />
     <Composition id="BlessPov" component={BlessPov} width={W} height={H} fps={30} durationInFrames={POV_TOTAL} />
     <Folder name="BlessPov-Scenes">
       {POV_SCENES.map((s) => (

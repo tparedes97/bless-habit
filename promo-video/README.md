@@ -22,3 +22,16 @@ Escenas en `src/pov/`. Video renderizado: `bless-habit-capacitor/play-store/prom
 ```
 npx remotion render BlessPov out/bless-habit-pov.mp4 --crf=18
 ```
+
+## Video orgánico (`BlessOrganic`)
+
+~35 s con pantallas REALES de la app (capturadas con Playwright desde una cuenta demo local),
+textos estilo Instagram, toques en pantalla y música lo-fi. Muestra las funciones nuevas:
+cronómetro por hábito, temporizador en la pantalla de bloqueo, metas por cantidad, posponer,
+recordatorios tipo alarma y métricas. Capturas en `public/organic/`, escenas en `src/organic/`.
+La pantalla de bloqueo y la notificación con botones están recreadas (son de Android nativo).
+
+```
+python3 scripts/make-music.py      # genera public/music/lofi-calm.wav (requiere numpy)
+npx remotion render BlessOrganic out/bless-habit-organico.mp4 --crf=18
+```

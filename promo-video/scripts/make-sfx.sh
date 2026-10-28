@@ -63,6 +63,18 @@ ff -f lavfi -i "aevalsrc='0.6*sin(2*PI*2400*t)*exp(-140*t)+0.4*sin(2*PI*1200*t)*
 ff -f lavfi -i "aevalsrc='sin(2*PI*58*t)*exp(-16*t)*min(1,t*300)+0.75*sin(2*PI*52*(t-0.2))*exp(-16*(t-0.2))*gte(t,0.2)':s=$R:d=0.7" \
   -af "lowpass=f=180,volume=2,pan=stereo|c0=c0|c1=c0" sfx/heartbeat.wav
 
+# Toque en pantalla (tap suave)
+ff -f lavfi -i "aevalsrc='0.7*sin(2*PI*(1800*t-6000*t*t))*exp(-90*t)+0.3*sin(2*PI*900*t)*exp(-60*t)':s=$R:d=0.09" \
+  -af "pan=stereo|c0=c0|c1=c0" sfx/tap.wav
+
+# Tono de alarma amable: arpegio de marimba que se repite dos veces
+ff -f lavfi -i "aevalsrc='
+  (sin(2*PI*1046.5*mod(t,0.9))*exp(-9*mod(t,0.9))
+  +sin(2*PI*1318.5*(mod(t,0.9)-0.15))*exp(-9*(mod(t,0.9)-0.15))*gte(mod(t,0.9),0.15)
+  +sin(2*PI*1568*(mod(t,0.9)-0.3))*exp(-9*(mod(t,0.9)-0.3))*gte(mod(t,0.9),0.3)
+  +sin(2*PI*2093*(mod(t,0.9)-0.45))*exp(-7*(mod(t,0.9)-0.45))*gte(mod(t,0.9),0.45))*0.3*lt(t,1.8)':s=$R:d=2.4" \
+  -af "aecho=0.8:0.4:60:0.2,pan=stereo|c0=c0|c1=c0" sfx/alarm.wav
+
 # Normaliza: efectos con pico en -3 dB, el fondo ambiental más bajo (-12 dB)
 norm() { # archivo pico_objetivo
   local peak gain
