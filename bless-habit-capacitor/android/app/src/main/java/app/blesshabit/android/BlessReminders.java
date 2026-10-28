@@ -50,6 +50,14 @@ public class BlessReminders {
 
     static final String ACTION_FIRE = "app.blesshabit.android.REMINDER_FIRE";
     static final String ACTION_STOP = "app.blesshabit.android.REMINDER_STOP";
+    static final String EXTRA_CANCEL_NOTIF = "bless_cancel_notif";
+
+    /** Android 14+: si el usuario permite que las alarmas salgan a pantalla completa. */
+    static boolean canFullScreen(Context ctx) {
+        if (Build.VERSION.SDK_INT < 34) return true;
+        NotificationManager nm = ctx.getSystemService(NotificationManager.class);
+        return nm != null && nm.canUseFullScreenIntent();
+    }
 
     /** Reemplaza todos los avisos programados por los de esta lista (JSON). */
     static int scheduleAll(Context ctx, String itemsJson) throws Exception {
@@ -168,8 +176,14 @@ public class BlessReminders {
      * (setupNativeAppUrlListener): encender el cronómetro, posponer, etc.
      */
     static PendingIntent deepLinkIntent(Context ctx, String uri, int requestCode) {
+        return deepLinkIntent(ctx, uri, requestCode, 0);
+    }
+
+    /** cancelNotifId: notificación a quitar al tocar (así una alarma deja de sonar). */
+    static PendingIntent deepLinkIntent(Context ctx, String uri, int requestCode, int cancelNotifId) {
         Intent i = new Intent(Intent.ACTION_VIEW, Uri.parse(uri), ctx, MainActivity.class);
         i.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+        if (cancelNotifId != 0) i.putExtra(EXTRA_CANCEL_NOTIF, cancelNotifId);
         return PendingIntent.getActivity(ctx, requestCode, i,
                 PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
     }
@@ -200,6 +214,15 @@ public class BlessReminders {
             b.addAction(0, en ? "Stop" : "Detener", stopPi);
             b.setOngoing(true);
             b.setTimeoutAfter(2 * 60 * 1000); // deja de sonar sola a los 2 minutos
+            // Pantalla completa sobre el bloqueo, como la alarma del reloj (AlarmActivity).
+            Intent full = new Intent(ctx, AlarmActivity.class)
+                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_NO_USER_ACTION)
+                    .putExtra("id", id).putExtra("title", title).putExtra("body", body)
+                    .putExtra("habitId", habitId == null ? "" : habitId).putExtra("kind", kind == null ? "" : kind);
+            PendingIntent fullPi = PendingIntent.getActivity(ctx, 500000 + id, full,
+                    PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+            b.setFullScreenIntent(fullPi, true);
+            b.setContentIntent(fullPi); // tocar la notificación abre la pantalla de alarma
         }
         // Hábito: botones para encender el cronómetro (si es por tiempo) y posponer.
         if (habitId != null && !habitId.isEmpty()) {
@@ -207,10 +230,10 @@ public class BlessReminders {
             String hid = Uri.encode(habitId);
             if ("timer".equals(kind)) {
                 b.addAction(0, en ? "▶ Start timer" : "▶ Encender cronómetro",
-                        deepLinkIntent(ctx, "blesshabit://timer?habit=" + hid + "&do=start", 200000 + id));
+                        deepLinkIntent(ctx, "blesshabit://timer?habit=" + hid + "&do=start", 200000 + id, alarm ? id : 0));
             }
             b.addAction(0, en ? "+15 min" : "Posponer 15 min",
-                    deepLinkIntent(ctx, "blesshabit://postpone?habit=" + hid + "&min=15", 300000 + id));
+                    deepLinkIntent(ctx, "blesshabit://postpone?habit=" + hid + "&min=15", 300000 + id, alarm ? id : 0));
         }
         Notification n = b.build();
         if (alarm) n.flags |= Notification.FLAG_INSISTENT; // repite el sonido hasta que se atienda

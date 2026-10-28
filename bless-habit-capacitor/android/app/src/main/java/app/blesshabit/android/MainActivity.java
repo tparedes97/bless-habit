@@ -1,5 +1,8 @@
 package app.blesshabit.android;
 
+import android.app.NotificationManager;
+import android.content.Context;
+import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -24,6 +27,7 @@ public class MainActivity extends BridgeActivity {
         registerPlugin(BlessDevicePlugin.class);
         super.onCreate(savedInstanceState);
         BlessTikTok.initFromPrefs(getApplicationContext()); // anuncios de TikTok (si ya hay IDs)
+        cancelNotifFrom(getIntent());
 
         // Pantalla de carga encima del WebView hasta que termine de cargar la
         // primera página (la app real o, sin internet, www/error.html).
@@ -45,6 +49,21 @@ public class MainActivity extends BridgeActivity {
     // El WebView guarda las cookies (la sesión iniciada) en memoria y las pasa
     // al disco cada cierto tiempo. Si la app se cierra antes, se pierde la
     // sesión y hay que volver a iniciarla: por eso se guardan al salir.
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        cancelNotifFrom(intent);
+    }
+
+    // Botón de una alarma (cronómetro / posponer): se quita la alarma para que deje de sonar.
+    private void cancelNotifFrom(Intent intent) {
+        if (intent == null) return;
+        int id = intent.getIntExtra(BlessReminders.EXTRA_CANCEL_NOTIF, 0);
+        if (id == 0) return;
+        NotificationManager nm = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+        if (nm != null) nm.cancel(id);
+    }
+
     @Override
     public void onPause() {
         super.onPause();

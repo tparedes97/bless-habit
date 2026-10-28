@@ -2334,7 +2334,8 @@ const I18N = {
     newTaskTitle: '✅ Nueva tarea', editTaskTitle: '✅ Editar tarea', taskTextPh: '¿Qué tienes que hacer?',
     taskFreeRemind: 'Te aviso a la hora de la tarea.', taskFreeRemindMore: '✨ Avisos antes con Premium',
     notifTestLink: '🔔 Probar notificaciones', notifTestOnlyApp: 'La prueba funciona en la app de Android.',
-    notifTestPerm: 'Permiso de notificaciones', notifTestExact: 'Alarmas exactas', notifTestBattery: 'Sin restricción de batería',
+    notifTestPerm: 'Permiso de notificaciones', notifTestExact: 'Alarmas exactas', notifTestBattery: 'Sin restricción de batería', notifTestFullScreen: 'Alarmas a pantalla completa',
+    fullScreenPromptMsg: 'Para que la alarma de tus hábitos aparezca en la pantalla (aunque el teléfono esté bloqueado), activa "Notificaciones a pantalla completa" para Bless Habit.', fullScreenPromptOk: 'Activar',
     notifTestScheduled: 'Avisos programados en el teléfono', notifTestTasks: 'Avisos de tareas programados',
     notifTestNowBody: 'Prueba inmediata: si ves esto, las notificaciones funcionan ✅',
     notifTestLaterBody: 'Prueba de 1 minuto: si ves esto con la app cerrada, todo está bien ✅',
@@ -2945,7 +2946,8 @@ const I18N = {
     newTaskTitle: '✅ New task', editTaskTitle: '✅ Edit task', taskTextPh: 'What do you need to do?',
     taskFreeRemind: "I'll remind you at the task time.", taskFreeRemindMore: '✨ Earlier reminders with Premium',
     notifTestLink: '🔔 Test notifications', notifTestOnlyApp: 'The test works in the Android app.',
-    notifTestPerm: 'Notification permission', notifTestExact: 'Exact alarms', notifTestBattery: 'No battery restriction',
+    notifTestPerm: 'Notification permission', notifTestExact: 'Exact alarms', notifTestBattery: 'No battery restriction', notifTestFullScreen: 'Full-screen alarms',
+    fullScreenPromptMsg: 'To make your habit alarms show up on the screen (even when the phone is locked), turn on "Full-screen notifications" for Bless Habit.', fullScreenPromptOk: 'Turn on',
     notifTestScheduled: 'Reminders scheduled on the phone', notifTestTasks: 'Task reminders scheduled',
     notifTestNowBody: 'Instant test: if you see this, notifications work ✅',
     notifTestLaterBody: '1-minute test: if you see this with the app closed, all is good ✅',
@@ -6039,6 +6041,13 @@ async function runNotificationTest() {
         const st = await BD.getBackgroundStatus();
         lines.push(`${ok(st.ignoringBatteryOptimizations)} ${t('notifTestBattery')} (${st.manufacturer || '?'})`);
       } catch (e) {}
+      try {
+        if (BD.getFullScreenStatus) {
+          const fs = await BD.getFullScreenStatus();
+          lines.push(`${ok(fs.allowed)} ${t('notifTestFullScreen')}`);
+          if (!fs.allowed) setTimeout(() => maybePromptFullScreen(true), 1500);
+        }
+      } catch (e) {}
     }
     const now = Date.now();
     if (hasNativeReminders()) {
@@ -6269,9 +6278,28 @@ function backgroundHintFor(manufacturer) {
   if (/samsung/.test(m)) return t('bgHintSamsung');
   return t('bgHintGeneric');
 }
+// App 1.4+ en Android 14+: la alarma solo sale a pantalla completa si la persona lo permite.
+async function maybePromptFullScreen(force) {
+  const BD = blessDevice();
+  if (!BD || !BD.getFullScreenStatus || !(habitAlarmsOn() || taskAlarmsOn())) return false;
+  let st;
+  try { st = await BD.getFullScreenStatus(); } catch (e) { return false; }
+  if (!st || st.allowed) return false;
+  if (!force) {
+    const last = (state.settings && state.settings.fsPromptedAt) || 0;
+    if (Date.now() - last < 7 * 86400000) return false;
+  }
+  state.settings.fsPromptedAt = Date.now();
+  saveStateToServer();
+  if (await uiConfirm(t('fullScreenPromptMsg'), { okText: t('fullScreenPromptOk') })) {
+    try { await BD.openFullScreenSettings(); } catch (e) {}
+  }
+  return true;
+}
 async function maybePromptBackground(force) {
   const BD = blessDevice();
   if (!BD) return;
+  if (!force && await maybePromptFullScreen(false)) return; // un aviso a la vez
   let st;
   try { st = await BD.getBackgroundStatus(); } catch (e) { return; }
   const aggressiveBrand = /honor|huawei|xiaomi|redmi|poco|oppo|realme|oneplus|vivo|iqoo|samsung/.test(st.manufacturer || '');

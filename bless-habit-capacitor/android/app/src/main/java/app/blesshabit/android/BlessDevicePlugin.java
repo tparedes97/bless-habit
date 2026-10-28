@@ -154,6 +154,25 @@ public class BlessDevicePlugin extends Plugin {
         call.resolve();
     }
 
+    /** Android 14+: si las alarmas pueden salir a pantalla completa. */
+    @PluginMethod
+    public void getFullScreenStatus(PluginCall call) {
+        JSObject ret = new JSObject();
+        ret.put("allowed", BlessReminders.canFullScreen(getContext()));
+        call.resolve(ret);
+    }
+
+    /** Abre el ajuste "Notificaciones a pantalla completa" de la app (Android 14+). */
+    @PluginMethod
+    public void openFullScreenSettings(PluginCall call) {
+        Intent i = Build.VERSION.SDK_INT >= 34
+                ? new Intent("android.settings.MANAGE_APP_USE_FULL_SCREEN_INTENT", Uri.parse("package:" + getContext().getPackageName()))
+                : appDetailsIntent();
+        i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        if (!tryStart(i)) tryStart(appDetailsIntent());
+        call.resolve();
+    }
+
     /** TikTok App Events: guarda los IDs y arranca el SDK. ttAppId, accessToken. */
     @PluginMethod
     public void initTikTok(PluginCall call) {
