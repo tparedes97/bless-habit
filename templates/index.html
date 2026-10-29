@@ -2415,6 +2415,8 @@ const I18N = {
     askTaskChat: '¡Claro! ¿Qué tarea agrego? Si quieres que te avise, dime también el día y la hora 😊 (por ejemplo: "pagar la luz el viernes a las 6")',
     remindAtTime: 'A la hora', remindBefore: (m) => m >= 60 ? '1 h antes' : `${m} min antes`,
     remindPremiumMsg: 'Con Premium eliges cuándo te aviso: 10, 15, 30 o 60 minutos antes ⏰✨',
+    remindAdMsg: 'Elige cuándo te aviso (10, 15, 30 o 60 minutos antes) viendo un anuncio, o hazte Premium ⏰✨', remindAdBtn: '🎬 Ver un anuncio', remindAdUnlocked: '¡Listo! Ya puedes elegir los avisos anticipados de este hábito ⏰',
+    metricsPassBtn: '🎬 Ver todo hoy con 2 anuncios', metricsPassProgress: (n) => `🎬 Vas ${n} de 2 anuncios`, metricsPassNext: '¡Vas 1 de 2! ¿Ves el segundo anuncio para desbloquear tus métricas de hoy?', metricsPassNextOk: 'Ver el segundo', metricsPassActiveNote: '🎬 Métricas completas desbloqueadas hasta hoy a medianoche',
     remindSoonTitle: (m, label) => `En ${m >= 60 ? '1 hora' : m + ' min'}: ${label}`,
     reminderSoonBody: ['Ve preparándote, ya casi es hora 🌱', 'Un recordatorio amable para que llegues con calma 🤍', 'Prepárate con tiempo ✨'],
     becomePremiumBtn: (price) => `Hazte Premium — ${price}`,
@@ -3027,6 +3029,8 @@ const I18N = {
     askTaskChat: 'Sure! What task should I add? If you want a reminder, tell me the day and time too 😊 (e.g. "pay the bill Friday at 6")',
     remindAtTime: 'On time', remindBefore: (m) => m >= 60 ? '1 h before' : `${m} min before`,
     remindPremiumMsg: 'With Premium you choose when I remind you: 10, 15, 30 or 60 minutes before ⏰✨',
+    remindAdMsg: 'Choose when I remind you (10, 15, 30 or 60 minutes before) by watching an ad, or go Premium ⏰✨', remindAdBtn: '🎬 Watch an ad', remindAdUnlocked: 'Done! You can now pick early reminders for this habit ⏰',
+    metricsPassBtn: '🎬 See everything today with 2 ads', metricsPassProgress: (n) => `🎬 ${n} of 2 ads watched`, metricsPassNext: '1 of 2 done! Watch the second ad to unlock today’s metrics?', metricsPassNextOk: 'Watch the second', metricsPassActiveNote: '🎬 Full metrics unlocked until midnight today',
     remindSoonTitle: (m, label) => `In ${m >= 60 ? '1 hour' : m + ' min'}: ${label}`,
     reminderSoonBody: ['Get ready, it is almost time 🌱', 'A gentle heads-up so you arrive calm 🤍', 'Get ready with time to spare ✨'],
     becomePremiumBtn: (price) => `Go Premium — ${price}`,
@@ -3430,29 +3434,41 @@ let heSelectedMinutes = null; // número, 'custom' o null (sin definir)
 // Recordatorios: gratis = a la hora del hábito; Premium = puede elegir uno o
 // varios avisos antes (10/15/30/60 min) además o en lugar del de la hora.
 const REMIND_OFFSET_OPTIONS = [0, 10, 15, 30, 60];
+// Plan gratis: un anuncio desbloquea los avisos anticipados de ESE hábito (h.adRemind).
+let heRemindUnlocked = false; // en el editor abierto: ya vio el anuncio
+function habitRemindAllowed(h) { return isPremium || !!(h && h.adRemind); }
 function habitReminderOffsets(h) {
-  if (!isPremium) return [0];
+  if (!habitRemindAllowed(h)) return [0];
   const o = Array.isArray(h.reminderOffsets) ? h.reminderOffsets.filter(n => REMIND_OFFSET_OPTIONS.includes(n)) : [];
   return o.length ? o : [0];
 }
 function renderHabitRemindPicker(h) {
   const wrap = document.getElementById('he-remind');
-  document.getElementById('he-remind-premium').style.display = isPremium ? 'none' : '';
+  heRemindUnlocked = habitRemindAllowed(h);
+  document.getElementById('he-remind-premium').style.display = heRemindUnlocked ? 'none' : '';
   const current = h ? habitReminderOffsets(h) : [0];
   wrap.innerHTML = '';
   REMIND_OFFSET_OPTIONS.forEach(m => {
     const b = document.createElement('button'); b.type = 'button';
-    const locked = !isPremium && m !== 0;
+    const locked = !heRemindUnlocked && m !== 0;
     b.className = 'qr-btn' + (current.includes(m) ? ' selected' : '') + (locked ? ' locked' : '');
     b.dataset.offset = m;
     b.textContent = m === 0 ? t('remindAtTime') : t('remindBefore', m);
     b.onclick = () => {
-      if (locked) { promptPremiumFeature(t('remindPremiumMsg')); return; }
+      if (locked && !heRemindUnlocked) { unlockRemindWithAd(b); return; }
       b.classList.toggle('selected');
       if (!wrap.querySelector('.qr-btn.selected')) b.classList.add('selected'); // siempre al menos uno
     };
     wrap.appendChild(b);
   });
+}
+async function unlockRemindWithAd(btn) {
+  if (!(await offerAdOrPremium(t('remindAdMsg'), t('remindAdBtn')))) return;
+  heRemindUnlocked = true;
+  document.getElementById('he-remind-premium').style.display = 'none';
+  document.querySelectorAll('#he-remind .qr-btn.locked').forEach(x => x.classList.remove('locked'));
+  btn.classList.add('selected');
+  uiAlert(t('remindAdUnlocked'));
 }
 function readHabitRemindPicker() {
   return Array.from(document.querySelectorAll('#he-remind .qr-btn.selected')).map(b => parseInt(b.dataset.offset, 10)).sort((a, b) => b - a);
@@ -5208,6 +5224,21 @@ async function watchAdForWeekly() {
   renderMetrics();
   if (await ensureWeeklySummary()) renderMetrics();
   else renderMetrics();
+}
+// --- Métricas completas por hoy con 2 anuncios (plan gratis) ---
+const METRICS_PASS_ADS = 2;
+function metricsPassCount() { const p = state.metricsPass || {}; return p.date === ymd(new Date()) ? (p.ads || 0) : 0; }
+function metricsPassActive() { return isPremium || metricsPassCount() >= METRICS_PASS_ADS; }
+async function watchAdForMetricsPass() {
+  while (metricsPassCount() < METRICS_PASS_ADS) {
+    if (!(await watchRewardedAd('metrics'))) break;
+    state.metricsPass = { date: ymd(new Date()), ads: metricsPassCount() + 1 };
+    saveStateToServer();
+    if (metricsPassCount() >= METRICS_PASS_ADS) break;
+    renderMetrics();
+    if (!(await uiConfirm(t('metricsPassNext'), { okText: t('metricsPassNextOk') }))) break;
+  }
+  renderMetrics();
 }
 function weeklyTeaserHtml() {
   const key = lastCompletedWeekStart();
@@ -10053,7 +10084,8 @@ function saveHabitEditor() {
     kind: kindData.kind,
     goal: kindData.kind === 'count' ? kindData.goal : null,
     unit: kindData.kind === 'count' ? kindData.unit : null,
-    reminderOffsets: isPremium ? readHabitRemindPicker() : ((existing && existing.reminderOffsets) || [0]),
+    reminderOffsets: (isPremium || heRemindUnlocked) ? readHabitRemindPicker() : ((existing && existing.reminderOffsets) || [0]),
+    adRemind: !!(heRemindUnlocked || (existing && existing.adRemind)),
     createdAt: existing ? (existing.createdAt || ymd(new Date())) : ymd(new Date()),
   };
   entry.repeatWeekly = entry.repeatDays.length === 7;
@@ -11339,6 +11371,7 @@ function moodInsightsHtml(mi) {
 }
 
 function renderMetrics() {
+  const mp = metricsPassActive(); // Premium, o 2 anuncios vistos hoy
   const el = document.getElementById('view-metrics');
   if (!state.profile.habitos.length) { el.innerHTML = `<div style="padding:20px;color:var(--text-dim);">${t('noHabitsYet')}</div>`; return; }
   const m = computeMetrics();
@@ -11379,7 +11412,7 @@ function renderMetrics() {
   // Racha actual, patrones semanales, ranking de hábitos y racha por hábito son
   // solo para Premium — el plan gratis se queda con el resumen del día/semana/mes.
   const fullSectionsHtml = `
-      ${weeklySummaryHtml()}
+      ${isPremium ? weeklySummaryHtml() : weeklyTeaserHtml()}
       ${moodInsightsHtml(computeMoodInsights())}
       <div class="metrics-section">
         <h4>${t('patronesTitle')}</h4>
@@ -11411,6 +11444,7 @@ function renderMetrics() {
           <div class="weekly-item">💡 ${t('lockedSampleInsight')}</div>
           <div class="mood-strip">${['😊','😌','😔','🙏','😊','😴','🤩'].map(e => `<div class="mood-day"><span>${e}</span></div>`).join('')}</div>
         </div>
+        ${canWatchRewarded() ? `<button type="button" class="qr-btn ad-reward-btn" id="metrics-pass-btn" style="width:100%;margin:6px 0 10px;">${metricsPassCount() ? t('metricsPassProgress', metricsPassCount()) + ' · ' + t('metricsPassNextOk') : t('metricsPassBtn')}</button>` : ''}
         <button class="premium-btn" id="unlock-premium-btn">${premiumCtaLabel()}</button>
         <div class="premium-note">${IS_NATIVE_APP ? t('nativePremiumNote') : t('premiumNote')}</div>
       </div>`;
@@ -11428,18 +11462,21 @@ function renderMetrics() {
         <div class="kpi-tile"><div class="kpi-num" style="color:${tileColor(m.pctToday)}">${m.pctToday!==null?m.pctToday+'%':'—'}</div><div class="kpi-lbl">${t('cumplimientoHoy')}</div></div>
         <div class="kpi-tile"><div class="kpi-num" style="color:${tileColor(m.pctWeek)}">${m.pctWeek!==null?m.pctWeek+'%':(m.hasHistory?'—':t('sinDatosCap'))}</div><div class="kpi-lbl">${t('cumplimientoSemana')}</div></div>
         <div class="kpi-tile"><div class="kpi-num" style="color:${tileColor(m.pctMonth)}">${m.pctMonth!==null?m.pctMonth+'%':(m.hasHistory?'—':t('sinDatosCap'))}</div><div class="kpi-lbl">${t('cumplimientoMes')}</div></div>
-        <div class="kpi-tile"><div class="kpi-num">${isPremium ? m.rachaActual+' 🔥' : '🔒'}</div><div class="kpi-lbl">${t('rachaActualLbl')}</div><div class="kpi-sub" style="color:var(--text-dim);">${isPremium ? t('maximaLbl', m.rachaMax) : t('soloPremium')}</div></div>
+        <div class="kpi-tile"><div class="kpi-num">${mp ? m.rachaActual+' 🔥' : '🔒'}</div><div class="kpi-lbl">${t('rachaActualLbl')}</div><div class="kpi-sub" style="color:var(--text-dim);">${mp ? t('maximaLbl', m.rachaMax) : t('soloPremium')}</div></div>
       </div>
 
       ${progressMetricsHtml()}
 
-      ${isPremium ? (m.hasHistory ? fullSectionsHtml : weeklySummaryHtml() + moodInsightsHtml(computeMoodInsights()) + emptyHistoryHtml) : (weeklyTeaserHtml() + (m.hasHistory ? '' : emptyHistoryHtml) + lockedSectionHtml)}
+      ${!isPremium && mp ? `<div class="premium-note" style="margin:4px 0 10px;">${t('metricsPassActiveNote')}</div>` : ''}
+      ${mp ? (m.hasHistory ? fullSectionsHtml : (isPremium ? weeklySummaryHtml() : weeklyTeaserHtml()) + moodInsightsHtml(computeMoodInsights()) + emptyHistoryHtml) : (weeklyTeaserHtml() + (m.hasHistory ? '' : emptyHistoryHtml) + lockedSectionHtml)}
 
       ${adBannerHtml()}
     </div>
   `;
   const weeklyAdBtn = document.getElementById('weekly-ad-btn');
   if (weeklyAdBtn) weeklyAdBtn.onclick = () => watchAdForWeekly();
+  const passBtn = document.getElementById('metrics-pass-btn');
+  if (passBtn) passBtn.onclick = () => watchAdForMetricsPass();
   if (!isPremium) {
     const btn = document.getElementById('unlock-premium-btn');
     if (btn) btn.onclick = () => openPremiumSheet();
