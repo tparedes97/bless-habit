@@ -841,6 +841,27 @@
   .premium-lock h4 { color: var(--accent-2); }
   .premium-btn { width: 100%; background: linear-gradient(135deg, var(--accent), var(--accent-2)); border: none; color: var(--on-accent); font-weight: 800; padding: 12px 16px; border-radius: 12px; cursor: pointer; font-size: 14px; margin-top: 4px; transition: transform .1s; }
   .premium-btn:active { transform: scale(.97); }
+  /* Perfil: datos plegables, grupos y funciones bloqueadas con marca de agua */
+  .profile-details > summary { list-style: none; cursor: pointer; display: flex; flex-direction: column; gap: 2px; position: relative; padding-right: 26px; }
+  .profile-details > summary::-webkit-details-marker { display: none; }
+  .profile-details > summary::after { content: '⌄'; position: absolute; right: 2px; top: 0; font-size: 20px; color: var(--text-dim); transition: transform .2s; }
+  .profile-details[open] > summary::after { transform: rotate(180deg); }
+  .profile-details > summary h4 { margin: 0; }
+  .profile-details-hint { font-size: 12px; color: var(--text-dim); }
+  .profile-subsection { border-top: 1px solid var(--border); margin-top: 12px; padding-top: 12px; }
+  .profile-group-title { font-size: 12px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--text-dim); margin: 22px 4px 10px; }
+  .locked-feature { position: relative; overflow: hidden; cursor: pointer; flex-shrink: 0; }
+  .locked-feature > * { position: relative; z-index: 1; }
+  .locked-feature::after { content: 'PREMIUM'; position: absolute; left: 50%; top: 58%; z-index: 2; font-size: 36px; font-weight: 900; letter-spacing: 3px; color: var(--accent); opacity: .2; transform: translate(-50%, -50%) rotate(-12deg); pointer-events: none; white-space: nowrap; }
+  .premium-hero { position: relative; overflow: hidden; flex-shrink: 0; border-radius: 22px; padding: 22px 18px 18px; margin: 22px 0 14px; color: #fff;
+    background: linear-gradient(140deg, #3b2a8f 0%, #7C6CF0 55%, #3fcf9f 120%); box-shadow: 0 14px 34px rgba(124,108,240,.35); }
+  .premium-hero-glow { position: absolute; width: 220px; height: 220px; right: -70px; top: -90px; border-radius: 50%; background: radial-gradient(circle, rgba(255,255,255,.35), rgba(255,255,255,0) 70%); }
+  .premium-hero-badge { display: inline-block; font-size: 11px; font-weight: 900; letter-spacing: .12em; padding: 4px 10px; border-radius: 999px; background: rgba(255,255,255,.2); border: 1px solid rgba(255,255,255,.35); }
+  .premium-hero-title { font-size: 22px; font-weight: 900; margin: 10px 0 4px; }
+  .premium-hero-sub { font-size: 13px; opacity: .9; margin-bottom: 12px; }
+  .premium-hero .premium-benefits { color: #fff; }
+  .premium-hero .premium-note, .premium-hero .logout-link { color: rgba(255,255,255,.85); }
+  .premium-hero-btn { background: #fff !important; color: #3b2a8f !important; font-size: 15px; padding: 14px 16px; box-shadow: 0 6px 16px rgba(0,0,0,.18); }
   .premium-note { font-size: 11.5px; color: var(--text-dim); margin-top: 8px; line-height: 1.4; }
   .premium-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 800; padding: 3px 10px; border-radius: 999px; background: rgba(124,158,255,.18); color: var(--accent); border: 1px solid rgba(124,158,255,.4); margin-top: 6px; }
   .ad-slot { margin-top: 16px; padding: 8px; border: 1px dashed var(--border); border-radius: 12px; text-align: center; min-height: 60px; display: flex; align-items: center; justify-content: center; }
@@ -2173,7 +2194,7 @@ const I18N = {
     saludTitle: 'Salud (opcional)', pesoLabel: 'Peso', kgSuffix: (n) => `${n} kg`, noCompartido: 'No compartido',
     tallaLabel: 'Talla', cmSuffix: (n) => `${n} cm`,
     dificultadTitle: 'Lo que se te dificulta', intentosTitle: 'Ya intentaste', detonantesTitle: 'Tus detonantes',
-    diasDificilesTitle: 'Días difíciles para ti', habitosTitle: 'Hábitos que quiere construir',
+    diasDificilesTitle: 'Días difíciles para ti', habitosTitle: '🌱 Tus hábitos',
     logrosTitle: '🏆 Tus logros', noLogros: 'Aún no tienes logros guardados — cuéntale a Bless cuando consigas algo importante y lo guarda aquí. 🌟',
     shareLogroIconTitle: 'Compartir este logro',
     deleteLogroIconTitle: 'Eliminar este logro',
@@ -2322,7 +2343,8 @@ const I18N = {
     configDescPremiumExtra: '/dorado Premium',
     openConfigBtn: 'Abrir configuración',
     planTitle: 'Plan', premiumBadge: '✨ Bless Habit Premium', cancelSubLink: 'Cancelar suscripción',
-    freePlanDesc: 'Estás en el plan gratis. Con Premium tienes:',
+    aboutYouTitle: '🙋 Sobre ti', aboutYouHint: 'Tus datos, horarios y lo que te cuesta', settingsGroupTitle: 'Ajustes', premiumHeroTitle: 'Bless Habit Premium',
+    freePlanDesc: 'Estás en el plan gratis. Con Premium desbloqueas:',
     premiumBenefits: ['💬 Conversa con Bless sin límite, y Bless recuerda lo importante de ti', '📬 Cada lunes, tu resumen semanal escrito por Bless', '😊 Tu ánimo en el tiempo y qué hábitos acompañan tus días buenos', '🌱 Hábitos ilimitados (gratis: 3 en total)', '⏰ Recordatorios a tu medida: 10, 15, 30 o 60 min antes', '✅ Tareas y notas ilimitadas y sin límite de fecha (gratis: 3 tareas y 10 notas por día, hasta 14 días adelante)', '📔 Diario con temas y stickers exclusivos, y exportar a PDF', '🔒 Bloqueo con PIN (y huella o rostro en Android)', '🚫 Sin anuncios · ✨ Tema dorado'],
     premiumCancelNote: 'Pago mensual con Paddle. Cancelas cuando quieras.',
     heRemindQ: '¿Cuándo te aviso?', heRemindPremiumTag: '✨ Premium para más opciones',
@@ -2787,7 +2809,7 @@ const I18N = {
     saludTitle: 'Health (optional)', pesoLabel: 'Weight', kgSuffix: (n) => `${n} kg`, noCompartido: 'Not shared',
     tallaLabel: 'Height', cmSuffix: (n) => `${n} cm`,
     dificultadTitle: "What's hard for you", intentosTitle: 'Already tried', detonantesTitle: 'Your triggers',
-    diasDificilesTitle: 'Hard days for you', habitosTitle: 'Habits you want to build',
+    diasDificilesTitle: 'Hard days for you', habitosTitle: '🌱 Your habits',
     logrosTitle: '🏆 Your achievements', noLogros: "You don't have any saved achievements yet — tell Bless when you accomplish something important and it'll be saved here. 🌟",
     shareLogroIconTitle: 'Share this achievement',
     deleteLogroIconTitle: 'Delete this achievement',
@@ -2936,6 +2958,7 @@ const I18N = {
     configDescPremiumExtra: '/Premium gold',
     openConfigBtn: 'Open settings',
     planTitle: 'Plan', premiumBadge: '✨ Bless Habit Premium', cancelSubLink: 'Cancel subscription',
+    aboutYouTitle: '🙋 About you', aboutYouHint: 'Your details, schedule and what is hard for you', settingsGroupTitle: 'Settings', premiumHeroTitle: 'Bless Habit Premium',
     freePlanDesc: "You're on the free plan. With Premium you get:",
     premiumBenefits: ['💬 Talk with Bless without limits, and Bless remembers what matters to you', '📬 Every Monday, your weekly summary written by Bless', '😊 Your mood over time and which habits come with your good days', '🌱 Unlimited habits (free: 3 in total)', '⏰ Reminders your way: 10, 15, 30 or 60 min before', '✅ Unlimited tasks and notes with no date limit (free: 3 tasks and 10 notes per day, up to 14 days ahead)', '📔 Journal with exclusive themes and stickers, plus PDF export', '🔒 PIN lock (plus fingerprint or face on Android)', '🚫 No ads · ✨ Gold theme'],
     premiumCancelNote: 'Monthly payment via Paddle. Cancel anytime.',
@@ -8397,7 +8420,21 @@ function renderProfile() {
       <div class="xp-progress" style="margin-top:10px;"><i style="width:${xpProgressPct(p.xp || 0, lp)}%;"></i></div>
       <button class="send-btn" id="view-levels-btn" style="width:100%;margin-top:12px;background:linear-gradient(135deg, var(--panel-3), var(--panel-2)); color:var(--text);">${t('viewLevelsBtn')}</button>
     </div>
-    <div class="profile-card"><h4>${t('basicDataTitle')}</h4>
+    <div class="profile-card"><h4>${t('habitosTitle')}${isPremium ? '' : ` <span class="day-habit-count">${t('habitCountFree', (p.habitos || []).length, habitLimit())}</span>`}</h4><div>${habitsHtml || '—'}</div>
+      <button class="send-btn" id="toggle-add-habit-btn" style="width:100%;margin-top:12px;">＋ ${t('addHabitTitle')}</button>
+      <div id="add-habit-box" style="display:none;margin-top:12px;">
+        <div style="font-size:13px;color:var(--text-dim);margin-bottom:10px;">${t('addHabitDesc')}</div>
+        <div class="quick-replies" id="add-habit-presets"></div>
+        <button class="send-btn" id="add-habit-custom-btn" style="width:100%;margin-top:8px;background:linear-gradient(135deg, var(--panel-3), var(--panel-2)); color:var(--text);">${t('configureCustomBtn')}</button>
+      </div>
+      <div id="add-habit-status" style="font-size:12px;color:var(--text-dim);margin-top:8px;"></div>
+    </div>
+    <div class="profile-card logros-card"><h4>${t('logrosTitle')}</h4>
+      ${(p.logros && p.logros.length) ? p.logros.map((l, i) => ({l, i})).reverse().map(({l, i}) => `<div class="logro-chip">${l.photo ? `<img class="logro-thumb" src="${escapeHtml(l.photo)}" alt="">` : (l.icon || '🏆')} ${l.text}<span class="logro-share-btn" data-logro-idx="${i}" title="${t('shareLogroIconTitle')}">📤</span><span class="logro-delete-btn" data-logro-idx="${i}" title="${t('deleteLogroIconTitle')}">🗑️</span><span class="logro-date">${l.date}</span></div>`).join('') : `<div style="font-size:13px;color:var(--text-dim);">${t('noLogros')}</div>`}
+    </div>
+    <details class="profile-card profile-details">
+      <summary><h4>${t('aboutYouTitle')}</h4><span class="profile-details-hint">${t('aboutYouHint')}</span></summary>
+    <div class="profile-subsection"><h4>${t('basicDataTitle')}</h4>
       <div class="profile-row"><span>${t('nombreLabel')}</span><span>${p.nombre || '—'} <span class="chip-edit-btn" data-field="nombre" data-label-key="nombreLabel" title="${t('editIconTitle')}">✏️</span></span></div>
       <div class="profile-row"><span>${t('edadLabel')}</span><span>${p.edad ? t('aniosSuffix', p.edad) : t('noCompartida')} <span class="chip-edit-btn" data-field="edad" data-label-key="edadLabel" data-numeric="1" title="${t('editIconTitle')}">✏️</span></span></div>
       <div class="profile-row"><span>${t('horarioFijoLabel')}</span><span>${p.trabajoInicio || '—'} – ${p.trabajoFin || '—'} <span class="chip-edit-btn" data-timepair="horario" title="${t('editIconTitle')}">✏️</span></span></div>
@@ -8407,52 +8444,45 @@ function renderProfile() {
       <div class="profile-row"><span>${t('tiempoLibreLabel')}</span><span>${optLabel('tiempoLibre', p.tiempoLibre) || '—'} <span class="chip-edit-btn" data-option-field="tiempoLibre" data-label-key="tiempoLibreLabel" title="${t('editIconTitle')}">✏️</span></span></div>
       <div class="profile-row"><span>${t('motivacionLabel')}</span><span>${optLabel('motivacion', p.motivacion) || '—'} <span class="chip-edit-btn" data-option-field="motivacion" data-label-key="motivacionLabel" title="${t('editIconTitle')}">✏️</span></span></div>
     </div>
-    <div class="profile-card"><h4>${t('saludTitle')}</h4>
+    <div class="profile-subsection"><h4>${t('saludTitle')}</h4>
       <div class="profile-row"><span>${t('pesoLabel')}</span><span>${p.peso ? t('kgSuffix', p.peso) : t('noCompartido')} <span class="chip-edit-btn" data-field="peso" data-label-key="pesoPh" data-numeric="1" title="${t('editIconTitle')}">✏️</span></span></div>
       <div class="profile-row"><span>${t('tallaLabel')}</span><span>${p.talla ? t('cmSuffix', p.talla) : t('noCompartido')} <span class="chip-edit-btn" data-field="talla" data-label-key="tallaPh" data-numeric="1" title="${t('editIconTitle')}">✏️</span></span></div>
     </div>
-    <div class="profile-card"><h4>${t('dificultadTitle')}</h4>${chipList(optLabelList('dificultades', p.dificultades))}</div>
-    <div class="profile-card"><h4>${t('intentosTitle')}</h4>${chipList(optLabelList('intentosPrevios', p.intentosPrevios))}</div>
-    <div class="profile-card"><h4>${t('detonantesTitle')}</h4>${chipList(optLabelList('detonantes', p.detonantes))}</div>
-    <div class="profile-card"><h4>${t('diasDificilesTitle')}</h4>${chipList(optLabelList('diasDificiles', p.diasDificiles))}</div>
-    <div class="profile-card"><h4>${t('habitosTitle')}${isPremium ? '' : ` <span class="day-habit-count">${t('habitCountFree', (p.habitos || []).length, habitLimit())}</span>`}</h4><div>${habitsHtml || '—'}</div></div>
-    <div class="profile-card logros-card"><h4>${t('logrosTitle')}</h4>
-      ${(p.logros && p.logros.length) ? p.logros.map((l, i) => ({l, i})).reverse().map(({l, i}) => `<div class="logro-chip">${l.photo ? `<img class="logro-thumb" src="${escapeHtml(l.photo)}" alt="">` : (l.icon || '🏆')} ${l.text}<span class="logro-share-btn" data-logro-idx="${i}" title="${t('shareLogroIconTitle')}">📤</span><span class="logro-delete-btn" data-logro-idx="${i}" title="${t('deleteLogroIconTitle')}">🗑️</span><span class="logro-date">${l.date}</span></div>`).join('') : `<div style="font-size:13px;color:var(--text-dim);">${t('noLogros')}</div>`}
-    </div>
-    <div class="profile-card">
-      <h4>${t('addHabitTitle')}</h4>
-      <div style="font-size:13px;color:var(--text-dim);margin-bottom:10px;">${t('addHabitDesc')}</div>
-      <div class="quick-replies" id="add-habit-presets"></div>
-      <button class="send-btn" id="add-habit-custom-btn" style="width:100%;margin-top:8px;background:linear-gradient(135deg, var(--panel-3), var(--panel-2)); color:var(--text);">${t('configureCustomBtn')}</button>
-      <div id="add-habit-status" style="font-size:12px;color:var(--text-dim);margin-top:8px;"></div>
-    </div>
-    <div class="profile-card">
-      <h4>${t('planTitle')}</h4>
-      ${isPremium
-        ? `<div class="premium-badge">${t('premiumBadge')}</div>${premiumSource === 'comp' ? '' : `<div style="margin-top:10px;"><span class="logout-link" id="cancel-premium-link">${premiumSource === 'gplay' ? t('gplayManageLink') : t('cancelSubLink')}</span></div>`}`
-        : `<div style="font-size:13px;color:var(--text-dim);margin-bottom:10px;">${t('freePlanDesc')}</div>
-           <ul class="premium-benefits">${(I18N[currentLang()].premiumBenefits || I18N.es.premiumBenefits).map(b => `<li>${b}</li>`).join('')}</ul>
-           <button class="premium-btn" id="profile-unlock-premium-btn">${premiumCtaLabel()}</button>
-           <div class="premium-note">${IS_NATIVE_APP ? t('nativePremiumNote') : t('premiumCancelNote')}</div>
-           ${IS_NATIVE_APP ? `<div style="text-align:center;margin-top:8px;"><span class="logout-link" id="gplay-restore-link">${t('gplayRestoreLink')}</span></div>` : ''}`}
-    </div>
-    ${appLockCardHtml()}
-    <div class="profile-card">
-      <h4>${t('memoriesTitle')}</h4>
-      <div style="font-size:12.5px;color:var(--text-dim);line-height:1.5;margin-bottom:10px;">${t('memoriesDesc')}</div>
-      ${!isPremium
-        ? `<div class="memory-empty">${t('memoriesFreeTeaser')}</div><button class="premium-btn" id="memories-premium-btn" style="margin-top:10px;">${premiumCtaLabel()}</button>`
-        : (state.blessMemories || []).length
-        ? `<div class="memory-list">${state.blessMemories.map(m => `<div class="memory-item"><span class="memory-text">${escapeHtml(m.text)}</span><button type="button" class="memory-del" data-id="${m.id}" title="${t('memoryDeleteTitle')}" aria-label="${t('memoryDeleteTitle')}">✕</button></div>`).join('')}</div>
-           <div style="text-align:right;margin-top:8px;"><span class="logout-link" id="memories-clear-all">${t('memoriesClearAll')}</span></div>`
-        : `<div class="memory-empty">${t('memoriesEmpty')}</div>`}
-    </div>
+    <div class="profile-subsection"><h4>${t('dificultadTitle')}</h4>${chipList(optLabelList('dificultades', p.dificultades))}</div>
+    <div class="profile-subsection"><h4>${t('intentosTitle')}</h4>${chipList(optLabelList('intentosPrevios', p.intentosPrevios))}</div>
+    <div class="profile-subsection"><h4>${t('detonantesTitle')}</h4>${chipList(optLabelList('detonantes', p.detonantes))}</div>
+    <div class="profile-subsection"><h4>${t('diasDificilesTitle')}</h4>${chipList(optLabelList('diasDificiles', p.diasDificiles))}</div>
+    </details>
+    <div class="profile-group-title">${t('settingsGroupTitle')}</div>
     <div class="profile-card">
       <h4>${t('notifTitle')}</h4>
       <div style="font-size:13px;color:var(--text-dim);margin-bottom:10px;" id="push-status-text">${t('consultando')}</div>
       <button class="premium-btn" id="push-toggle-btn" style="background:linear-gradient(135deg, var(--panel-3), var(--panel-2)); color:var(--text);">${t('pushEnableBtn')}</button>
     </div>
     ${widgetSettingsHtml()}
+    ${appLockCardHtml()}
+    <div class="profile-card${isPremium ? '' : ' locked-feature'}" ${isPremium ? '' : 'data-goto-premium="1"'}>
+      <h4>${t('memoriesTitle')}</h4>
+      <div style="font-size:12.5px;color:var(--text-dim);line-height:1.5;margin-bottom:10px;">${t('memoriesDesc')}</div>
+      ${!isPremium
+        ? `<div class="memory-empty">${t('memoriesFreeTeaser')}</div>`
+        : (state.blessMemories || []).length
+        ? `<div class="memory-list">${state.blessMemories.map(m => `<div class="memory-item"><span class="memory-text">${escapeHtml(m.text)}</span><button type="button" class="memory-del" data-id="${m.id}" title="${t('memoryDeleteTitle')}" aria-label="${t('memoryDeleteTitle')}">✕</button></div>`).join('')}</div>
+           <div style="text-align:right;margin-top:8px;"><span class="logout-link" id="memories-clear-all">${t('memoriesClearAll')}</span></div>`
+        : `<div class="memory-empty">${t('memoriesEmpty')}</div>`}
+    </div>
+    ${isPremium
+      ? `<div class="profile-card"><h4>${t('planTitle')}</h4><div class="premium-badge">${t('premiumBadge')}</div>${premiumSource === 'comp' ? '' : `<div style="margin-top:10px;"><span class="logout-link" id="cancel-premium-link">${premiumSource === 'gplay' ? t('gplayManageLink') : t('cancelSubLink')}</span></div>`}</div>`
+      : `<div class="premium-hero" id="premium-hero">
+          <div class="premium-hero-glow" aria-hidden="true"></div>
+          <div class="premium-hero-badge">✨ PREMIUM</div>
+          <div class="premium-hero-title">${t('premiumHeroTitle')}</div>
+          <div class="premium-hero-sub">${t('freePlanDesc')}</div>
+          <ul class="premium-benefits">${(I18N[currentLang()].premiumBenefits || I18N.es.premiumBenefits).map(b => `<li>${b}</li>`).join('')}</ul>
+          <button class="premium-btn premium-hero-btn" id="profile-unlock-premium-btn">${premiumCtaLabel()}</button>
+          <div class="premium-note">${IS_NATIVE_APP ? t('nativePremiumNote') : t('premiumCancelNote')}</div>
+          ${IS_NATIVE_APP ? `<div style="text-align:center;margin-top:8px;"><span class="logout-link" id="gplay-restore-link">${t('gplayRestoreLink')}</span></div>` : ''}
+        </div>`}
     ${adBannerHtml()}
     <div style="text-align:center; margin-top: 14px;"><a href="/auth/logout" class="logout-link">${t('logoutLink')}</a></div>
     <div style="text-align:center; margin-top: 18px;"><button type="button" class="delete-account-link" id="delete-account-btn">${t('deleteAccountLink')}</button></div>
@@ -8473,8 +8503,17 @@ function renderProfile() {
     pushAdsenseSlots();
   }
   bindAppLockCard();
-  const memPremiumBtn = document.getElementById('memories-premium-btn');
-  if (memPremiumBtn) memPremiumBtn.onclick = () => openPremiumSheet();
+  // Funciones bloqueadas: al tocarlas se baja a la tarjeta Premium del final.
+  el.querySelectorAll('[data-goto-premium]').forEach(card => {
+    card.onclick = () => { const hero = document.getElementById('premium-hero'); if (hero) hero.scrollIntoView({ behavior: 'smooth', block: 'center' }); };
+  });
+  const toggleAdd = document.getElementById('toggle-add-habit-btn');
+  if (toggleAdd) toggleAdd.onclick = () => {
+    const box = document.getElementById('add-habit-box');
+    const open = box.style.display === 'none';
+    box.style.display = open ? '' : 'none';
+    toggleAdd.style.display = open ? 'none' : '';
+  };
   const adPrivacyLink = document.getElementById('ad-privacy-link');
   if (adPrivacyLink) adPrivacyLink.onclick = (e) => { e.preventDefault(); const A = admob(); if (A) A.showPrivacyOptionsForm().catch(() => {}); };
   const delBtn = document.getElementById('delete-account-btn');
