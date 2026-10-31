@@ -5929,6 +5929,8 @@ function buildReminderItems() {
   });
   // Cronómetro corriendo: aviso cuando llegue a la meta (aunque la app esté cerrada).
   timerFinishReminders().forEach(it => { if (it.at > now) items.push(it); });
+  // Pomodoro con la app en segundo plano: aviso 10 s antes de cada cambio.
+  if (typeof pomoBackgroundItems === 'function') pomoBackgroundItems().forEach(it => items.push(it));
   if (prefs.reengage) {
     const comeBack = addDays(new Date(), 3); comeBack.setHours(19, 0, 0, 0);
     if (!inQuietHours(comeBack, prefs)) items.push({ at: comeBack.getTime(), title: 'Bless Habit 🤍', body: tp('reengageBody'), alarm: false });
@@ -8491,6 +8493,7 @@ function pomoAdvance() {
     left = (r.phaseEnd - Date.now()) / 1000;
     pomoChime(true);
     pomoSave();
+    pomoSyncNotif();
   }
   return left;
 }
@@ -8539,52 +8542,93 @@ async function pomoKeepAwake(on) {
   } catch (e) { pomoWake = null; }
 }
 // ---- avisos del teléfono cuando la app no está a la vista ----
+// Con la app 1.2+ y los recordatorios activos, van en el programador exacto de
+// Bless (despierta al teléfono aunque esté bloqueado). Si no, con el plugin.
+let pomoInBackground = false;
+function pomoIsRunning() { return !!pomo.run; }
+function pomoUpcomingAlerts() {
+  const r = pomo.run; const out = [];
+  if (!r || r.paused) return out;
+  let end = r.phaseEnd;
+  for (let i = r.idx; i < r.phases.length && out.length < 30; i++) {
+    if (i > r.idx) end += r.phases[i].sec * 1000;
+    const next = r.phases[i + 1];
+    const body = !next ? t('pomoNotifEnd') : next.type === 'rest' ? t('pomoNotifRest') : t('pomoNotifFocus');
+    const at = end - POMO_LEAD_SEC * 1000;
+    if (at > Date.now() + 1000) out.push({ at, title: '⏱️ Pomodoro', body, alarm: false });
+  }
+  return out;
+}
+function pomoUsesNativeScheduler() { return hasNativeReminders() && !!(state.settings && state.settings.nativeReminders); }
+function pomoBackgroundItems() { return pomoInBackground && pomoUsesNativeScheduler() ? pomoUpcomingAlerts() : []; }
 async function pomoCancelNotifs() {
   const LN = nativeNotifications(); if (!LN) return;
   try { await LN.cancel({ notifications: Array.from({ length: 30 }, (_, i) => ({ id: POMO_NOTIF_BASE + i })) }); } catch (e) {}
 }
 async function pomoScheduleNotifs() {
-  const LN = nativeNotifications(); const r = pomo.run;
-  if (!LN || !r || r.paused) return;
+  const LN = nativeNotifications(); if (!LN) return;
   await pomoCancelNotifs();
-  const list = []; let end = r.phaseEnd;
-  for (let i = r.idx; i < r.phases.length && list.length < 30; i++) {
-    if (i > r.idx) end += r.phases[i].sec * 1000;
-    const next = r.phases[i + 1];
-    const body = !next ? t('pomoNotifEnd') : next.type === 'rest' ? t('pomoNotifRest') : t('pomoNotifFocus');
-    const at = end - POMO_LEAD_SEC * 1000;
-    if (at > Date.now() + 1000) list.push({ id: POMO_NOTIF_BASE + list.length, title: '⏱️ Pomodoro', body, schedule: { at: new Date(at), allowWhileIdle: true } });
-  }
+  if (pomoUsesNativeScheduler()) { try { await scheduleNativeReminders(); } catch (e) {} return; }
+  const list = pomoUpcomingAlerts().map((it, i) => ({ id: POMO_NOTIF_BASE + i, title: it.title, body: it.body, schedule: { at: new Date(it.at), allowWhileIdle: true } }));
   if (!list.length) return;
   try { await LN.schedule({ notifications: await withReminderChannel(list) }); } catch (e) {}
 }
+async function pomoClearBackground() {
+  await pomoCancelNotifs();
+  if (pomoUsesNativeScheduler()) { try { await scheduleNativeReminders(); } catch (e) {} }
+}
+// ---- cronómetro en la pantalla bloqueada (el mismo de los hábitos, app 1.3+) ----
+let pomoNotifKey = '';
+function pomoSyncNotif() {
+  if (!canTimerNotif()) return;
+  const BD = blessDevice(), r = pomo.run;
+  if (!r) { if (pomoNotifKey) { pomoNotifKey = ''; BD.hideTimerNotification().catch(() => {}); try { syncTimerNotification(); } catch (e) {} } return; }
+  const ph = r.phases[r.idx];
+  const left = r.paused ? r.pausedLeft : Math.max(0, (r.phaseEnd - Date.now()) / 1000);
+  const elapsed = Math.max(0, Math.round(ph.sec - left));
+  const focusTotal = r.phases.filter(x => x.type === 'focus').length;
+  const title = ph.type === 'intro' ? `Pomodoro · ${t('pomoGetReady')}`
+    : `${ph.type === 'rest' ? t('pomoRest') : t('pomoFocus')} · ${t('pomoRound', ph.round, focusTotal)}`;
+  const key = `${r.idx}|${r.paused}|${r.paused ? elapsed : Math.round(Date.now() / 1000 - elapsed)}`;
+  if (key === pomoNotifKey) return;
+  pomoNotifKey = key;
+  BD.showTimerNotification({ habitId: 'pomodoro', title, elapsedSec: elapsed, goalSec: ph.sec, running: !r.paused }).catch(() => {});
+}
+// Botones de esa notificación: Pausar / Reanudar / Finalizar / tocarla.
+function pomoNotifAction(what) {
+  if (what === 'pause' && pomo.run && !pomo.run.paused) pomoToggle();
+  else if (what === 'resume' && pomo.run && pomo.run.paused) pomoToggle();
+  else if (what === 'finish' && pomo.run) pomoStop(false);
+  try { switchTab('pomodoro'); } catch (e) {}
+}
 document.addEventListener('visibilitychange', () => {
   if (!pomo.run) return;
-  if (document.visibilityState === 'hidden') pomoScheduleNotifs();
-  else { pomoCancelNotifs(); if (!pomo.run.paused) pomoKeepAwake(true); pomoLastSec = null; pomoTick(); }
+  if (document.visibilityState === 'hidden') { pomoInBackground = true; pomoSyncNotif(); pomoScheduleNotifs(); }
+  else { pomoInBackground = false; pomoClearBackground(); if (!pomo.run.paused) pomoKeepAwake(true); pomoLastSec = null; pomoTick(); pomoSyncNotif(); }
 });
 // ---- controles ----
 function pomoStart() {
   pomoBeep(660, 120, 0.15); // desbloquea el audio con el toque
   const phases = pomoPhases(pomo.cfg);
   pomo.run = { phases, idx: 0, phaseEnd: Date.now() + phases[0].sec * 1000, paused: false, pausedLeft: 0, doneFocus: 0 };
-  pomoLastSec = null; pomoSave(); pomoKeepAwake(true); pomoLoop(); renderPomodoro();
+  pomoLastSec = null; pomoSave(); pomoKeepAwake(true); pomoLoop(); renderPomodoro(); pomoSyncNotif();
 }
 function pomoToggle() {
   const r = pomo.run; if (!r) return;
   if (r.paused) { r.phaseEnd = Date.now() + r.pausedLeft * 1000; r.paused = false; pomoKeepAwake(true); pomoBeep(660, 120, 0.2); }
   else { const left = pomoAdvance(); if (left === null) return; r.pausedLeft = left; r.paused = true; pomoKeepAwake(false); pomoBeep(440, 150, 0.2); try { speechSynthesis.cancel(); } catch (e) {} }
-  pomoLastSec = null; pomoSave(); pomoTick(); renderPomodoro();
+  pomoLastSec = null; pomoSave(); pomoTick(); renderPomodoro(); pomoSyncNotif();
+  if (pomoInBackground) pomoScheduleNotifs();
 }
 async function pomoStop(ask = true) {
   if (ask && !(await uiConfirm(t('pomoStopConfirm')))) return;
-  pomo.run = null; pomoSave(); pomoKeepAwake(false); pomoCancelNotifs(); pomoHideOverlay();
-  clearInterval(pomoTimer); pomoTimer = null; renderPomodoro();
+  pomo.run = null; pomoSave(); pomoKeepAwake(false); pomoClearBackground(); pomoHideOverlay();
+  clearInterval(pomoTimer); pomoTimer = null; renderPomodoro(); pomoSyncNotif();
 }
 function pomoFinish() {
   const n = (pomo.run && pomo.run.doneFocus) || 0;
-  pomo.run = null; pomoSave(); pomoKeepAwake(false); pomoCancelNotifs(); pomoHideOverlay();
-  clearInterval(pomoTimer); pomoTimer = null;
+  pomo.run = null; pomoSave(); pomoKeepAwake(false); pomoClearBackground(); pomoHideOverlay();
+  clearInterval(pomoTimer); pomoTimer = null; pomoSyncNotif();
   pomoBeep(523, 250, 0.35); setTimeout(() => pomoBeep(659, 250, 0.35), 220); setTimeout(() => pomoBeep(784, 500, 0.35), 440);
   pomoVibrate([300, 100, 300, 100, 600]);
   if (n && pomoStateReady()) { try { awardXp(5 * n); } catch (e) {} }
@@ -8681,6 +8725,7 @@ document.getElementById('pomo-countdown').onclick = () => pomoToggle();
   if (!pomo.run) return;
   if (!pomoStateReady() && tries < 40) return setTimeout(() => pomoResumeWhenReady(tries + 1), 500);
   pomoLoop(); if (pomo.run && !pomo.run.paused) pomoKeepAwake(true);
+  if (pomo.run) { pomoNotifKey = ''; pomoSyncNotif(); }
 })(0);
 
 function chipList(arr) { return (arr && arr.length) ? arr.map(x => `<span class="tag-chip">${x}</span>`).join('') : '<span style="color:var(--text-dim);font-size:13px;">—</span>'; }
@@ -10805,6 +10850,7 @@ function canTimerNotif() {
 let lastTimerNotifKey = '';
 function syncTimerNotification() {
   if (!canTimerNotif()) return;
+  if (typeof pomoIsRunning === 'function' && pomoIsRunning()) return; // la notificación la usa el pomodoro
   // El cronómetro activo o en pausa (con tiempo ya contado) de hoy.
   const a = (state.agenda || []).find(x => x.timer && (x.timer.running || x.timer.accSec > 0));
   const h = a && itemHabit(a);
@@ -10824,6 +10870,7 @@ function syncTimerNotification() {
 // Si la app se abrió en frío desde la notificación, se espera a que carguen los datos.
 let pendingNotifAction = null, lastNotifActionKey = '', lastNotifActionAt = 0;
 function queueNotifAction(url) {
+  if ((url.searchParams.get('habit') || '') === 'pomodoro') { if (url.href !== lastNotifActionKey || Date.now() - lastNotifActionAt > 5000) { lastNotifActionKey = url.href; lastNotifActionAt = Date.now(); pomoNotifAction(url.searchParams.get('do') || 'open'); } return; }
   // El mismo botón puede llegar dos veces al abrir la app (aviso + enlace de arranque).
   if (url.href === lastNotifActionKey && Date.now() - lastNotifActionAt < 5000) return;
   lastNotifActionKey = url.href; lastNotifActionAt = Date.now();
