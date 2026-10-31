@@ -321,6 +321,16 @@ def init_db():
             value TEXT NOT NULL
         )
     """)
+    # Métricas: una fila por persona por día en que usó la app (y cuántos
+    # mensajes le mandó a Bless ese día). Solo fechas y contadores, sin contenido.
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS daily_activity (
+            user_id INTEGER NOT NULL,
+            day TEXT NOT NULL,
+            ai_msgs INTEGER NOT NULL DEFAULT 0,
+            PRIMARY KEY (user_id, day)
+        )
+    """)
     # Migración suave: agrega columnas nuevas si la base ya existía sin ellas
     # (por ejemplo una base creada antes de Premium, o todavía con las
     # columnas viejas de Culqi de una versión anterior de este archivo).
@@ -1852,6 +1862,7 @@ def consume_ai_quota(user_id):
     """Suma una llamada a la IA del día. Devuelve False si el plan gratis ya
     llegó al límite (Premium no tiene límite)."""
     if user_is_premium(user_id):
+        record_ai_message(user_id)
         return True
     day = time.strftime("%Y-%m-%d", time.gmtime())
     conn = get_db()
@@ -1870,6 +1881,7 @@ def consume_ai_quota(user_id):
     conn.execute("DELETE FROM ai_usage WHERE day < ?", (time.strftime("%Y-%m-%d", time.gmtime(time.time() - 3 * 86400)),))
     conn.commit()
     conn.close()
+    record_ai_message(user_id)
     return True
 
 
@@ -2371,6 +2383,195 @@ def diary_export():
                     "photo": photo, "tags": [str(t) for t in (e.get("tags") or [])][:8], "favorite": bool(e.get("favorite"))})
     name = ((state.get("profile") or {}).get("nombre")) or (user["name"] if user else "")
     return render_template("diary_export.html", entries=out, name=name, lang=lang)
+
+
+# ============================================================
+# MÉTRICAS DE USO (para el panel de la dueña en Mi Negocio)
+#   - Cada día que alguien usa la app se anota en daily_activity (una fila
+#     por persona por día; nada de contenido).
+#   - GET /api/admin/metrics devuelve el uso SIN nombres ni correos, con el
+#     historial reconstruido desde lo que ya guarda cada cuenta (días de
+#     hábitos, diario, fecha de registro). Pide la cabecera
+#     "Authorization: Bearer <METRICS_TOKEN>" (variable en Render).
+# ============================================================
+try:
+    from zoneinfo import ZoneInfo
+    METRICS_TZ = ZoneInfo(os.environ.get("METRICS_TIME_ZONE", "America/Lima"))
+except Exception:
+    from datetime import timezone as _tz
+    METRICS_TZ = _tz(timedelta(hours=-5))
+METRICS_TOKEN = os.environ.get("METRICS_TOKEN", "").strip()
+_DAY_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
+_activity_seen = {"day": None, "keys": set()}
+_metrics_cache = {"at": 0, "data": None}
+
+
+def metrics_today():
+    from datetime import datetime
+    return datetime.now(METRICS_TZ).strftime("%Y-%m-%d")
+
+
+def _local_day_from_epoch(ts):
+    from datetime import datetime, timezone
+    try:
+        return datetime.fromtimestamp(float(ts), tz=timezone.utc).astimezone(METRICS_TZ).strftime("%Y-%m-%d")
+    except Exception:
+        return None
+
+
+def _local_day_from_sqlite(text):
+    """'YYYY-MM-DD HH:MM:SS' guardado por datetime('now') (UTC) → día local."""
+    from datetime import datetime, timezone
+    try:
+        dt = datetime.strptime(str(text)[:19], "%Y-%m-%d %H:%M:%S").replace(tzinfo=timezone.utc)
+        return dt.astimezone(METRICS_TZ).strftime("%Y-%m-%d")
+    except Exception:
+        return None
+
+
+def record_daily_activity(user_id, ai_msg=False):
+    day = metrics_today()
+    if not ai_msg:
+        if _activity_seen["day"] != day:
+            _activity_seen["day"] = day
+            _activity_seen["keys"] = set()
+        if user_id in _activity_seen["keys"]:
+            return
+    try:
+        conn = get_db()
+        conn.execute("""
+            INSERT INTO daily_activity (user_id, day, ai_msgs) VALUES (?, ?, ?)
+            ON CONFLICT(user_id, day) DO UPDATE SET ai_msgs = ai_msgs + excluded.ai_msgs
+        """, (user_id, day, 1 if ai_msg else 0))
+        conn.commit()
+        conn.close()
+        _activity_seen["keys"].add(user_id)
+    except Exception as e:
+        print(f"[métricas] no se pudo anotar la actividad: {e}")
+
+
+def record_ai_message(user_id):
+    record_daily_activity(user_id, ai_msg=True)
+
+
+@app.before_request
+def _track_daily_activity():
+    if not request.path.startswith("/api/") or request.path.startswith("/api/admin/"):
+        return
+    user_id = session.get("user_id")
+    if user_id:
+        record_daily_activity(user_id)
+
+
+def build_usage_metrics():
+    conn = get_db()
+    cur = conn.execute("SELECT * FROM users")
+    users = _rows_to_dicts(cur, cur.fetchall())
+    cur = conn.execute("SELECT user_id, state_json, updated_at FROM user_state")
+    states = {r["user_id"]: r for r in _rows_to_dicts(cur, cur.fetchall())}
+    cur = conn.execute("SELECT user_id, day, ai_msgs FROM daily_activity")
+    activity = _rows_to_dicts(cur, cur.fetchall())
+    cur = conn.execute("SELECT user_id, created_at FROM diary_photos")
+    photos = _rows_to_dicts(cur, cur.fetchall())
+    cur = conn.execute("SELECT user_id, day FROM ai_usage")
+    ai_recent = _rows_to_dicts(cur, cur.fetchall())
+    conn.close()
+
+    events = {
+        "habits_done": {"label": "Hábitos completados", "byDay": {}},
+        "journal": {"label": "Entradas del diario", "byDay": {}},
+        "ai_msgs": {"label": "Mensajes a Bless (IA)", "byDay": {}},
+    }
+
+    def bump(key, day, n=1):
+        if day and _DAY_RE.match(day) and n:
+            events[key]["byDay"][day] = events[key]["byDay"].get(day, 0) + n
+
+    per_user = {u["id"]: {"days": set(), "key": set()} for u in users}
+
+    def mark(uid, day, key=False):
+        if uid in per_user and day and _DAY_RE.match(day):
+            per_user[uid]["days"].add(day)
+            if key:
+                per_user[uid]["key"].add(day)
+
+    for a in activity:
+        mark(a["user_id"], a["day"], key=bool(a["ai_msgs"]))
+        bump("ai_msgs", a["day"], a["ai_msgs"] or 0)
+    for p in photos:
+        mark(p["user_id"], _local_day_from_epoch(p["created_at"]), key=True)
+    for r in ai_recent:
+        mark(r["user_id"], str(r["day"])[:10], key=True)
+
+    for uid, st in states.items():
+        mark(uid, _local_day_from_sqlite(st["updated_at"]))
+        try:
+            state = json.loads(st["state_json"]) or {}
+        except Exception:
+            continue
+        # Días ya cerrados: cada uno se archivó porque la persona abrió la app ese día
+        for h in state.get("history") or []:
+            if not isinstance(h, dict):
+                continue
+            day = str(h.get("date") or "")
+            done = sum(1 for it in (h.get("items") or []) if isinstance(it, dict) and it.get("done"))
+            mark(uid, day, key=done > 0)
+            bump("habits_done", day, done)
+        # Hoy (o el último día que entró): la agenda todavía abierta
+        last = str(state.get("lastActiveDate") or "")
+        done_today = sum(1 for it in (state.get("agenda") or []) if isinstance(it, dict) and it.get("done"))
+        mark(uid, last, key=done_today > 0)
+        bump("habits_done", last, done_today)
+        for j in state.get("journal") or []:
+            if isinstance(j, dict) and (j.get("text") or j.get("mood") or j.get("photo")):
+                day = str(j.get("date") or "")
+                mark(uid, day, key=True)
+                bump("journal", day, 1)
+
+    out_users = []
+    for u in users:
+        info = per_user[u["id"]]
+        signup = _local_day_from_sqlite(u.get("created_at"))
+        if signup:
+            info["days"].add(signup)
+        days = sorted(info["days"])
+        if not days:
+            continue
+        first = days[0]
+        premium = bool(_with_effective_premium(dict(u)).get("is_premium"))
+        out_users.append({"first": first, "premium": premium, "days": days, "keyDays": sorted(info["key"])})
+    out_users.sort(key=lambda x: x["first"])
+
+    tracked = [a["day"] for a in activity if a.get("day")]
+    return {
+        "ok": True,
+        "app": "bless-habit",
+        "name": "Blessed Habit",
+        "timeZone": str(METRICS_TZ),
+        "generatedAt": int(time.time()),
+        "trackingSince": min(tracked) if tracked else None,
+        "keyActionLabel": "marcó un hábito, escribió en el diario o habló con Bless",
+        "users": out_users,
+        "events": events,
+        "notes": [
+            "El historial anterior al registro diario sale de los días de hábitos y del diario que guarda cada cuenta.",
+            "Los mensajes a Bless se cuentan desde que se activó el registro diario.",
+        ],
+    }
+
+
+@app.route("/api/admin/metrics")
+def api_admin_metrics():
+    if not METRICS_TOKEN:
+        return jsonify({"ok": False, "error": "Falta configurar METRICS_TOKEN en el servidor"}), 503
+    auth_header = request.headers.get("Authorization", "")
+    given = auth_header[7:].strip() if auth_header.lower().startswith("bearer ") else ""
+    if not given or not hmac.compare_digest(given, METRICS_TOKEN):
+        return jsonify({"ok": False, "error": "No autorizado"}), 401
+    if _metrics_cache["data"] is None or time.time() - _metrics_cache["at"] > 300 or request.args.get("fresh"):
+        _metrics_cache["data"] = build_usage_metrics()
+        _metrics_cache["at"] = time.time()
+    return jsonify(_metrics_cache["data"])
 
 
 if __name__ == "__main__":
