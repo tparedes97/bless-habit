@@ -563,8 +563,13 @@
   .pomo-time { font-size: 52px; font-weight: 800; font-variant-numeric: tabular-nums; letter-spacing: -1px; color: var(--text); }
   .pomo-round { font-size: 13px; color: var(--text-dim); }
   .pomo-hint { text-align: center; font-size: 12px; color: var(--text-dim); margin-bottom: 12px; min-height: 16px; }
-  .pomo-btns { display: flex; gap: 10px; justify-content: center; margin-bottom: 16px; }
-  .pomo-btns button { flex: 1; max-width: 160px; }
+  .pomo-btns { display: flex; gap: 12px; justify-content: center; margin-bottom: 18px; }
+  .pomo-btn { flex: 1; max-width: 180px; min-height: 52px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; border: none; border-radius: 16px; font-size: 16px; font-weight: 800; cursor: pointer; transition: transform .1s; -webkit-tap-highlight-color: transparent; }
+  .pomo-btn:active { transform: scale(.96); }
+  .pomo-btn .pi { font-size: 18px; line-height: 1; }
+  .pomo-btn.main { background: linear-gradient(135deg, var(--accent), #9b87ff); color: #fff; box-shadow: 0 8px 20px rgba(124,98,245,.35); }
+  .pomo-btn.alt { background: transparent; color: var(--text); border: 2px solid var(--border); }
+  .pomo-btn.solo { max-width: 260px; }
   .pomo-cfg { background: var(--panel-2); border: 1px solid var(--border); border-radius: 16px; padding: 12px 14px; }
   .pomo-cfg.locked { opacity: .5; pointer-events: none; }
   .pomo-presets { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
@@ -2013,6 +2018,7 @@ const I18N = {
     pomoFocus: '🎯 Concentración', pomoRest: '☕ Descanso', pomoReady: 'Listo para empezar', pomoGetReady: '⏳ Prepárate', pomoPaused: '⏸️ En pausa',
     pomoRound: (i, n) => `Ronda ${i} de ${n}`, pomoRounds: 'Rondas', pomoFocusLbl: '🎯 Concentración', pomoRestLbl: '☕ Descanso', pomoPresets: 'Elige un ritmo',
     pomoStart: '▶️ Empezar', pomoPause: '⏸️ Pausar', pomoResume: '▶️ Seguir', pomoStop: '⏹️ Terminar',
+    pomoStartLbl: 'Empezar', pomoPauseLbl: 'Pausar', pomoResumeLbl: 'Seguir', pomoStopLbl: 'Terminar',
     pomoTapPause: 'Toca el círculo para pausar', pomoTapResume: 'Toca el círculo para seguir',
     pomoStartsFocus: 'Arrancamos tiempo de concentración en', pomoStartsRest: 'Arrancamos tiempo de descanso en', pomoEndsIn: 'Terminamos en',
     pomoSpeakFocus: 'Arrancamos tiempo de concentración en', pomoSpeakRest: 'Arrancamos tiempo de descanso en', pomoSpeakEnd: 'Terminamos en',
@@ -2654,6 +2660,7 @@ const I18N = {
     pomoFocus: '🎯 Focus', pomoRest: '☕ Break', pomoReady: 'Ready to start', pomoGetReady: '⏳ Get ready', pomoPaused: '⏸️ Paused',
     pomoRound: (i, n) => `Round ${i} of ${n}`, pomoRounds: 'Rounds', pomoFocusLbl: '🎯 Focus', pomoRestLbl: '☕ Break', pomoPresets: 'Pick a rhythm',
     pomoStart: '▶️ Start', pomoPause: '⏸️ Pause', pomoResume: '▶️ Resume', pomoStop: '⏹️ Finish',
+    pomoStartLbl: 'Start', pomoPauseLbl: 'Pause', pomoResumeLbl: 'Resume', pomoStopLbl: 'Finish',
     pomoTapPause: 'Tap the circle to pause', pomoTapResume: 'Tap the circle to resume',
     pomoStartsFocus: 'Focus time starts in', pomoStartsRest: 'Break time starts in', pomoEndsIn: 'Finishing in',
     pomoSpeakFocus: 'Focus time starts in', pomoSpeakRest: 'Break time starts in', pomoSpeakEnd: 'Finishing in',
@@ -8674,8 +8681,10 @@ function pomoCountFocus() {
   const today = ymd(new Date());
   if (!state.pomoStats || state.pomoStats.date !== today) state.pomoStats = { date: today, count: 0 };
   state.pomoStats.count++;
+  pomoRefreshToday();
   try { saveStateToServer(); } catch (e) {}
 }
+function pomoRefreshToday() { const el = document.getElementById('pomo-today'); if (el) el.textContent = t('pomoToday', pomoTodayCount()); }
 function pomoTodayCount() { const s = state.pomoStats; return s && s.date === ymd(new Date()) ? s.count : 0; }
 // ---- sonido, vibración y voz ----
 function pomoBeep(freq, ms, vol = 0.25) {
@@ -8753,13 +8762,21 @@ function pomoSyncNotif() {
   if (!canTimerNotif()) return;
   const BD = blessDevice(), r = pomo.run;
   if (!r) { if (pomoNotifKey) { pomoNotifKey = ''; BD.hideTimerNotification().catch(() => {}); try { syncTimerNotification(); } catch (e) {} } return; }
-  const ph = r.phases[r.idx];
+  const ph = r.phases[r.idx], next = r.phases[r.idx + 1];
   const left = r.paused ? r.pausedLeft : Math.max(0, (r.phaseEnd - Date.now()) / 1000);
-  const elapsed = Math.max(0, Math.round(ph.sec - left));
   const focusTotal = r.phases.filter(x => x.type === 'focus').length;
-  const title = ph.type === 'intro' ? `Pomodoro · ${t('pomoGetReady')}`
+  // En los últimos 10 s el título anuncia lo que viene.
+  const lastTen = !r.paused && left <= POMO_LEAD_SEC;
+  const upcoming = ph.type === 'intro' ? 'focus' : next ? next.type : 'end';
+  const title = lastTen
+    ? (upcoming === 'focus' ? t('pomoStartsFocus') : upcoming === 'rest' ? t('pomoStartsRest') : t('pomoEndsIn')) + '…'
+    : ph.type === 'intro' ? `Pomodoro · ${t('pomoGetReady')}`
     : `${ph.type === 'rest' ? t('pomoRest') : t('pomoFocus')} · ${t('pomoRound', ph.round, focusTotal)}`;
-  const key = `${r.idx}|${r.paused}|${r.paused ? elapsed : Math.round(Date.now() / 1000 - elapsed)}`;
+  // Corriendo: "tiempo contado" negativo = el reloj de Android muestra −mm:ss y
+  // va bajando hasta 0 (cuenta regresiva sin cambiar la app nativa).
+  // En pausa: lo ya hecho, con la barra de progreso.
+  const elapsed = r.paused ? Math.max(0, Math.round(ph.sec - left)) : -Math.ceil(left);
+  const key = `${r.idx}|${r.paused}|${lastTen}|${r.paused ? elapsed : Math.round(r.phaseEnd / 1000)}`;
   if (key === pomoNotifKey) return;
   pomoNotifKey = key;
   BD.showTimerNotification({ habitId: 'pomodoro', title, elapsedSec: elapsed, goalSec: ph.sec, running: !r.paused }).catch(() => {});
@@ -8771,11 +8788,19 @@ function pomoNotifAction(what) {
   else if (what === 'finish' && pomo.run) pomoStop(false);
   try { switchTab('pomodoro'); } catch (e) {}
 }
-document.addEventListener('visibilitychange', () => {
-  if (!pomo.run) return;
-  if (document.visibilityState === 'hidden') { pomoInBackground = true; pomoSyncNotif(); pomoScheduleNotifs(); }
-  else { pomoInBackground = false; pomoClearBackground(); if (!pomo.run.paused) pomoKeepAwake(true); pomoLastSec = null; pomoTick(); pomoSyncNotif(); }
-});
+// Al bloquear el teléfono, el WebView de la app puede seguir "visible": por eso
+// también se escucha el aviso de Android (appStateChange) de que la app se fue.
+function pomoSetBackground(bg) {
+  if (!pomo.run || bg === pomoInBackground) { pomoInBackground = bg; return; }
+  pomoInBackground = bg;
+  if (bg) { pomoNotifKey = ''; pomoSyncNotif(); pomoScheduleNotifs(); }
+  else { pomoClearBackground(); if (!pomo.run.paused) pomoKeepAwake(true); pomoLastSec = null; pomoTick(); pomoNotifKey = ''; pomoSyncNotif(); }
+}
+document.addEventListener('visibilitychange', () => pomoSetBackground(document.visibilityState === 'hidden'));
+try {
+  const CapApp = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.App;
+  if (CapApp && CapApp.addListener) CapApp.addListener('appStateChange', (st) => pomoSetBackground(!(st && st.isActive)));
+} catch (e) {}
 // ---- controles ----
 function pomoStart() {
   pomoBeep(660, 120, 0.15); // desbloquea el audio con el toque
@@ -8814,6 +8839,7 @@ function pomoTick() {
   if (left === null || !pomo.run) return;
   const ph = r.phases[r.idx], next = r.phases[r.idx + 1];
   const sec = Math.ceil(left);
+  if (sec === POMO_LEAD_SEC && pomoLastSec !== sec) pomoSyncNotif();
   // Pantalla del pomodoro
   const timeEl = document.getElementById('pomo-time');
   if (timeEl) {
@@ -8838,7 +8864,7 @@ function pomoTick() {
       document.getElementById('po-sub').textContent = t('pomoTapToPause');
       ov.classList.add('show');
     }
-    if (pomoLastSec !== sec && document.visibilityState === 'visible') {
+    if (pomoLastSec !== sec && document.visibilityState === 'visible' && !pomoInBackground) {
       if (sec === POMO_LEAD_SEC) {
         pomoVibrate([250, 100, 250]); pomoBeep(990, 300, 0.3);
         pomoSpeak(`${upcoming === 'focus' ? t('pomoSpeakFocus') : upcoming === 'rest' ? t('pomoSpeakRest') : t('pomoSpeakEnd')} ${sec}`);
@@ -8863,8 +8889,8 @@ function renderPomodoro() {
     </div>
     <div class="pomo-hint">${running ? (r.paused ? t('pomoTapResume') : t('pomoTapPause')) : ''}</div>
     <div class="pomo-btns">${running
-      ? `<button type="button" class="send-btn" id="pomo-toggle">${r.paused ? t('pomoResume') : t('pomoPause')}</button><button type="button" class="send-btn" id="pomo-stop" style="background:var(--panel-3);color:var(--text);">${t('pomoStop')}</button>`
-      : `<button type="button" class="send-btn" id="pomo-start">${t('pomoStart')}</button>`}</div>
+      ? `<button type="button" class="pomo-btn main" id="pomo-toggle"><span class="pi">${r.paused ? '▶' : '❚❚'}</span>${t(r.paused ? 'pomoResumeLbl' : 'pomoPauseLbl')}</button><button type="button" class="pomo-btn alt" id="pomo-stop"><span class="pi">■</span>${t('pomoStopLbl')}</button>`
+      : `<button type="button" class="pomo-btn main solo" id="pomo-start"><span class="pi">▶</span>${t('pomoStartLbl')}</button>`}</div>
     <div class="pomo-cfg ${running ? 'locked' : ''}">
       <div class="switch-text" style="margin-bottom:8px;">${t('pomoPresets')}</div>
       <div class="pomo-presets">${preset}</div>
@@ -8872,7 +8898,7 @@ function renderPomodoro() {
       <div class="pomo-row"><span>${t('pomoRestLbl')}</span>${step('rest', c.rest, t('pomoMin'))}</div>
       <div class="pomo-row"><span>🔁 ${t('pomoRounds')}</span>${step('rounds', c.rounds, '')}</div>
     </div>
-    <div class="pomo-today">${t('pomoToday', pomoTodayCount())}</div>`;
+    <div class="pomo-today" id="pomo-today">${t('pomoToday', pomoTodayCount())}</div>`;
   const fg = document.getElementById('pomo-fg'); const circ = 2 * Math.PI * 104;
   fg.style.strokeDasharray = circ; fg.style.strokeDashoffset = 0;
   document.getElementById('pomo-ring').onclick = () => running ? pomoToggle() : pomoStart();
