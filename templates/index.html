@@ -670,6 +670,10 @@
   .tm-soft { background: linear-gradient(135deg, var(--panel-3), var(--panel-2)) !important; color: var(--text) !important; }
   .tm-finish { background: none !important; border: 1.5px solid var(--border) !important; color: var(--text) !important; box-shadow: none !important; }
   .tm-hint { font-size: 11.5px; color: var(--text-dim); margin-top: 12px; }
+  .tip-card { margin: 8px 0 12px; padding: 10px 12px; border-radius: 14px; background: var(--surface-2, rgba(124,108,240,0.08)); border: 1px solid var(--border); font-size: 13px; line-height: 1.4; }
+  .tip-card .tip-head { display: flex; justify-content: space-between; align-items: center; font-weight: 800; font-size: 12px; margin-bottom: 4px; }
+  .tip-card .tip-actions { display: flex; gap: 10px; margin-top: 6px; }
+  .tip-card .tip-actions button { background: none; border: none; padding: 0; font-size: 12px; font-weight: 700; color: var(--accent, #7C6CF0); cursor: pointer; }
   .notif-prefs { margin-top: 14px; border-top: 1px solid var(--border); padding-top: 10px; text-align: left; }
   .np-title { font-size: 13px; font-weight: 700; color: var(--text-dim); text-transform: uppercase; letter-spacing: .5px; }
   .np-quiet { margin-top: 12px; padding: 12px 14px; border-radius: 14px; background: var(--panel-2); border: 1px solid var(--border); }
@@ -2497,6 +2501,15 @@ const I18N = {
     postponeLbl: 'Posponer', postponedMsg: (name, time) => `Listo ⏰ «${name}» quedó para las ${time}. Te aviso a esa hora.`, postponedTag: (orig) => `pospuesto (era ${orig})`,
     dayFilterAll: 'Todas', dayFilterPending: 'Pendientes', dayFilterDone: 'Completadas', dayFilterSkipped: 'Omitidas', dayFilterEmpty: 'Nada por aquí 🙂',
     notifPrefsTitle: 'Qué avisos recibir', notifPrefHabits: '🌱 Recordatorios de hábitos', notifPrefTasks: '✅ Recordatorios de tareas', notifPrefReengage: '🤍 Mensaje si pasan días sin abrir la app',
+    notifPrefMotivation: '☀️ Frases de ánimo (mañana y noche)', notifPrefTips: '💡 Un tip al día para mantener tus hábitos', notifPrefFollowup: '🔁 Un segundo aviso si un hábito sigue pendiente',
+    morningTitle: (n) => n ? `☀️ Buenos días, ${n}` : '☀️ Buenos días',
+    morningToday: (count, names) => count === 1 ? `Hoy te toca: ${names}.` : `Hoy te tocan ${count} hábitos: ${names}.`,
+    tipNotifTitle: '💡 Tip para tus hábitos',
+    followupTitle: (icon, label) => `${icon} ¿Ya pudiste con ${label}?`,
+    eveningTitleToday: (n) => n === 1 ? '🌙 Te falta 1 hábito hoy' : `🌙 Te faltan ${n} hábitos hoy`,
+    eveningTitle: '🌙 ¿Cómo te fue hoy?',
+    eveningStreak: (n, label) => `Tu racha de ${n} días en ${label} te espera 🔥`,
+    tipCardTitle: '💡 Tip del día', tipCardNext: 'Otro tip', tipCardHide: 'Ocultar por hoy',
     notifQuietTitle: 'Horario de silencio', notifQuietHint: 'En ese horario no llegan avisos de hábitos ni el mensaje de Bless. Las tareas con hora sí te avisan.',
     notifQuietFrom: 'Desde', notifQuietTo: 'Hasta', notifQuietClear: 'Quitar',
     notifChanReminders: 'Canal de recordatorios', notifChanAlarms: 'Canal de alarmas', notifChanOn: 'activo con sonido', notifChanSilenced: (i) => `silenciado en Ajustes de Android (nivel ${i})`, notifChanOff: 'apagado', notifTestUpcoming: 'Próximos avisos programados',
@@ -3112,6 +3125,15 @@ const I18N = {
     postponeLbl: 'Postpone', postponedMsg: (name, time) => `Done ⏰ "${name}" moved to ${time}. I'll remind you then.`, postponedTag: (orig) => `postponed (was ${orig})`,
     dayFilterAll: 'All', dayFilterPending: 'Pending', dayFilterDone: 'Done', dayFilterSkipped: 'Skipped', dayFilterEmpty: 'Nothing here 🙂',
     notifPrefsTitle: 'Which reminders', notifPrefHabits: '🌱 Habit reminders', notifPrefTasks: '✅ Task reminders', notifPrefReengage: "🤍 Message if days pass without opening the app",
+    notifPrefMotivation: '☀️ Encouragement (morning and evening)', notifPrefTips: '💡 A daily tip to keep your habits going', notifPrefFollowup: '🔁 A second reminder if a habit is still pending',
+    morningTitle: (n) => n ? `☀️ Good morning, ${n}` : '☀️ Good morning',
+    morningToday: (count, names) => count === 1 ? `Today you have: ${names}.` : `Today you have ${count} habits: ${names}.`,
+    tipNotifTitle: '💡 Habit tip',
+    followupTitle: (icon, label) => `${icon} Did you get to ${label}?`,
+    eveningTitleToday: (n) => n === 1 ? '🌙 1 habit left today' : `🌙 ${n} habits left today`,
+    eveningTitle: '🌙 How did today go?',
+    eveningStreak: (n, label) => `Your ${n}-day streak in ${label} is waiting 🔥`,
+    tipCardTitle: '💡 Tip of the day', tipCardNext: 'Another tip', tipCardHide: 'Hide for today',
     notifQuietTitle: 'Quiet hours', notifQuietHint: "No habit reminders or Bless messages during these hours. Tasks with a time still remind you.",
     notifQuietFrom: 'From', notifQuietTo: 'To', notifQuietClear: 'Clear',
     notifChanReminders: 'Reminder channel', notifChanAlarms: 'Alarm channel', notifChanOn: 'on with sound', notifChanSilenced: (i) => `silenced in Android Settings (level ${i})`, notifChanOff: 'off', notifTestUpcoming: 'Next scheduled reminders',
@@ -5864,6 +5886,8 @@ function buildReminderItems() {
       });
     });
   });
+  // Ánimo, tips y segundo aviso de hábitos pendientes.
+  buildEncouragementItems(prefs).forEach(it => items.push(it));
   // Cronómetro corriendo: aviso cuando llegue a la meta (aunque la app esté cerrada).
   timerFinishReminders().forEach(it => { if (it.at > now) items.push(it); });
   if (prefs.reengage) {
@@ -5876,7 +5900,9 @@ function buildReminderItems() {
 // Preferencias de notificaciones (Perfil → Notificaciones).
 function notifPrefs() {
   const p = (state.settings && state.settings.notif) || {};
-  return { habits: p.habits !== false, tasks: p.tasks !== false, reengage: p.reengage !== false, quietFrom: p.quietFrom || '', quietTo: p.quietTo || '' };
+  return { habits: p.habits !== false, tasks: p.tasks !== false, reengage: p.reengage !== false,
+    motivation: p.motivation !== false, tips: p.tips !== false, followup: p.followup !== false,
+    quietFrom: p.quietFrom || '', quietTo: p.quietTo || '' };
 }
 // ¿Esa hora cae en el horario de silencio? (puede cruzar la medianoche: 22:00–07:00)
 function inQuietHours(date, prefs) {
@@ -5893,6 +5919,142 @@ function timerFinishReminders() {
     if (left <= 0) return;
     out.push({ at: Date.now() + left * 1000, title: `⏱️ ${habitDisplayLabel(h)}`, body: t('timerDoneNotif', h.minutesPerDay), alarm: false });
   });
+  return out;
+}
+/* ---- Ánimo durante el día, tips y segundo aviso ----
+   Para que la gente complete sus hábitos, además del aviso a la hora de cada
+   uno, Bless manda (cada tipo se puede apagar en Perfil → Notificaciones):
+   - ☀️ Mañana: saludo con los hábitos que le tocan ese día.
+   - 💡 Mediodía: un tip práctico para mantener los hábitos (el mismo que sale
+     en la tarjeta "Tip del día"), elegido según lo que le cuesta.
+   - 🔁 Un rato después de la hora de un hábito: "¿ya pudiste?". Como los
+     avisos se reprograman cada vez que marca algo, si ya lo hizo hoy no llega.
+   - 🌙 Noche: cuántos hábitos le faltan hoy (y su racha), o un cierre amable
+     para los días siguientes. Si hoy ya completó todo, no llega.
+   Solo los días con al menos un hábito, y nunca en el horario de silencio. */
+const HABIT_TIPS = {
+  general: [
+    { es: 'Si hoy cuesta, haz la versión de 2 minutos. Lo importante es no romper la cadena.', en: "If today is hard, do the 2-minute version. What matters is not breaking the chain." },
+    { es: 'Ata tu hábito a algo que ya haces: "después del café, leo una página".', en: 'Tie your habit to something you already do: "after coffee, I read one page".' },
+    { es: 'Deja a la vista lo que necesitas (los tenis, el libro, la botella). Menos fricción, más constancia.', en: 'Keep what you need in sight (shoes, book, bottle). Less friction, more consistency.' },
+    { es: 'Fallar un día no borra tu avance. La regla es: nunca dos días seguidos.', en: "Missing one day doesn't erase your progress. The rule: never miss twice in a row." },
+    { es: 'Celebra cada check, aunque sea pequeño. Tu cerebro repite lo que se siente bien.', en: 'Celebrate every check, even small ones. Your brain repeats what feels good.' },
+    { es: 'Piensa en quién quieres ser, no solo en qué quieres lograr. Cada hábito es un voto por esa persona.', en: 'Think about who you want to be, not just what you want to achieve. Each habit is a vote for that person.' },
+    { es: 'Mejor poco todos los días que mucho de vez en cuando.', en: 'A little every day beats a lot once in a while.' },
+    { es: 'Prepara esta noche lo de mañana: así tu yo de mañana solo tiene que empezar.', en: 'Set up tonight what you need tomorrow: then tomorrow-you just has to start.' },
+    { es: 'Marca tus hábitos apenas los termines. Ver tu progreso motiva a seguir.', en: 'Check off your habits as soon as you finish. Seeing progress keeps you going.' },
+    { es: 'Cuéntale a alguien qué hábito estás construyendo. Decirlo en voz alta ayuda a cumplirlo.', en: "Tell someone which habit you're building. Saying it out loud helps you follow through." },
+    { es: 'Si un horario no te funciona, cámbialo. El mejor momento es el que sí puedes cumplir.', en: "If a time doesn't work, change it. The best time is the one you can actually keep." },
+    { es: 'Haz el hábito más difícil cuando tienes más energía.', en: 'Do your hardest habit when your energy is highest.' },
+  ],
+  procrastino: [
+    { es: 'Solo empieza: ponte 2 minutos de cronómetro. Casi siempre, empezar es lo más difícil.', en: 'Just start: set a 2-minute timer. Starting is almost always the hardest part.' },
+    { es: 'No esperes a tener ganas. La motivación suele llegar después de empezar, no antes.', en: "Don't wait to feel like it. Motivation usually comes after you start, not before." },
+  ],
+  olvido: [
+    { es: 'Pon una señal visible: una nota en el espejo o el objeto del hábito donde lo veas.', en: 'Add a visible cue: a note on the mirror or the habit item where you will see it.' },
+    { es: 'Usa el widget de Bless en tu pantalla de inicio para ver tus hábitos sin abrir la app.', en: 'Use the Bless widget on your home screen to see your habits without opening the app.' },
+  ],
+  pierdo_motivacion: [
+    { es: 'Mira tus días cumplidos en el calendario: todo lo que ya llevas cuenta.', en: 'Look at your completed days in the calendar: everything you have done counts.' },
+    { es: 'Recuerda por qué empezaste. Escríbelo en tu diario y vuelve a leerlo cuando flaquees.', en: 'Remember why you started. Write it in your journal and reread it when you waver.' },
+  ],
+  falta_tiempo: [
+    { es: 'Reduce el hábito en vez de saltarlo: 5 minutos también cuentan.', en: 'Shrink the habit instead of skipping it: 5 minutes still count.' },
+    { es: 'Agenda tu hábito como una cita contigo: con hora fija es más fácil cumplir.', en: "Schedule your habit like an appointment with yourself: a set time makes it easier." },
+  ],
+  falta_consistencia: [
+    { es: 'Mantén la misma hora y el mismo lugar. La repetición en el mismo contexto lo vuelve automático.', en: 'Keep the same time and place. Repeating in the same context makes it automatic.' },
+    { es: 'Pocos hábitos bien hechos valen más que muchos a medias. Enfócate en 1 o 2.', en: 'A few habits done well beat many done halfway. Focus on 1 or 2.' },
+  ],
+};
+function habitTipPool() {
+  const own = ((state.profile && state.profile.dificultades) || []).flatMap(d => HABIT_TIPS[d] || []);
+  return own.concat(HABIT_TIPS.general); // los de lo que le cuesta van primero y se repiten más
+}
+// Tip de un día (siempre el mismo para esa fecha: la tarjeta y la notificación coinciden).
+function habitTipForDate(date, shift = 0) {
+  const pool = habitTipPool();
+  const dayNum = Math.floor(new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime() / 86400000);
+  const tip = pool[(((dayNum + shift) % pool.length) + pool.length) % pool.length];
+  return currentLang() === 'en' ? tip.en : tip.es;
+}
+function hmToMin(hm) {
+  if (!/^\d{1,2}:\d{2}/.test(String(hm || ''))) return null;
+  const [h, m] = String(hm).split(':').map(Number);
+  return Number.isFinite(h) ? h * 60 + (Number.isFinite(m) ? m : 0) : null;
+}
+function atMinutes(day, total) { const d = new Date(day); d.setHours(Math.floor(total / 60), total % 60, 0, 0); return d; }
+const FOLLOWUP_AFTER_MIN = 60;
+function buildEncouragementItems(prefs) {
+  const out = [];
+  if (!prefs.motivation && !prefs.tips && !prefs.followup) return out;
+  const p = state.profile || {};
+  const habits = p.habitos || [];
+  if (!habits.length) return out;
+  const now = Date.now();
+  const todayS = ymd(new Date());
+  const firstName = String(p.nombre || '').trim().split(/\s+/)[0] || '';
+  const doneToday = (state.agenda || []).filter(a => a.done);
+  const isDoneToday = (h) => doneToday.some(a => habitOwnsItem(h, { habitId: a.habitId, habitKey: a.habitKey, label: a.task }));
+  const wake = hmToMin(p.despertar), sleep = hmToMin(p.dormir);
+  const push = (at, title, body) => {
+    if (at.getTime() <= now || inQuietHours(at, prefs)) return;
+    out.push({ at: at.getTime(), title, body, alarm: false });
+  };
+  for (let add = 0; add < REMINDER_DAYS_AHEAD; add++) {
+    const day = addDays(new Date(), add);
+    const dayS = ymd(day), dow = day.getDay(), isToday = dayS === todayS;
+    const todays = habits.filter(h => habitRepeatDays(h).includes(dow) && habitActiveOnDate(h, dayS))
+      .map(h => {
+        const moved = isToday ? (state.agenda || []).find(a => a.origTime && habitOwnsItem(h, { habitId: a.habitId, habitKey: a.habitKey, label: a.task })) : null;
+        return { h, min: hmToMin(moved ? moved.time : habitTimeForDay(h, dow)) };
+      });
+    if (!todays.length) continue;
+    const times = todays.map(x => x.min).filter(m => m !== null);
+    const first = times.length ? Math.min(...times) : null, last = times.length ? Math.max(...times) : null;
+    // ☀️ Mañana: 30 min después de despertar (o 8:00), antes del primer hábito.
+    if (prefs.motivation) {
+      let m = wake !== null ? wake + 30 : 8 * 60;
+      if (first !== null && first - 15 < m) m = first - 15;
+      m = Math.max(m, 6 * 60);
+      const names = todays.map(x => habitDisplayLabel(x.h)).slice(0, 3).join(', ') + (todays.length > 3 ? '…' : '');
+      push(atMinutes(day, m), t('morningTitle', firstName), `${t('morningToday', todays.length, names)} ${reminderLine('morning')}`);
+    }
+    // 💡 Tip del día, a mediodía (o en el hueco libre más cercano).
+    if (prefs.tips) {
+      let m = 13 * 60;
+      if (todays.some(x => x.min !== null && Math.abs(x.min - m) < 30)) m += 45;
+      push(atMinutes(day, m), t('tipNotifTitle'), habitTipForDate(day));
+    }
+    // 🔁 Segundo aviso si el hábito sigue pendiente.
+    if (prefs.followup) {
+      todays.forEach(({ h, min }) => {
+        if (min === null || (isToday && isDoneToday(h))) return;
+        const m = min + FOLLOWUP_AFTER_MIN + (Number(h.minutesPerDay) || 0);
+        if (m > 23 * 60) return;
+        push(atMinutes(day, m), t('followupTitle', h.icon || '🌱', habitDisplayLabel(h)), reminderLine('followup'));
+      });
+    }
+    // 🌙 Noche: lo que falta hoy, o un cierre amable los días siguientes.
+    if (prefs.motivation) {
+      let m = sleep !== null && sleep > 19 * 60 ? sleep - 90 : 20 * 60 + 30;
+      m = Math.min(Math.max(m, 18 * 60), 22 * 60 + 30);
+      if (last !== null && m < last + 45) m = last + 45;
+      if (m <= 23 * 60) {
+        if (isToday) {
+          const pending = todays.filter(x => !isDoneToday(x.h));
+          if (pending.length) {
+            const best = pending.map(x => ({ h: x.h, n: (state.streaks || {})[x.h.key] || 0 })).sort((a, b) => b.n - a.n)[0];
+            const body = best && best.n >= 2 ? t('eveningStreak', best.n, habitDisplayLabel(best.h)) : reminderLine('evening');
+            push(atMinutes(day, m), t('eveningTitleToday', pending.length), body);
+          }
+        } else {
+          push(atMinutes(day, m), t('eveningTitle'), reminderLine('evening'));
+        }
+      }
+    }
+  }
   return out;
 }
 let lastNativeReminderResult = null;
@@ -5974,6 +6136,8 @@ async function scheduleNativeReminders() {
     if (prefs.reengage && !inQuietHours(comeBack, prefs)) notifications.push({ id: NATIVE_REENGAGE_ID, title: 'Bless Habit 🤍', body: tp('reengageBody'), schedule: { at: comeBack, allowWhileIdle: true } });
     // Cronómetro corriendo → aviso al llegar a la meta. Hábito pospuesto → aviso a la hora nueva.
     let extraId = 700000;
+    let encId = 800000;
+    buildEncouragementItems(prefs).slice(0, 150).forEach(it => notifications.push({ id: encId++, title: it.title, body: it.body, schedule: { at: new Date(it.at), allowWhileIdle: true } }));
     timerFinishReminders().forEach(it => notifications.push({ id: extraId++, title: it.title, body: it.body, schedule: { at: new Date(it.at), allowWhileIdle: true } }));
     (state.agenda || []).filter(a => a.origTime && !a.done && a.time).forEach(a => {
       const at = new Date(`${ymd(new Date())}T${a.time}:00`);
@@ -6008,10 +6172,16 @@ function personalFallbackLines(kind) {
     habit: ['{n}, it\'s your moment 🌱', 'A little time for you, {n} 🤍', 'Future you says thanks ✨', 'Step by step, {n} 💪', 'I\'m right here with you, let\'s go 🌱'],
     task: ['{n}, this one\'s up now ⏰', 'It\'s time, just like we planned 🤍', 'Now\'s the moment! You\'ve got this ✨', 'One less thing on your list in a bit 🙌'],
     soon: ['Get ready, it\'s almost time 🌱', '{n}, you\'re up in a little while 🤍', 'Get ready calmly ✨'],
+    morning: ['Small steps, big day ✨', 'Today is a fresh start 🌱', "You've got this, {n} 💪", "I'm with you all day 🤍"],
+    followup: ['Still time to do it — even a short version counts 🌱', "If you already did it, check it off in Bless ✅", "A few minutes are enough, {n} 🤍", 'No pressure, just a nudge ✨'],
+    evening: ["Check off what you did today — every bit counts 🌙", 'Whatever you did today is progress, {n} 🤍', 'Rest well, tomorrow we keep going ✨', "Still time for a small step before bed 🌱"],
   } : {
     habit: ['{n}, es tu momento 🌱', 'Un ratito para ti, {n} 🤍', 'Tu yo de mañana te lo agradece ✨', 'Pasito a pasito, {n} 💪', 'Aquí estoy contigo, vamos 🌱'],
     task: ['{n}, te toca esto ⏰', 'Es la hora, como quedamos 🤍', '¡Ahora sí! Tú puedes ✨', 'Un pendiente menos en un ratito 🙌'],
     soon: ['Ve preparándote, ya casi es hora 🌱', '{n}, en un ratito te toca 🤍', 'Prepárate con calma ✨'],
+    morning: ['Pasitos pequeños, gran día ✨', 'Hoy es un buen día para empezar 🌱', 'Tú puedes, {n} 💪', 'Te acompaño todo el día 🤍'],
+    followup: ['Aún estás a tiempo, aunque sea una versión corta 🌱', 'Si ya lo hiciste, márcalo en Bless ✅', 'Con unos minutos basta, {n} 🤍', 'Sin presión, solo un empujoncito ✨'],
+    evening: ['Marca lo que hiciste hoy, todo suma 🌙', 'Lo que hiciste hoy es avance, {n} 🤍', 'Descansa, mañana seguimos ✨', 'Aún hay tiempo para un pasito antes de dormir 🌱'],
   };
   const byMotivation = en ? {
     disciplina: ['A promise is a promise 😉 you can do it', 'Consistency is making you stronger 💪'],
@@ -6024,7 +6194,7 @@ function personalFallbackLines(kind) {
     competencia: ['¿Le ganamos al tú de ayer? 🏆', 'Mantén la racha viva 🔥'],
     acompanamiento: ['Lo hacemos en equipo 🫂', 'Te acompaño en esto 🤍'],
   };
-  const extra = kind !== 'soon' ? (byMotivation[state.profile && state.profile.motivacion] || []) : [];
+  const extra = (kind === 'habit' || kind === 'task') ? (byMotivation[state.profile && state.profile.motivacion] || []) : [];
   return base[kind].concat(extra).map(withName);
 }
 function reminderLine(kind) {
@@ -6036,7 +6206,7 @@ let reminderLinesGenerating = false;
 async function refreshReminderLinesIfNeeded() {
   if (reminderLinesGenerating || !aiEnabled() || !state.profile || !state.profile.nombre) return;
   const c = state.reminderLines, lang = currentLang(), today = ymd(new Date());
-  if (c && c.lang === lang && c.date && (new Date(today) - new Date(c.date)) < REMINDER_LINES_MAX_AGE_DAYS * 86400000) return;
+  if (c && c.lang === lang && c.date && Array.isArray(c.morning) && (new Date(today) - new Date(c.date)) < REMINDER_LINES_MAX_AGE_DAYS * 86400000) return;
   if (Date.now() - (state.reminderLinesTriedAt || 0) < 6 * 3600000) return; // si falló, no reintentar en cada guardado
   state.reminderLinesTriedAt = Date.now();
   reminderLinesGenerating = true;
@@ -6056,15 +6226,15 @@ Reglas:
 - El título de la notificación ya dice el nombre del hábito o la tarea: NO lo repitas.
 - Se ven con el teléfono bloqueado: NADA íntimo, de salud, emociones difíciles ni cosas que contó en el chat.
 Formato exacto:
-{"habit":[10 frases para animarla a hacer un hábito ahora],"task":[8 frases para recordarle una tarea que toca ahora],"soon":[6 frases para avisarle que en unos minutos le toca algo]}`;
+{"habit":[10 frases para animarla a hacer un hábito ahora],"task":[8 frases para recordarle una tarea que toca ahora],"soon":[6 frases para avisarle que en unos minutos le toca algo],"morning":[6 frases de buenos días para arrancar con energía],"followup":[6 frases amables para cuando un hábito sigue pendiente un rato después de su hora, sin culpa, recordando que una versión corta también cuenta],"evening":[6 frases de cierre del día para motivarla a marcar lo que hizo o hacer un último pasito]}`;
     const raw = await callBlessAI(sys, prompt);
     const json = raw && raw.match(/\{[\s\S]*\}/);
     if (!json) return;
     const data = JSON.parse(json[0]);
     const clean = (arr) => (Array.isArray(arr) ? arr : []).map(x => String(x || '').trim()).filter(x => x && x.length <= 110).slice(0, 12);
-    const lines = { date: today, lang, habit: clean(data.habit), task: clean(data.task), soon: clean(data.soon) };
+    const lines = { date: today, lang, habit: clean(data.habit), task: clean(data.task), soon: clean(data.soon), morning: clean(data.morning), followup: clean(data.followup), evening: clean(data.evening) };
     if (lines.habit.length < 3 || lines.task.length < 3) return;
-    if (!lines.soon.length) lines.soon = personalFallbackLines('soon');
+    ['soon', 'morning', 'followup', 'evening'].forEach(k => { if (lines[k].length < 2) lines[k] = personalFallbackLines(k); });
     state.reminderLines = lines;
     saveStateToServer(); // reprograma los avisos ya con las frases nuevas
   } catch (e) { /* se siguen usando las frases de respaldo */ }
@@ -6423,7 +6593,7 @@ function refreshNativeRemindersUI(textEl, btnEl) {
     box.className = 'notif-prefs';
     const sw = (key, label) => `<label class="switch-row"><div class="switch-text">${label}</div><span class="bless-switch"><input type="checkbox" data-np="${key}" ${p[key] ? 'checked' : ''}><span class="knob"></span></span></label>`;
     box.innerHTML = `<div class="np-title">${t('notifPrefsTitle')}</div>
-      ${sw('habits', t('notifPrefHabits'))}${sw('tasks', t('notifPrefTasks'))}${sw('reengage', t('notifPrefReengage'))}
+      ${sw('habits', t('notifPrefHabits'))}${sw('followup', t('notifPrefFollowup'))}${sw('motivation', t('notifPrefMotivation'))}${sw('tips', t('notifPrefTips'))}${sw('tasks', t('notifPrefTasks'))}${sw('reengage', t('notifPrefReengage'))}
       <div class="np-quiet"><div class="switch-text">🌙 ${t('notifQuietTitle')}</div><div class="switch-hint">${t('notifQuietHint')}</div>
         <div class="np-quiet-row"><label>${t('notifQuietFrom')} <input type="time" data-nq="quietFrom" value="${p.quietFrom}"></label>
         <label>${t('notifQuietTo')} <input type="time" data-nq="quietTo" value="${p.quietTo}"></label>
@@ -10677,6 +10847,14 @@ document.getElementById('day-item-action-overlay').addEventListener('click', (e)
 });
 document.getElementById('day-item-action-cancel-btn').onclick = closeDayItemAction;
 
+let tipCardShift = 0;
+function tipCardHtml(isToday) {
+  if (!isToday || !(state.profile.habitos || []).length) return '';
+  if (state.settings && state.settings.tipHiddenDate === ymd(new Date())) return '';
+  return `<div class="tip-card"><div class="tip-head"><span>${t('tipCardTitle')}</span></div>
+    <div>${escapeHtml(habitTipForDate(new Date(), tipCardShift))}</div>
+    <div class="tip-actions"><button type="button" id="tip-next">${t('tipCardNext')} ›</button><button type="button" id="tip-hide">${t('tipCardHide')}</button></div></div>`;
+}
 function renderCalDay() {
   const date = addDays(new Date(), calDayOffset);
   const dateStr = ymd(date);
@@ -10741,7 +10919,7 @@ function renderCalDay() {
       <button id="day-prev">‹</button>
       <div><div class="day-title">${label}</div><div class="day-pct">${pctLabel}</div></div>
       <button id="day-next" ${calDayOffset >= CAL_DAY_MAX_AHEAD ? 'disabled' : ''}>›</button>
-    </div>
+    </div>${tipCardHtml(isToday)}
     <div class="day-section-head"><span>🌱 ${t('daySecHabits')}${isPremium ? '' : ` <span class="day-habit-count">${t('habitCountFree', (state.profile.habitos || []).length, habitLimit())}</span>`}</span><button type="button" class="day-sec-add" id="day-add-habit">＋ ${t('daySecAdd')}</button></div>
     <div id="day-items">${itemsHtml}</div>${offHtml}
     <div class="day-section-head"><span>✅ ${t('daySecTasks')}</span>${isPast ? '' : `<button type="button" class="day-sec-add" id="day-add-task">＋ ${t('daySecAdd')}</button>`}</div>
@@ -10750,6 +10928,10 @@ function renderCalDay() {
     <div id="day-notes">${notesHtml}</div>
   `;
   document.getElementById('day-prev').onclick = () => { calDayOffset--; renderCalDay(); };
+  const tipNext = document.getElementById('tip-next');
+  if (tipNext) tipNext.onclick = () => { tipCardShift++; renderCalDay(); };
+  const tipHide = document.getElementById('tip-hide');
+  if (tipHide) tipHide.onclick = () => { state.settings.tipHiddenDate = ymd(new Date()); saveStateToServer(); renderCalDay(); };
   document.getElementById('day-next').onclick = () => { if (calDayOffset < CAL_DAY_MAX_AHEAD) { calDayOffset++; renderCalDay(); } };
   document.getElementById('day-add-habit').onclick = () => openAddHabitPicker();
   const unlockFarBtn = document.getElementById('day-unlock-far');
